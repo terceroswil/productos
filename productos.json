@@ -48,6 +48,11 @@
       "pueblo": "Otro pueblo del trópico",
       "costo": 30,
       "nota": "Coordinamos por chat"
+    },
+    {
+      "pueblo": "Nuevo pueblo",
+      "costo": 0,
+      "nota": ""
     }
   ],
   "pagos": [

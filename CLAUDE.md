@@ -325,8 +325,50 @@ del mercado boliviano.
   ya no está. Por eso `cargar()` hace `leerBorrador()` primero.
 - `guardarBorrador()` llama a `recogerTienda()`: sin eso, lo que se edita en la pestaña
   "Tienda y envíos" no entra en `CFG` hasta el guardado y el borrador lo perdía.
-- El pie del diálogo lo dice en palabras: *"Aceptar lo anota en la lista. Para que lo vea
-  el cliente falta 💾 Guardar cambios, arriba."*
+- El pie del diálogo lo dice en palabras. El "arriba"/"abajo" del final cambia con el
+  ancho (`si-ancho`/`si-angosto`): en la computadora el botón vive en la cabecera, en
+  el celular baja como barra fija al pie.
+
+## Panel en el celular (23/08/2026)
+Todo vive en un solo `@media(max-width:560px)`; la computadora no cambia.
+
+|  | antes | ahora |
+|---|---|---|
+| cabecera | 275 px | 108 px |
+| barra de herramientas | 198 px | 44 px |
+| hasta el primer producto | 589 px | 184 px |
+| alto de cada producto | 101 px | 73 px |
+| productos visibles | 3 | 8 |
+
+- **La tabla deja de ser tabla**: cada producto es una grilla de dos renglones. El
+  nombre ocupa el primer renglón entero (columnas 2 a 4) y el `#id · variante` va al
+  lado, no debajo; abajo van Bs, Stock y los botones. Antes el nombre compartía fila
+  con los botones, le quedaban 158 px y casi todos se partían en dos líneas.
+- El corte va en **560 px y no en 520**: la tabla tiene `min-width:520px` y el `.wrap`
+  se lleva 32 px, así que entre 521 y 560 sobraban 16 px de scroll lateral.
+- ⚠️ `#tabla td` lleva `:not(.oculta-movil)` sí o sí: pesa más que el `.oculta-movil`
+  del bloque de 720 px y sin eso reaparecen las columnas que hay que esconder.
+- ⚠️ **`backdrop-filter` en el `<header>` rompe cualquier `position:fixed` que cuelgue
+  de él.** Crea un bloque contenedor y el elemento se ancla al header, no a la ventana:
+  la barra de guardar quedaba flotando a 107 px del techo. En celular va
+  `backdrop-filter:none` + fondo opaco (sin desenfoque, el 8% de transparencia deja
+  ver los productos pasando por atrás).
+- ⚠️ **La clase `ancho` ya estaba tomada** por `.campo.ancho` (los campos que ocupan
+  las dos columnas del formulario). Usar `.ancho{display:none}` para textos
+  responsivos escondía Nombre, Descripción, Palabras, Fotos y Variantes en el celular.
+  Por eso el par se llama **`si-ancho` / `si-angosto`**.
+- **Guardar solo existe cuando hay algo que guardar**: `marcarSucio()`/`marcarLimpio()`
+  ponen y sacan `body.hay-cambios`, y el CSS cuelga de ahí la barra fija al pie. Antes
+  medía 322 px de ancho y el 95% del tiempo estaba apagado.
+- **El chip de estado se oculta en celular**: de sus tres textos dos son "no pasa nada"
+  y el tercero ya lo dice la barra al aparecer. Eran 116 px repetidos.
+- **"+ Nuevo producto" es botón flotante** abajo a la derecha; sube a `bottom:74px`
+  cuando aparece la barra de guardar para no taparse.
+- El `.pista` (el párrafo "Precio y stock se editan directo en la tabla…") se oculta en
+  celular: se lee una vez en la vida y ocupa 35 px para siempre.
+- El ancho del filtro de categorías salió del `style=` inline a CSS: un estilo inline
+  le gana a cualquier regla sin `!important`, y con `min-width:150px` fijo al buscador
+  le quedaban 106 px ("Buscar proc…"). Ahora se reparten 2:1 a favor del buscador.
 
 
 ## Control de versiones (desde el 23/08/2026)
