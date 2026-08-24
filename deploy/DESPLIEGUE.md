@@ -31,6 +31,12 @@ elija el nombre y compres el dominio. No reemplaza al B — lo continúa: mismo
 servidor, mismo servicio, solo cambia por dónde entra la gente. Está al final
 de esta guía.
 
+> 📌 **El dominio ya está comprado: `loscaseritos.com`, en Cloudflare.**
+> Para ese caso concreto hay una guía aparte, con los pasos aterrizados y las
+> dos trampas de Cloudflare que acá no se cuentan (la nube gris y el freno de
+> intentos que se vuelve global): **[MUDANZA-LOSCASERITOS.md](MUDANZA-LOSCASERITOS.md)**.
+> El camino C de más abajo sigue sirviendo como explicación general.
+
 ---
 
 # A · El camino rápido

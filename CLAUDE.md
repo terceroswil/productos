@@ -457,10 +457,20 @@ Se probó API, seguridad, panel y tienda de punta a punta. Lo que apareció:
   pestaña "Qué buscan". Conviene filtrarlos por fecha al terminar.
 
 ## Pendientes
-- **Dominio propio**: el cliente todavía no eligió el nombre. El candidato es
-  `caseritos.com`. Cuando confirme: `node herramientas/dominio.cjs https://…` +
-  el camino **C** de `deploy/DESPLIEGUE.md`. Va en el mismo VPS que motoivir.com,
-  como sitio aparte (no como subcarpeta).
+- **Dominio propio: ya está comprado — `loscaseritos.com`, en Cloudflare** (24/08/2026).
+  Falta ejecutar la mudanza: `deploy/MUDANZA-LOSCASERITOS.md` (guía concreta) y
+  `deploy/Caddyfile-loscaseritos.txt` (el bloque). Va en el mismo VPS que
+  motoivir.com, como sitio aparte y **proceso aparte** (no como subcarpeta):
+  motoivir.com → :3000, loscaseritos.com → :4100.
+  - ⚠️ **Los registros A van en "DNS only" (nube gris), no naranja.** Con el proxy
+    de Cloudflare activo, Caddy ve la IP del borde de Cloudflare y `ipDe()` toma el
+    ÚLTIMO valor de `X-Forwarded-For`: **todos los visitantes comparten el mismo
+    cupo del freno de intentos**. Seis logins fallidos de cualquiera dejan al
+    comerciante 10 min afuera de su panel. Para prender la nube naranja hay que
+    enseñarle antes a `ipDe()` a leer `CF-Connecting-IP`, y poner el modo SSL en
+    Full (strict). En ese orden.
+  - No correr `dominio.cjs` hasta que el DNS resuelva: si se publica antes, las
+    vistas previas de WhatsApp apuntan a un dominio muerto y salen sin foto.
 - Migrar el número a WhatsApp Business y recién ahí encender el enlace directo.
 - Iconos PWA en PNG (192/512); hoy son SVG.
 - Cargar el campo `marca` de los productos (está vacío a propósito).
