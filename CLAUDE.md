@@ -194,9 +194,14 @@ del mercado boliviano.
 
 ## Arranque
 - `node serve.js` → tienda en `http://localhost:4100`, panel en `/admin.html`
-- `node serve.js --red` → además contesta a la WiFi, para probar en el celular. En ese
-  modo `admin.html`, `herramientas/`, `logos/` y `data/` devuelven 403 a todo lo que no
-  sea 127.0.0.1 (el panel no tiene contraseña).
+- `node serve.js --red` → además contesta a la WiFi, para probar en el celular.
+  Qué pasa con el panel en ese modo depende de si hay clave configurada:
+  - **sin `.env`**: `admin.html`, `herramientas/`, `logos/` y `data/` solo contestan a
+    127.0.0.1; al resto de la WiFi le devuelven 403 (el panel no tiene contraseña).
+  - **con `PANEL_CLAVE_HASH` en `.env`** (que es como está hoy): manda el login, no la IP.
+    Cualquiera en la WiFi llega a `entrar.html` y entra si sabe la clave. `tienePermiso()`
+    deja de mirar si la petición es local. Es a propósito: así se abre el panel desde el
+    celular. El freno son los 6 intentos / 10 min por IP.
 - **NO abrir el HTML con doble clic**: el catálogo se carga por `fetch` de
   `productos.json` y `file://` lo bloquea.
 
@@ -225,9 +230,14 @@ del mercado boliviano.
   lados). Aborta si detecta `admin.html`/`serve.js`/`data` colados. Netlify Drop.
 
 ## ⚠️ Gotchas
-- **Regla del WhatsApp**: `contacto.enlaceDirectoWhatsapp` está en `false` a propósito.
-  Con `false` la web NUNCA genera un `wa.me`; el número va como texto para copiar y los
-  pedidos salen por Telegram/Messenger. Poner en `true` SOLO con WhatsApp Business.
+- **Regla del WhatsApp**: hoy `contacto.enlaceDirectoWhatsapp` está en **`true`**, y solo
+  se puede porque el número ya es WhatsApp Business. Con una cuenta normal va en `false`:
+  Meta suspende por volumen de mensajes entrantes desde `wa.me`. Con `false` la web NUNCA
+  genera un `wa.me` —el número va como texto para copiar y los pedidos salen por
+  Telegram/Messenger—; con `true` el enlace aparece en los tres lados a la vez: el botón
+  de enviar el pedido, el contacto del pie y la consulta desde la ficha.
+  El número vive en dos campos, `whatsapp` (con el 591) y `whatsappVisible`: al cambiarlo
+  hay que tocar **los dos**.
 - **Todo lo que entra al HTML pasa por `esc()`**. Sin eso, un nombre con comillas
   (`Televisor 43"`) rompe el atributo y la tarjeta. Ya pasó una vez.
 - **`.fila[hidden]{display:none}`**: cualquier elemento con `display:flex` ignora el
