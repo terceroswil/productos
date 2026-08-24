@@ -1,0 +1,10 @@
+# Los archivos de texto se guardan con saltos de linea LF adentro del repo
+# y salen como CRLF en Windows. Sin esto Git avisa en cada archivo y los
+# diffs salen enteros en rojo aunque no se haya tocado nada.
+* text=auto
+
+# Binarios: que Git ni los mire.
+*.jpg binary
+*.png binary
+*.webp binary
+*.ico binary

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="gc" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17c07f"/><stop offset="1" stop-color="#0a7d54"/>
+    </linearGradient>
+  </defs>
+  <!-- la C, abierta como una canasta -->
+  <path d="M76 30 A30 30 0 1 0 76 70" fill="none" stroke="url(#gc)"
+        stroke-width="13" stroke-linecap="round"/>
+  <!-- la L encajada adentro -->
+  <path d="M40 32 V62 H62" fill="none" stroke="url(#gc)"
+        stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

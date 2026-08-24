@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Entrar — Los Caseritos</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%20width='100'%20height='100'%3E%3Crect%20width='100'%20height='100'%20rx='22'%20fill='%230a7d54'/%3E%3Cg%20transform='translate(50,50)%20scale(.76)%20translate(-50,-51.5)'%3E%3Cmask%20id='mCanasta'%3E%3Crect%20width='100'%20height='100'%20fill='black'/%3E%3Cpath%20d='M50%2010%20L94%2044%20A5%205%200%200%201%2091%2052%20H9%20A5%205%200%200%201%206%2044%20Z'%20fill='white'/%3E%3Crect%20x='13'%20y='58'%20width='74'%20height='12'%20rx='5'%20fill='white'/%3E%3Cpath%20d='M20%2072%20H80%20L71%2091%20A4%204%200%200%201%2067%2093%20H33%20A4%204%200%200%201%2029%2091%20Z'%20fill='white'/%3E%3Cg%20stroke='black'%20stroke-width='4.5'%20stroke-linecap='round'%3E%3Cpath%20d='M27%2081%20H73'/%3E%3C/g%3E%3C/mask%3E%3Crect%20width='100'%20height='100'%20fill='%23ffffff'%20mask='url(%23mCanasta)'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0a140f; --surface:#11201a; --surface-2:#183026;
+    --ink:#eaf5ee; --ink-soft:#9fb6a8; --line:#223a2e;
+    --green:#2fd08f; --coral:#ff8378;
+    --grad:linear-gradient(135deg,#2fd08f,#12946a);
+    --f-display:"Trebuchet MS","Segoe UI",system-ui,sans-serif;
+    --f-body:"Segoe UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100dvh;display:grid;place-items:center;padding:24px;
+    background:
+      radial-gradient(900px 500px at 100% -10%, rgba(43,208,194,.16), transparent 60%),
+      radial-gradient(700px 460px at -10% 0%, rgba(47,208,143,.13), transparent 55%),
+      var(--bg);
+    color:var(--ink);font-family:var(--f-body)}
+  .caja{width:min(400px,100%);background:var(--surface);border:1px solid var(--line);
+    border-radius:22px;padding:32px 26px;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+  .marca{display:flex;flex-direction:column;align-items:center;gap:12px;margin-bottom:26px}
+  .marca .ic{width:62px;height:62px;border-radius:20px;background:var(--grad);
+    display:grid;place-items:center;box-shadow:0 8px 22px rgba(47,208,143,.3)}
+  .marca .ic svg{width:40px;height:40px;display:block}
+  .marca b{font-family:var(--f-display);font-size:1.35rem;letter-spacing:-.02em}
+  .marca b span{color:var(--green)}
+  .marca small{color:var(--ink-soft);font-size:.72rem;letter-spacing:.13em;text-transform:uppercase;font-weight:700}
+
+  label{display:block;font-size:.72rem;font-weight:800;color:var(--ink-soft);
+    text-transform:uppercase;letter-spacing:.08em;margin:0 0 6px}
+  .campo{margin-bottom:16px}
+  input{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;
+    padding:14px 15px;color:var(--ink);font-family:var(--f-body);font-size:1rem;outline:none}
+  input:focus{border-color:var(--green)}
+  .clave-caja{position:relative}
+  .ojo{position:absolute;right:6px;top:50%;transform:translateY(-50%);background:transparent;
+    border:0;color:var(--ink-soft);font-size:1.05rem;cursor:pointer;padding:8px 10px;border-radius:9px}
+  .ojo:hover{color:var(--ink)}
+  button.entrar{width:100%;background:var(--grad);color:#05130d;border:0;border-radius:12px;
+    padding:15px;font-family:var(--f-body);font-weight:800;font-size:.98rem;cursor:pointer;margin-top:6px}
+  button.entrar:disabled{opacity:.55;cursor:not-allowed}
+  .aviso{margin-top:14px;padding:12px 14px;border-radius:11px;font-size:.85rem;font-weight:700;
+    background:rgba(255,131,120,.14);border:1px solid rgba(255,131,120,.38);color:var(--coral);display:none}
+  .aviso.ver{display:block}
+  .pie{margin-top:20px;text-align:center;font-size:.78rem;color:var(--ink-soft)}
+  .pie a{color:var(--green);font-weight:700;text-decoration:none}
+</style>
+</head>
+<body>
+
+<main class="caja">
+  <div class="marca">
+    <span class="ic">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <mask id="m">
+          <rect width="100" height="100" fill="black"/>
+          <path d="M50 10 L94 44 A5 5 0 0 1 91 52 H9 A5 5 0 0 1 6 44 Z" fill="white"/>
+          <rect x="13" y="58" width="74" height="12" rx="5" fill="white"/>
+          <path d="M20 72 H80 L71 91 A4 4 0 0 1 67 93 H33 A4 4 0 0 1 29 91 Z" fill="white"/>
+          <g stroke="black" stroke-width="4.5" stroke-linecap="round"><path d="M27 81 H73"/></g>
+        </mask>
+        <rect width="100" height="100" fill="#ffffff" mask="url(#m)"/>
+      </svg>
+    </span>
+    <b>Los <span>Caseritos</span></b>
+    <small>Panel de la tienda</small>
+  </div>
+
+  <form id="form" autocomplete="on">
+    <div class="campo">
+      <label for="usuario">Usuario</label>
+      <input id="usuario" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" required>
+    </div>
+    <div class="campo">
+      <label for="clave">Contraseña</label>
+      <div class="clave-caja">
+        <input id="clave" name="password" type="password" autocomplete="current-password" required>
+        <button type="button" class="ojo" id="verClave" aria-label="Mostrar contraseña">👁</button>
+      </div>
+    </div>
+    <button type="submit" class="entrar" id="btn">Entrar</button>
+    <div class="aviso" id="aviso"></div>
+  </form>
+
+  <p class="pie"><a href="./">← Ver la tienda</a></p>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const volver=new URLSearchParams(location.search).get('volver')||'admin.html';
+
+$('verClave').addEventListener('click',()=>{
+  const c=$('clave');
+  c.type = c.type==='password' ? 'text' : 'password';
+  $('verClave').textContent = c.type==='password' ? '👁' : '🙈';
+  c.focus();
+});
+
+function mostrarAviso(txt){
+  const a=$('aviso');
+  a.textContent=txt;
+  a.classList.add('ver');
+}
+
+$('form').addEventListener('submit',async e=>{
+  e.preventDefault();
+  $('aviso').classList.remove('ver');
+  $('btn').disabled=true;
+  $('btn').textContent='Entrando…';
+  try{
+    const r=await fetch('api/login',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({usuario:$('usuario').value,clave:$('clave').value})
+    });
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'No se pudo entrar');
+    /* "volver" llega SIN barra inicial y se usa como ruta relativa: así funciona
+       igual en la raíz del dominio o en una subcarpeta, y nunca puede mandar al
+       visitante a otro sitio */
+    location.href = /^[a-zA-Z0-9._/-]+$/.test(volver) && !volver.includes('..')
+      ? volver : 'admin.html';
+  }catch(err){
+    mostrarAviso(err.message);
+    $('clave').value=''; $('clave').focus();
+  }finally{
+    $('btn').disabled=false;
+    $('btn').textContent='Entrar';
+  }
+});
+
+/* si ya había entrado antes, no le hacemos escribir de nuevo */
+fetch('api/quien-soy').then(r=>r.json()).then(d=>{
+  if(d.dentro) location.href='admin.html';
+  if(!d.conLogin) mostrarAviso('Este servidor no usa clave: el panel se abre directo desde esta computadora.');
+}).catch(()=>{});
+
+$('usuario').focus();
+</script>
+</body>
+</html>

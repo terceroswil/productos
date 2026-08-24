@@ -1,0 +1,17 @@
+{
+  "name": "Los Caseritos — Tienda en Ivirgarzama",
+  "short_name": "Los Caseritos",
+  "description": "Cocina, electrodomesticos, tecnologia, belleza, hogar y herramientas con entrega en todo el tropico de Cochabamba.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a140f",
+  "theme_color": "#0a7d54",
+  "lang": "es-BO",
+  "categories": ["shopping"],
+  "icons": [
+    { "src": "icono.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" },
+    { "src": "icono-mascara.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "maskable" }
+  ]
+}

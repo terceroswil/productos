@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /entrar.html
+Disallow: /panel
+Disallow: /admin
+Disallow: /api/
+
+Sitemap: https://motoivir.com/caseritos/sitemap.xml

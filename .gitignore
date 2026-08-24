@@ -1,0 +1,20 @@
+# ── Nunca a internet ──────────────────────────────────────────────
+# Adentro van la clave del panel y SESION_SECRETO: con ese secreto
+# cualquiera se fabrica una sesion valida sin saber la clave.
+.env
+
+# ── Se genera solo ────────────────────────────────────────────────
+# publicar/ lo rearma  node herramientas/publicar.cjs  cuando haga falta.
+publicar/
+
+# ── Datos del comerciante, no del codigo ──────────────────────────
+# Respaldos automaticos del catalogo y estadisticas de visitas.
+data/respaldos/
+data/eventos.jsonl
+
+# ── Ruido del sistema ─────────────────────────────────────────────
+node_modules/
+Thumbs.db
+desktop.ini
+.DS_Store
+*.log

@@ -1,0 +1,30 @@
+# Servicio de Los Caseritos. Va en /etc/systemd/system/caseritos.service
+#
+# Corre APARTE de MOTO-IVIR a propósito: si uno falla, el otro sigue.
+# MOTO-IVIR maneja saldos con dinero; no conviene compartir proceso.
+
+[Unit]
+Description=Los Caseritos (tienda web)
+After=network.target
+
+[Service]
+Type=simple
+User=caseritos
+Group=caseritos
+WorkingDirectory=/opt/caseritos
+EnvironmentFile=/etc/caseritos.env
+ExecStart=/usr/bin/node serve.js
+Restart=always
+RestartSec=3
+
+# --- Endurecimiento basico ---
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+PrivateTmp=true
+# Solo puede escribir en la carpeta de datos: el catalogo y las fotos que
+# sube el comerciante viven ahi, asi actualizar el codigo no los borra.
+ReadWritePaths=/var/lib/caseritos
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Imagen de compartir — Los Caseritos</title>
+<style>
+  body{margin:0;background:#0a140f;color:#eaf5ee;font-family:"Segoe UI",system-ui,sans-serif;padding:24px}
+  h1{font-family:"Trebuchet MS","Segoe UI",sans-serif;font-size:1.4rem;margin:0 0 6px}
+  p.intro{color:#9fb6a8;font-size:.9rem;max-width:70ch;line-height:1.6;margin:0 0 20px}
+  .marco{border:1px solid #223a2e;border-radius:14px;overflow:hidden;max-width:900px;background:#11201a}
+  .marco svg{width:100%;height:auto;display:block}
+  .acciones{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:18px}
+  button{font-family:inherit;font-weight:700;font-size:.9rem;padding:12px 20px;border-radius:11px;
+    border:1px solid #223a2e;background:#11201a;color:#eaf5ee;cursor:pointer}
+  button:hover{border-color:#2fd08f}
+  .primario{background:linear-gradient(135deg,#2fd08f,#12946a);color:#05130d;border-color:transparent}
+  #aviso{font-size:.87rem;font-weight:700;padding:10px 0}
+  .ok{color:#2fd08f} .mal{color:#ff8378}
+  code{background:#183026;padding:2px 7px;border-radius:6px;font-size:.85em}
+</style>
+</head>
+<body>
+
+<h1>🧺 Imagen de compartir (Open Graph)</h1>
+<p class="intro">
+  Esta es la imagen que ve la gente cuando mandás el link de la tienda por WhatsApp,
+  Facebook o Telegram. Mide 1200×630, que es la medida que piden esas apps.
+  Se genera desde el nombre y los datos que están en <code>productos.json</code>,
+  así que si cambiás el nombre de la tienda alcanza con volver a entrar acá y regenerarla.
+</p>
+
+<div class="marco" id="marco"></div>
+
+<div class="acciones">
+  <button class="primario" onclick="generar()">💾 Guardar como img/og.jpg</button>
+  <button onclick="descargar()">⬇ Descargar a mi PC</button>
+  <span id="aviso"></span>
+</div>
+
+<script>
+let CFG={tienda:{nombre:'Los Caseritos',lema:'Ivirgarzama · Chapare'}};
+
+/* Todo el diseño es un solo SVG: se dibuja igual en pantalla y en el archivo final. */
+function dibujar(){
+  const t=CFG.tienda||{};
+  /* A 27px entran ~55 caracteres en el ancho libre. Con más categorías el texto
+     se salía del borde derecho, así que se reparte en dos renglones. */
+  const nombresCat=(CFG.categorias||[]).map(c=>c.nombre);
+  const mitad=Math.ceil(nombresCat.length/2);
+  const cats1=nombresCat.slice(0,mitad).join('  ·  ');
+  const cats2=nombresCat.slice(mitad).join('  ·  ');
+  const nombre=(t.nombre||'Los Caseritos').split(' ');
+  const primera=nombre.shift();          // "Los"
+  const resto=nombre.join(' ');          // "Caseritos"
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630"
+      font-family="Trebuchet MS, Segoe UI, DejaVu Sans, sans-serif">
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2=".6" y2="1">
+      <stop offset="0" stop-color="#0a7d54"/><stop offset=".5" stop-color="#0ea06a"/><stop offset="1" stop-color="#14b3a6"/>
+    </linearGradient>
+    <linearGradient id="cuadro" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d9f7e8"/>
+    </linearGradient>
+    <!--SIMBOLO: lo reescribe herramientas/logo.cjs, no editar a mano-->
+    <mask id="simbolo">
+    <rect width="100" height="100" fill="black"/>
+    <path d="M50 10 L94 44 A5 5 0 0 1 91 52 H9 A5 5 0 0 1 6 44 Z" fill="white"/>
+    <rect x="13" y="58" width="74" height="12" rx="5" fill="white"/>
+    <path d="M20 72 H80 L71 91 A4 4 0 0 1 67 93 H33 A4 4 0 0 1 29 91 Z" fill="white"/>
+    <g stroke="black" stroke-width="4.5" stroke-linecap="round">
+      <path d="M27 81 H73"/>
+    </g>
+  </mask>
+    <!--/SIMBOLO-->
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#fondo)"/>
+  <circle cx="1080" cy="90" r="240" fill="#ffffff" opacity=".07"/>
+  <circle cx="120" cy="580" r="200" fill="#ffffff" opacity=".05"/>
+
+  <!-- logo -->
+  <g transform="translate(96,168)">
+    <rect width="168" height="168" rx="44" fill="url(#cuadro)"/>
+    <g transform="translate(84,84) scale(1.24) translate(-50,-52)">
+      <rect width="100" height="100" fill="#0a7d54" mask="url(#simbolo)"/>
+    </g>
+  </g>
+
+  <!-- nombre -->
+  <text x="308" y="252" font-size="104" font-weight="bold" fill="#ffffff" letter-spacing="-3">
+    ${primera} <tspan fill="#c9f9e3">${resto}</tspan>
+  </text>
+  <text x="312" y="304" font-size="27" font-weight="bold" fill="#eafff3" opacity=".9" letter-spacing="7">
+    ${(t.lema||'').toUpperCase()}
+  </text>
+  <text x="312" y="366" font-size="27" fill="#eafff3" opacity=".95">${cats1}</text>
+  <text x="312" y="408" font-size="27" fill="#eafff3" opacity=".95">${cats2}</text>
+
+  <!-- franja de abajo -->
+  <rect x="0" y="516" width="1200" height="114" fill="#05301f" opacity=".28"/>
+  <text x="96" y="588" font-size="34" font-weight="bold" fill="#ffffff">
+    🧺 Entrega rápida en todo el trópico de Cochabamba
+  </text>
+</svg>`;
+}
+
+function pintar(){ document.getElementById('marco').innerHTML=dibujar(); }
+
+/* SVG -> canvas -> JPG. El SVG no trae recursos externos, así que el canvas
+   no queda "contaminado" y toDataURL funciona sin problemas. */
+function aJPEG(){
+  return new Promise((ok,mal)=>{
+    const svg=dibujar();
+    const url='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+    const im=new Image();
+    im.onload=()=>{
+      const c=document.createElement('canvas');
+      c.width=1200; c.height=630;
+      const x=c.getContext('2d');
+      x.fillStyle='#0a7d54'; x.fillRect(0,0,1200,630);   // por si el JPG no soporta transparencia
+      x.drawImage(im,0,0,1200,630);
+      ok(c.toDataURL('image/jpeg',0.92));
+    };
+    im.onerror=()=>mal(new Error('No se pudo rasterizar el SVG'));
+    im.src=url;
+  });
+}
+
+function aviso(txt,clase){ const a=document.getElementById('aviso'); a.textContent=txt; a.className=clase||''; }
+
+async function generar(){
+  aviso('Generando…');
+  try{
+    const dataURL=await aJPEG();
+    const r=await fetch('/api/guardar-imagen',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({archivo:'img/og.jpg',dataURL})});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'error del servidor');
+    aviso('✔ Guardada en img/og.jpg — '+Math.round(d.bytes/1024)+' KB','ok');
+  }catch(e){ aviso('✕ '+e.message+'. Usá "Descargar a mi PC".','mal'); }
+}
+
+async function descargar(){
+  const dataURL=await aJPEG();
+  const a=document.createElement('a');
+  a.href=dataURL; a.download='og.jpg';
+  document.body.appendChild(a); a.click(); a.remove();
+  aviso('Descargada. Copiala a la carpeta img/','ok');
+}
+
+(async()=>{
+  try{ CFG=await (await fetch('/productos.json',{cache:'no-cache'})).json(); }catch(e){}
+  pintar();
+})();
+</script>
+</body>
+</html>

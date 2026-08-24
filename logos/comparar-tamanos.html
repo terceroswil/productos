@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Logo: antes y ahora</title>
+<style>
+ body{margin:0;background:#0a140f;color:#eaf5ee;font-family:"Segoe UI",system-ui,sans-serif;padding:26px}
+ h1{font-family:"Trebuchet MS",sans-serif;font-size:1.3rem;margin:0 0 18px}
+ .par{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:820px}
+ .caja{border:1px solid #223a2e;border-radius:16px;padding:18px;background:#11201a}
+ .caja h2{margin:0 0 4px;font-size:.95rem;font-family:"Trebuchet MS",sans-serif}
+ .caja p{margin:0 0 16px;font-size:.76rem;color:#9fb6a8}
+ .fila{display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap}
+ .u{text-align:center}
+ .u i{font-style:normal;display:block;font-size:.6rem;opacity:.5;margin-top:5px}
+ .cuadro{background:linear-gradient(135deg,#2fd08f,#12946a);display:grid;place-items:center;border-radius:22%}
+ svg{display:block}
+</style></head><body>
+<h1>El logo a los tamaños reales de uso</h1>
+<div class="par">
+  <div class="caja">
+    <h2>Antes</h2><p>Techo + 2 rayas: se leía como el botón “expulsar”.</p>
+    <div class="fila" id="viejo"></div>
+  </div>
+  <div class="caja">
+    <h2>Ahora</h2><p>Alero ancho, labio de canasta y cuerpo en trapecio.</p>
+    <div class="fila" id="nuevo"></div>
+  </div>
+</div>
+<script>
+const VIEJO=`<mask id="mv"><rect width="100" height="100" fill="black"/>
+ <path d="M50 13 L88 45 A5 5 0 0 1 85 53 H15 A5 5 0 0 1 12 45 Z" fill="white"/>
+ <path d="M20 58 H80 L73 88 A4 4 0 0 1 69 91 H31 A4 4 0 0 1 27 88 Z" fill="white"/>
+ <g stroke="black" stroke-width="5" stroke-linecap="round"><path d="M24 69 H76"/><path d="M26 79 H74"/></g>
+ </mask><rect width="100" height="100" fill="#fff" mask="url(#mv)"/>`;
+const NUEVO=`<mask id="mn"><rect width="100" height="100" fill="black"/>
+ <path d="M50 10 L94 44 A5 5 0 0 1 91 52 H9 A5 5 0 0 1 6 44 Z" fill="white"/>
+ <rect x="13" y="58" width="74" height="12" rx="5" fill="white"/>
+ <path d="M20 72 H80 L71 91 A4 4 0 0 1 67 93 H33 A4 4 0 0 1 29 91 Z" fill="white"/>
+ <g stroke="black" stroke-width="4.5" stroke-linecap="round"><path d="M27 81 H73"/></g>
+ </mask><rect width="100" height="100" fill="#fff" mask="url(#mn)"/>`;
+const TAM=[[72,'grande'],[36,'encabezado'],[24,'símbolo'],[16,'favicon 16px']];
+function pintar(id,cuerpo,esc){
+  document.getElementById(id).innerHTML=TAM.map(([px,txt])=>
+    `<div class="u"><div class="cuadro" style="width:${px}px;height:${px}px">
+      <svg viewBox="0 0 100 100" width="${Math.round(px*.68)}" height="${Math.round(px*.68)}">${cuerpo}</svg>
+     </div><i>${txt}</i></div>`).join('');
+}
+pintar('viejo',VIEJO); pintar('nuevo',NUEVO);
+</script></body></html>

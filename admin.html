@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Panel — Los Caseritos</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%20width='100'%20height='100'%3E%3Crect%20width='100'%20height='100'%20rx='22'%20fill='%230a7d54'/%3E%3Cg%20transform='translate(50,50)%20scale(.76)%20translate(-50,-51.5)'%3E%3Cmask%20id='mCanasta'%3E%3Crect%20width='100'%20height='100'%20fill='black'/%3E%3Cpath%20d='M50%2010%20L94%2044%20A5%205%200%200%201%2091%2052%20H9%20A5%205%200%200%201%206%2044%20Z'%20fill='white'/%3E%3Crect%20x='13'%20y='58'%20width='74'%20height='12'%20rx='5'%20fill='white'/%3E%3Cpath%20d='M20%2072%20H80%20L71%2091%20A4%204%200%200%201%2067%2093%20H33%20A4%204%200%200%201%2029%2091%20Z'%20fill='white'/%3E%3Cg%20stroke='black'%20stroke-width='4.5'%20stroke-linecap='round'%3E%3Cpath%20d='M27%2081%20H73'/%3E%3C/g%3E%3C/mask%3E%3Crect%20width='100'%20height='100'%20fill='%23ffffff'%20mask='url(%23mCanasta)'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+  :root{
+    --bg:#0a140f; --surface:#11201a; --surface-2:#183026;
+    --ink:#eaf5ee; --ink-soft:#9fb6a8; --line:#223a2e;
+    --green:#2fd08f; --green-deep:#18a870; --amber:#ffb056; --coral:#ff8378;
+    --grad:linear-gradient(135deg,#2fd08f,#12946a);
+    --f-display:"Trebuchet MS","Segoe UI",system-ui,sans-serif;
+    --f-body:"Segoe UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);line-height:1.5}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 18px}
+
+  header{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 92%,transparent);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .bar{display:flex;align-items:center;gap:14px;padding:13px 0;flex-wrap:wrap}
+  .logo{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:800;font-size:1.15rem}
+  .logo .ic{width:34px;height:34px;border-radius:11px;background:var(--grad);display:grid;place-items:center}
+  .marca-svg{width:23px;height:23px;display:block}
+  .sp{flex:1}
+  .estado{font-size:.8rem;font-weight:700;padding:5px 12px;border-radius:999px;background:var(--surface-2);color:var(--ink-soft)}
+  .estado.sucio{background:color-mix(in srgb,var(--amber) 22%,transparent);color:var(--amber)}
+  .estado.ok{background:color-mix(in srgb,var(--green) 20%,transparent);color:var(--green)}
+
+  button,.btn{font-family:var(--f-body);font-weight:700;border-radius:11px;cursor:pointer;border:1px solid var(--line);
+    background:var(--surface);color:var(--ink);padding:10px 16px;font-size:.88rem;transition:.15s;text-decoration:none;display:inline-block}
+  button:hover{border-color:var(--green)}
+  .primario{background:var(--grad);border-color:transparent;color:#05130d}
+  .primario:disabled{opacity:.45;cursor:not-allowed}
+  .peligro{color:var(--coral)}
+  .mini{padding:6px 11px;font-size:.8rem}
+
+  .tabs{display:flex;gap:8px;padding:16px 0 0;flex-wrap:wrap}
+  .tab{background:transparent;border:1px solid var(--line);color:var(--ink-soft);border-radius:999px;padding:9px 18px}
+  .tab.activa{background:var(--grad);color:#05130d;border-color:transparent}
+  .panel{display:none;padding:20px 0 60px}
+  .panel.activo{display:block}
+
+  .herramientas{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:16px}
+  .buscador{flex:1;min-width:200px;background:var(--surface);border:1px solid var(--line);border-radius:999px;
+    padding:10px 16px;color:var(--ink);outline:none;font-size:.9rem;font-family:var(--f-body)}
+  .buscador:focus{border-color:var(--green)}
+
+  /* las tablas scrollean dentro de su caja: la página nunca se corre de costado */
+  .tabla-caja{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-inline:-2px;padding-inline:2px}
+  table{width:100%;min-width:520px;border-collapse:collapse;font-size:.88rem}
+  th{text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.09em;color:var(--ink-soft);
+    padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+  td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tr:hover td{background:color-mix(in srgb,var(--surface) 60%,transparent)}
+  .foto{width:44px;height:44px;border-radius:9px;object-fit:cover;background:var(--surface-2);display:block}
+  .nom{font-weight:700}
+  .sub{font-size:.76rem;color:var(--ink-soft)}
+  .pill{display:inline-block;font-size:.68rem;font-weight:800;padding:3px 9px;border-radius:999px;background:var(--surface-2);color:var(--ink-soft)}
+  .pill.of{background:color-mix(in srgb,var(--coral) 25%,transparent);color:var(--coral)}
+  .pill.nv{background:color-mix(in srgb,var(--green) 22%,transparent);color:var(--green)}
+  .pill.ag{background:color-mix(in srgb,var(--amber) 22%,transparent);color:var(--amber)}
+  td.der{text-align:right;white-space:nowrap}
+
+  /* edición rápida en la tabla */
+  .celda{background:transparent;border:1px solid transparent;border-radius:8px;color:var(--ink);
+    padding:6px 8px;font-family:var(--f-body);font-size:.88rem;font-weight:700;width:88px;outline:none}
+  .celda:hover{border-color:var(--line)}
+  .celda:focus{border-color:var(--green);background:var(--surface)}
+
+  dialog{border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--ink);
+    padding:0;width:min(680px,94vw);max-height:90vh}
+  dialog::backdrop{background:rgba(0,0,0,.65)}
+  .dlg-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--line)}
+  .dlg-head h3{margin:0;font-family:var(--f-display);font-size:1.2rem}
+  .dlg-body{padding:20px 22px;overflow-y:auto;max-height:64vh}
+  .dlg-foot{display:flex;gap:10px;justify-content:flex-end;padding:16px 22px;border-top:1px solid var(--line)}
+  .rejilla{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .campo{display:flex;flex-direction:column;gap:5px}
+  .campo.ancho{grid-column:1/-1}
+  .campo label{font-size:.72rem;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.07em}
+  .campo input,.campo select,.campo textarea{background:var(--bg);border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;color:var(--ink);font-family:var(--f-body);font-size:.92rem;outline:none;width:100%}
+  .campo input:focus,.campo select:focus,.campo textarea:focus{border-color:var(--green)}
+  .campo textarea{resize:vertical;min-height:70px}
+  .ayuda{font-size:.72rem;color:var(--ink-soft)}
+
+  /* fotos del producto */
+  .fotos{display:flex;gap:8px;flex-wrap:wrap}
+  .fotos:empty{display:none}
+  .foto-item{position:relative;width:78px;height:78px;border-radius:11px;overflow:hidden;
+    border:1px solid var(--line);background:var(--bg)}
+  .foto-item img{width:100%;height:100%;object-fit:cover;display:block}
+  .foto-item .quitar-foto{position:absolute;top:3px;right:3px;width:22px;height:22px;border-radius:999px;
+    border:0;background:rgba(0,0,0,.72);color:#fff;font-size:.72rem;cursor:pointer;
+    display:grid;place-items:center;padding:0;line-height:1}
+  .foto-item .principal{position:absolute;left:0;right:0;bottom:0;background:var(--grad);
+    color:#05130d;font-size:.56rem;font-weight:800;text-align:center;padding:2px;letter-spacing:.04em}
+  .btn-foto{align-self:flex-start;background:var(--surface-2);border:1px dashed var(--line)}
+  .btn-foto:hover{border-style:solid;border-color:var(--green)}
+  .dlg-body.soltando{outline:2px dashed var(--green);outline-offset:-8px;border-radius:12px}
+
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:24px}
+  .kpi{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .kpi b{display:block;font-family:var(--f-display);font-size:1.9rem;line-height:1.1}
+  .kpi span{font-size:.76rem;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.07em;font-weight:700}
+  .kpi.alerta b{color:var(--amber)}
+  .listas{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+  .caja{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px}
+  .caja h4{margin:0 0 12px;font-family:var(--f-display);font-size:1rem}
+  .caja ol{margin:0;padding-left:20px;font-size:.88rem}
+  .caja li{padding:3px 0}
+  .caja .vacio{color:var(--ink-soft);font-size:.85rem;margin:0}
+  .barra{display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px solid var(--line);font-size:.88rem}
+  .barra:last-child{border-bottom:0}
+  .barra b{color:var(--green);font-variant-numeric:tabular-nums}
+
+  .aviso{padding:13px 16px;border-radius:12px;font-size:.87rem;font-weight:600;margin-bottom:16px;
+    background:color-mix(in srgb,var(--amber) 14%,transparent);border:1px solid color-mix(in srgb,var(--amber) 35%,transparent);color:var(--amber)}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);z-index:100;background:var(--ink);
+    color:var(--bg);padding:13px 22px;border-radius:999px;font-weight:800;font-size:.9rem;opacity:0;
+    pointer-events:none;transition:.2s;max-width:90vw;text-align:center}
+  .toast.show{opacity:1;transform:translate(-50%,0)}
+
+  @media(max-width:720px){
+    .rejilla{grid-template-columns:1fr}
+    .oculta-movil{display:none}
+    .celda{width:70px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap bar">
+    <div class="logo"><span class="ic"><svg class="marca-svg" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><mask id="mCanasta"><rect width="100" height="100" fill="black"/><path d="M50 10 L94 44 A5 5 0 0 1 91 52 H9 A5 5 0 0 1 6 44 Z" fill="white"/><rect x="13" y="58" width="74" height="12" rx="5" fill="white"/><path d="M20 72 H80 L71 91 A4 4 0 0 1 67 93 H33 A4 4 0 0 1 29 91 Z" fill="white"/><g stroke="black" stroke-width="4.5" stroke-linecap="round"><path d="M27 81 H73"/></g></mask><rect width="100" height="100" fill="#ffffff" mask="url(#mCanasta)"/></svg></span> Panel Los Caseritos</div>
+    <span class="estado" id="estado">Cargando…</span>
+    <div class="sp"></div>
+    <a class="btn" href="./" target="_blank">Ver tienda ↗</a>
+    <button id="btnGuardar" class="primario" onclick="guardar()" disabled>💾 Guardar cambios</button>
+    <button id="btnSalir" onclick="salir()" hidden title="Cerrar sesión">Salir</button>
+  </div>
+  <div class="wrap tabs">
+    <button class="tab activa" onclick="verTab('productos',this)">📦 Productos</button>
+    <button class="tab" onclick="verTab('tienda',this)">🏪 Tienda y envíos</button>
+    <button class="tab" onclick="verTab('stats',this)">📊 Qué buscan</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ══════════ PRODUCTOS ══════════ -->
+  <section class="panel activo" id="pProductos">
+    <div class="herramientas">
+      <input class="buscador" id="q" placeholder="Buscar producto…" oninput="pintarTabla()">
+      <select class="buscador" id="fCat" style="flex:0 0 auto;min-width:150px" onchange="pintarTabla()"></select>
+      <button class="primario" onclick="editar(null)">+ Nuevo producto</button>
+      <button onclick="exportar()">⬇ Descargar JSON</button>
+    </div>
+    <p class="ayuda" style="margin:-6px 0 14px">
+      Precio y stock se editan directo en la tabla. El resto, con el botón ✏️.
+      Los cambios no se aplican hasta tocar <b>Guardar cambios</b>.
+    </p>
+    <div class="tabla-caja">
+      <table>
+      <thead>
+        <tr>
+          <th style="width:52px"></th>
+          <th>Producto</th>
+          <th class="oculta-movil">Categoría</th>
+          <th style="width:110px">Precio Bs</th>
+          <th style="width:100px" class="oculta-movil">Antes Bs</th>
+          <th style="width:96px">Stock</th>
+          <th class="oculta-movil">Estado</th>
+          <th style="width:104px"></th>
+        </tr>
+      </thead>
+      <tbody id="tabla"></tbody>
+    </table>
+    </div>
+    <p id="sinResultados" class="ayuda" style="text-align:center;padding:30px" hidden>No hay productos con ese filtro.</p>
+  </section>
+
+  <!-- ══════════ TIENDA ══════════ -->
+  <section class="panel" id="pTienda">
+    <div class="aviso" id="avisoWa"></div>
+    <div class="rejilla">
+      <div class="campo"><label>Nombre de la tienda</label><input id="tNombre" oninput="marcarSucio()"></div>
+      <div class="campo"><label>Dominio público (urlBase)</label><input id="tUrl" oninput="marcarSucio()" placeholder="https://tudominio.com"></div>
+      <div class="campo ancho"><label>Descripción (la usa Google)</label><textarea id="tDesc" oninput="marcarSucio()"></textarea></div>
+      <div class="campo"><label>Dirección</label><input id="tDir" oninput="marcarSucio()"></div>
+      <div class="campo"><label>Horario</label><input id="tHora" oninput="marcarSucio()"></div>
+    </div>
+
+    <h3 style="font-family:var(--f-display);margin:28px 0 4px">Contacto</h3>
+    <div class="rejilla">
+      <div class="campo"><label>WhatsApp (solo números, con 591)</label><input id="cWa" oninput="marcarSucio()"></div>
+      <div class="campo"><label>WhatsApp como se muestra</label><input id="cWaVis" oninput="marcarSucio()"></div>
+      <div class="campo ancho">
+        <label>Enlace directo de WhatsApp</label>
+        <select id="cWaLink" onchange="marcarSucio();pintarAvisoWa()">
+          <option value="no">APAGADO — el número va como texto para copiar (recomendado)</option>
+          <option value="si">ENCENDIDO — botón wa.me directo (solo con WhatsApp Business)</option>
+        </select>
+        <span class="ayuda">Meta suspende números personales que reciben mucho tráfico desde enlaces wa.me.</span>
+      </div>
+      <div class="campo"><label>Telegram</label><input id="cTg" oninput="marcarSucio()"></div>
+      <div class="campo"><label>Messenger</label><input id="cMs" oninput="marcarSucio()"></div>
+    </div>
+
+    <h3 style="font-family:var(--f-display);margin:28px 0 4px">Costos de envío</h3>
+    <p class="ayuda" style="margin:0 0 12px">Estos pueblos aparecen en el formulario de pedido.</p>
+    <div class="tabla-caja">
+      <table>
+      <thead><tr><th>Pueblo</th><th style="width:120px">Costo Bs</th><th>Nota</th><th style="width:56px"></th></tr></thead>
+      <tbody id="tablaEnvios"></tbody>
+    </table>
+    </div>
+    <button class="mini" style="margin-top:12px" onclick="agregarEnvio()">+ Agregar destino</button>
+
+    <h3 style="font-family:var(--f-display);margin:28px 0 4px">Cupones</h3>
+    <div class="tabla-caja">
+      <table>
+      <thead><tr><th>Código</th><th style="width:130px">Tipo</th><th style="width:100px">Valor</th><th style="width:110px">Mínimo Bs</th><th style="width:90px">Activo</th><th style="width:56px"></th></tr></thead>
+      <tbody id="tablaCupones"></tbody>
+    </table>
+    </div>
+    <button class="mini" style="margin-top:12px" onclick="agregarCupon()">+ Agregar cupón</button>
+  </section>
+
+  <!-- ══════════ ESTADÍSTICAS ══════════ -->
+  <section class="panel" id="pStats">
+    <div class="herramientas">
+      <button onclick="cargarStats()">🔄 Actualizar</button>
+      <span class="ayuda" id="statsDesde"></span>
+    </div>
+    <div class="kpis" id="kpis"></div>
+    <div class="listas" id="listas"></div>
+  </section>
+
+</main>
+
+<dialog id="dlg">
+  <form method="dialog">
+    <div class="dlg-head"><h3 id="dlgTitulo">Producto</h3><button class="mini" value="cancel">✕</button></div>
+    <div class="dlg-body">
+      <div class="rejilla">
+        <div class="campo ancho"><label>Nombre <span style="color:var(--coral)">*</span></label><input id="eName"></div>
+        <div class="campo"><label>Categoría</label><select id="eCat" onchange="pintarSubs()"></select></div>
+        <div class="campo"><label>Subcategoría</label><select id="eSub"></select></div>
+        <div class="campo"><label>Precio Bs <span style="color:var(--coral)">*</span></label><input id="ePrice" type="number" min="0" step="1"></div>
+        <div class="campo"><label>Precio antes Bs</label><input id="eAntes" type="number" min="0" step="1" placeholder="0 = sin oferta"></div>
+        <div class="campo"><label>Stock</label><input id="eStock" type="number" min="0" step="1"></div>
+        <div class="campo"><label>Marca</label><input id="eMarca" placeholder="opcional"></div>
+        <div class="campo"><label>Emoji (si falla la foto)</label><input id="eEm" maxlength="4"></div>
+        <div class="campo"><label>¿Es novedad?</label><select id="eNuevo"><option value="no">No</option><option value="si">Sí — muestra etiqueta "Nuevo"</option></select></div>
+        <div class="campo ancho"><label>Descripción corta (tarjeta)</label><input id="eDesc"></div>
+        <div class="campo ancho"><label>Descripción larga (ficha)</label><textarea id="eDescL"></textarea></div>
+        <div class="campo ancho"><label>Palabras que usa la gente para buscarlo</label>
+          <input id="ePalabras" placeholder="celular, telefono, movil, fono">
+          <span class="ayuda">Separadas por coma. Acá va como <b>habla el cliente</b>, no como dice la caja: "ampolleta", "planchita", "tele". Es lo que hace que te encuentren.</span>
+        </div>
+        <div class="campo ancho"><label>Fotos del producto</label>
+          <div class="fotos" id="eFotos"></div>
+          <input type="file" id="eArchivo" accept="image/jpeg,image/png,image/webp" multiple hidden>
+          <button type="button" class="btn-foto" id="btnFoto">📷 Elegir fotos</button>
+          <span class="ayuda" id="ayudaFotos">La primera es la que se ve en el catálogo. Se achican solas
+            para que la tienda cargue rápido. Podés arrastrarlas acá también.</span>
+          <textarea id="eImg" hidden></textarea>
+        </div>
+        <div class="campo ancho"><label>Variantes</label>
+          <input id="eVarNom" placeholder="Nombre del grupo — ej: Tamaño, Color, Memoria">
+          <textarea id="eVarOps" placeholder="Una por línea:&#10;24 cm = -25&#10;28 cm = 0&#10;32 cm = 40"></textarea>
+          <span class="ayuda">Formato <b>etiqueta = diferencia de precio</b>. Dejalo vacío si el producto no tiene variantes.</span>
+        </div>
+      </div>
+    </div>
+    <div class="dlg-foot">
+      <button value="cancel">Cancelar</button>
+      <button class="primario" value="ok" onclick="guardarProducto(event)">Aceptar</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let CFG=null, sucio=false, editandoId=null;
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+const fmt=n=>'Bs '+Math.round(Number(n)||0).toLocaleString('es-BO');
+
+let toastT;
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2400); }
+
+function marcarSucio(){
+  sucio=true;
+  $('estado').textContent='Cambios sin guardar';
+  $('estado').className='estado sucio';
+  $('btnGuardar').disabled=false;
+}
+function marcarLimpio(msg){
+  sucio=false;
+  $('estado').textContent=msg||'Todo guardado';
+  $('estado').className='estado ok';
+  $('btnGuardar').disabled=true;
+}
+addEventListener('beforeunload',e=>{ if(sucio){ e.preventDefault(); e.returnValue=''; } });
+
+function verTab(cual,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('activo'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('activa'));
+  btn.classList.add('activa');
+  ({productos:'pProductos',tienda:'pTienda',stats:'pStats'})[cual];
+  $(cual==='productos'?'pProductos':cual==='tienda'?'pTienda':'pStats').classList.add('activo');
+  if(cual==='stats') cargarStats();
+}
+
+/* ═════════════ carga ═════════════ */
+
+async function cargar(){
+  try{
+    const r=await fetch('productos.json',{cache:'no-cache'});
+    CFG=await r.json();
+  }catch(e){ toast('No se pudo leer productos.json'); return; }
+  pintarFiltroCat(); pintarTabla(); pintarTienda(); pintarEnvios(); pintarCupones();
+  marcarLimpio('Catálogo cargado');
+}
+
+/* ═════════════ productos ═════════════ */
+
+function pintarFiltroCat(){
+  $('fCat').innerHTML='<option value="">Todas las categorías</option>'+
+    CFG.categorias.map(c=>'<option>'+esc(c.nombre)+'</option>').join('')+
+    '<option value="__sin">⚠️ Sin stock</option><option value="__of">🔥 En oferta</option>';
+}
+
+function pintarTabla(){
+  const q=($('q').value||'').toLowerCase(), f=$('fCat').value;
+  const lista=CFG.productos.filter(p=>{
+    if(f==='__sin'){ if(Number(p.stock)>0)return false; }
+    else if(f==='__of'){ if(!(Number(p.precioAntes)>Number(p.price)))return false; }
+    else if(f && p.cat!==f) return false;
+    if(q && !((p.name+' '+p.cat+' '+(p.sub||'')+' '+(p.marca||'')+' '+(p.palabras||[]).join(' ')).toLowerCase().includes(q))) return false;
+    return true;
+  });
+  $('sinResultados').hidden=lista.length>0;
+  $('tabla').innerHTML=lista.map(p=>{
+    const of=Number(p.precioAntes)>Number(p.price);
+    const sin=!(Number(p.stock)>0);
+    return '<tr>'+
+      '<td><img class="foto" src="'+esc((p.img&&p.img[0])||'')+'" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement(\'div\'),{className:\'foto\',textContent:\''+esc(p.em||'📦')+'\',style:\'display:grid;place-items:center;font-size:1.3rem\'}))"></td>'+
+      '<td><div class="nom">'+esc(p.name)+'</div><div class="sub">#'+p.id+(p.variantes?' · '+esc(p.variantes.nombre):'')+'</div></td>'+
+      '<td class="oculta-movil"><div>'+esc(p.cat)+'</div><div class="sub">'+esc(p.sub||'—')+'</div></td>'+
+      '<td><input class="celda" type="number" min="0" value="'+Number(p.price)+'" onchange="editarCampo('+p.id+',\'price\',this.value)"></td>'+
+      '<td class="oculta-movil"><input class="celda" type="number" min="0" value="'+Number(p.precioAntes||0)+'" onchange="editarCampo('+p.id+',\'precioAntes\',this.value)"></td>'+
+      '<td><input class="celda" style="width:70px" type="number" min="0" value="'+Number(p.stock)+'" onchange="editarCampo('+p.id+',\'stock\',this.value)"></td>'+
+      '<td class="oculta-movil">'+
+        (sin?'<span class="pill ag">Agotado</span> ':'')+
+        (of?'<span class="pill of">-'+Math.round((1-p.price/p.precioAntes)*100)+'%</span> ':'')+
+        (p.nuevo?'<span class="pill nv">Nuevo</span>':'')+
+        (!sin&&!of&&!p.nuevo?'<span class="pill">Normal</span>':'')+
+      '</td>'+
+      '<td class="der">'+
+        '<button class="mini" onclick="editar('+p.id+')" title="Editar">✏️</button> '+
+        '<button class="mini peligro" onclick="borrar('+p.id+')" title="Eliminar">🗑</button>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+}
+
+function editarCampo(id,campo,valor){
+  const p=CFG.productos.find(x=>x.id===id); if(!p)return;
+  p[campo]=Number(valor)||0;
+  marcarSucio(); pintarTabla();
+}
+
+function borrar(id){
+  const p=CFG.productos.find(x=>x.id===id); if(!p)return;
+  if(!confirm('¿Eliminar "'+p.name+'" del catálogo?'))return;
+  CFG.productos=CFG.productos.filter(x=>x.id!==id);
+  marcarSucio(); pintarTabla(); toast('Producto eliminado');
+}
+
+/* ═════════════ fotos del producto ═════════════
+   Antes había que copiar el archivo a la carpeta img/ a mano y escribir la ruta
+   sin equivocarse. Ahora se eligen desde el celular o la PC y se suben solas.
+   De paso se achican: una foto de celular pesa 3–5 MB y dejaría la tienda
+   inusable con datos móviles. */
+
+const FOTO_LADO_MAX = 1000;   // píxeles del lado más largo
+const FOTO_CALIDAD  = 0.82;
+
+let fotosActuales = [];
+
+function pintarFotos(){
+  $('eFotos').innerHTML = fotosActuales.map((f,i)=>
+    '<div class="foto-item">'+
+      '<img src="'+esc(f)+'?v='+Date.now()+'" alt="">'+
+      '<button type="button" class="quitar-foto" onclick="quitarFoto('+i+')" title="Quitar">✕</button>'+
+      (i===0?'<span class="principal">PRINCIPAL</span>':'')+
+    '</div>').join('');
+  $('eImg').value = fotosActuales.join('\n');
+}
+function quitarFoto(i){
+  /* solo se saca de la lista del producto; el archivo queda en img/ por si
+     estaba en uso en otro lado o el admin se arrepiente */
+  fotosActuales.splice(i,1); pintarFotos(); marcarSucio();
+}
+
+/* nombre de archivo legible y seguro, derivado del producto */
+function nombreDeArchivo(){
+  const base = ($('eName').value || 'producto')
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g,'')
+    .replace(/[^a-z0-9]+/g,'-')
+    .replace(/^-+|-+$/g,'')
+    .slice(0,40) || 'producto';
+  return 'img/' + base + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2,5) + '.jpg';
+}
+
+/* Redimensiona en el navegador antes de mandar nada al servidor */
+function achicarFoto(file){
+  return new Promise((ok,mal)=>{
+    const lector = new FileReader();
+    lector.onerror = ()=>mal(new Error('No se pudo leer el archivo'));
+    lector.onload = ()=>{
+      const im = new Image();
+      im.onerror = ()=>mal(new Error('El archivo no es una imagen válida'));
+      im.onload = ()=>{
+        let {width:w, height:h} = im;
+        const escala = Math.min(1, FOTO_LADO_MAX/Math.max(w,h));
+        w = Math.round(w*escala); h = Math.round(h*escala);
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        const x = c.getContext('2d');
+        x.fillStyle = '#ffffff';           // los PNG con transparencia irían a negro en JPG
+        x.fillRect(0,0,w,h);
+        x.drawImage(im,0,0,w,h);
+        ok({ dataURL:c.toDataURL('image/jpeg',FOTO_CALIDAD), w:w, h:h });
+      };
+      im.src = lector.result;
+    };
+    lector.readAsDataURL(file);
+  });
+}
+
+async function subirFotos(files){
+  const lista = [...files].filter(f=>/^image\//.test(f.type));
+  if(!lista.length){ toast('Elegí archivos de imagen'); return; }
+  const ayuda = $('ayudaFotos');
+  let n = 0;
+  for(const file of lista){
+    ayuda.textContent = 'Subiendo '+(n+1)+' de '+lista.length+'…';
+    try{
+      const { dataURL, w, h } = await achicarFoto(file);
+      const archivo = nombreDeArchivo();
+      const r = await fetch('api/guardar-imagen',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ archivo:archivo, dataURL:dataURL })
+      });
+      const d = await r.json();
+      if(!r.ok) throw new Error(d.error||'no se pudo guardar');
+      fotosActuales.push(archivo);
+      n++;
+      console.log('foto guardada:', archivo, w+'×'+h, Math.round(d.bytes/1024)+' KB');
+    }catch(e){
+      toast('Falló una foto: '+e.message);
+    }
+  }
+  pintarFotos();
+  if(n) marcarSucio();
+  ayuda.textContent = n
+    ? n+' foto'+(n>1?'s':'')+' lista'+(n>1?'s':'')+'. La primera es la que se ve en el catálogo.'
+    : 'No se pudo subir ninguna foto.';
+}
+
+function pintarSubs(){
+  const c=CFG.categorias.find(x=>x.nombre===$('eCat').value);
+  const subs=(c&&c.sub)||[];
+  $('eSub').innerHTML='<option value="">— sin subcategoría —</option>'+subs.map(s=>'<option>'+esc(s)+'</option>').join('');
+}
+
+function editar(id){
+  editandoId=id;
+  const p=id?CFG.productos.find(x=>x.id===id):null;
+  $('dlgTitulo').textContent=p?'Editar producto':'Nuevo producto';
+  $('eCat').innerHTML=CFG.categorias.map(c=>'<option>'+esc(c.nombre)+'</option>').join('');
+  $('eCat').value=p?p.cat:CFG.categorias[0].nombre;
+  pintarSubs();
+  $('eSub').value=p&&p.sub?p.sub:'';
+  $('eName').value=p?p.name:'';
+  $('ePrice').value=p?p.price:'';
+  $('eAntes').value=p?(p.precioAntes||0):0;
+  $('eStock').value=p?p.stock:1;
+  $('eMarca').value=p?(p.marca||''):'';
+  $('eEm').value=p?(p.em||'📦'):'📦';
+  $('eNuevo').value=p&&p.nuevo?'si':'no';
+  $('eDesc').value=p?p.desc:'';
+  $('eDescL').value=p?(p.descLarga||''):'';
+  $('ePalabras').value=p&&p.palabras?p.palabras.join(', '):'';
+  fotosActuales = p&&p.img ? p.img.slice() : [];
+  pintarFotos();
+  $('ayudaFotos').textContent='La primera es la que se ve en el catálogo. Se achican solas para que la tienda cargue rápido. Podés arrastrarlas acá también.';
+  $('eVarNom').value=p&&p.variantes?p.variantes.nombre:'';
+  $('eVarOps').value=p&&p.variantes?p.variantes.opciones.map(o=>o.label+' = '+o.delta).join('\n'):'';
+  $('dlg').showModal();
+}
+
+function guardarProducto(ev){
+  const nombre=$('eName').value.trim();
+  const precio=Number($('ePrice').value);
+  if(!nombre||!(precio>0)){ ev.preventDefault(); toast('Falta el nombre o el precio'); return; }
+
+  /* variantes: "etiqueta = diferencia" por línea */
+  let variantes=null;
+  const vn=$('eVarNom').value.trim();
+  const vo=$('eVarOps').value.trim();
+  if(vn&&vo){
+    const ops=vo.split('\n').map(l=>l.trim()).filter(Boolean).map(l=>{
+      const [lab,d]=l.split('=');
+      return { label:(lab||'').trim(), delta:Number((d||'0').trim())||0 };
+    }).filter(o=>o.label);
+    if(ops.length) variantes={nombre:vn,opciones:ops};
+  }
+
+  const datos={
+    cat:$('eCat').value, sub:$('eSub').value, em:$('eEm').value.trim()||'📦',
+    marca:$('eMarca').value.trim(), name:nombre,
+    desc:$('eDesc').value.trim(), descLarga:$('eDescL').value.trim(),
+    price:precio, precioAntes:Number($('eAntes').value)||0,
+    stock:Number($('eStock').value)||0, nuevo:$('eNuevo').value==='si',
+    palabras:$('ePalabras').value.split(',').map(s=>s.trim()).filter(Boolean),
+    img:fotosActuales.slice(),
+    variantes:variantes
+  };
+
+  if(editandoId){
+    Object.assign(CFG.productos.find(x=>x.id===editandoId),datos);
+    toast('Producto actualizado');
+  }else{
+    datos.id=CFG.productos.reduce((m,p)=>Math.max(m,p.id),0)+1;
+    CFG.productos.push(datos);
+    toast('Producto agregado (#'+datos.id+')');
+  }
+  marcarSucio(); pintarTabla();
+}
+
+/* ═════════════ tienda, envíos y cupones ═════════════ */
+
+function pintarTienda(){
+  const t=CFG.tienda||{}, c=CFG.contacto||{};
+  $('tNombre').value=t.nombre||''; $('tUrl').value=t.urlBase||'';
+  $('tDesc').value=t.descripcion||''; $('tDir').value=t.direccion||''; $('tHora').value=t.horario||'';
+  $('cWa').value=c.whatsapp||''; $('cWaVis').value=c.whatsappVisible||'';
+  $('cWaLink').value=c.enlaceDirectoWhatsapp?'si':'no';
+  $('cTg').value=c.telegram||''; $('cMs').value=c.messenger||'';
+  pintarAvisoWa();
+}
+function pintarAvisoWa(){
+  const on=$('cWaLink').value==='si';
+  $('avisoWa').innerHTML = on
+    ? '⚠️ El enlace directo de WhatsApp está <b>ENCENDIDO</b>. Solo dejalo así si el número es WhatsApp Business: Meta suspende números personales por volumen de mensajes entrantes.'
+    : '✅ El enlace directo de WhatsApp está <b>apagado</b>. En la tienda el número aparece como texto para copiar, y los pedidos salen por Telegram o Messenger. Es la opción segura.';
+  $('avisoWa').style.background = on ? 'color-mix(in srgb,var(--coral) 14%,transparent)' : 'color-mix(in srgb,var(--green) 12%,transparent)';
+  $('avisoWa').style.borderColor = on ? 'color-mix(in srgb,var(--coral) 40%,transparent)' : 'color-mix(in srgb,var(--green) 32%,transparent)';
+  $('avisoWa').style.color = on ? 'var(--coral)' : 'var(--green)';
+}
+
+function pintarEnvios(){
+  $('tablaEnvios').innerHTML=CFG.envios.map((e,i)=>
+    '<tr>'+
+    '<td><input class="celda" style="width:100%" value="'+esc(e.pueblo)+'" onchange="editarEnvio('+i+',\'pueblo\',this.value)"></td>'+
+    '<td><input class="celda" type="number" min="0" value="'+Number(e.costo)+'" onchange="editarEnvio('+i+',\'costo\',this.value)"></td>'+
+    '<td><input class="celda" style="width:100%" value="'+esc(e.nota||'')+'" onchange="editarEnvio('+i+',\'nota\',this.value)"></td>'+
+    '<td class="der"><button class="mini peligro" onclick="quitarEnvio('+i+')">🗑</button></td></tr>').join('');
+}
+function editarEnvio(i,c,v){ CFG.envios[i][c]=(c==='costo')?(Number(v)||0):v; marcarSucio(); }
+function agregarEnvio(){ CFG.envios.push({pueblo:'Nuevo pueblo',costo:0,nota:''}); marcarSucio(); pintarEnvios(); }
+function quitarEnvio(i){ CFG.envios.splice(i,1); marcarSucio(); pintarEnvios(); }
+
+function pintarCupones(){
+  CFG.cupones=CFG.cupones||[];
+  $('tablaCupones').innerHTML=CFG.cupones.map((c,i)=>
+    '<tr>'+
+    '<td><input class="celda" style="width:100%;text-transform:uppercase" value="'+esc(c.codigo)+'" onchange="editarCupon('+i+',\'codigo\',this.value)"></td>'+
+    '<td><select class="celda" style="width:100%" onchange="editarCupon('+i+',\'tipo\',this.value)">'+
+      '<option value="porcentaje"'+(c.tipo==='porcentaje'?' selected':'')+'>% descuento</option>'+
+      '<option value="envio"'+(c.tipo==='envio'?' selected':'')+'>Envío gratis</option></select></td>'+
+    '<td><input class="celda" type="number" min="0" value="'+Number(c.valor||0)+'" onchange="editarCupon('+i+',\'valor\',this.value)"></td>'+
+    '<td><input class="celda" type="number" min="0" value="'+Number(c.minimo||0)+'" onchange="editarCupon('+i+',\'minimo\',this.value)"></td>'+
+    '<td><select class="celda" style="width:100%" onchange="editarCupon('+i+',\'activo\',this.value)">'+
+      '<option value="si"'+(c.activo?' selected':'')+'>Sí</option><option value="no"'+(!c.activo?' selected':'')+'>No</option></select></td>'+
+    '<td class="der"><button class="mini peligro" onclick="quitarCupon('+i+')">🗑</button></td></tr>').join('');
+}
+function editarCupon(i,c,v){
+  const cu=CFG.cupones[i];
+  if(c==='activo') cu.activo=(v==='si');
+  else if(c==='valor'||c==='minimo') cu[c]=Number(v)||0;
+  else if(c==='codigo') cu.codigo=String(v).trim().toUpperCase();
+  else cu[c]=v;
+  cu.desc = cu.tipo==='envio'
+    ? 'Envío gratis en compras desde '+fmt(cu.minimo)
+    : cu.valor+'% de descuento en compras desde '+fmt(cu.minimo);
+  marcarSucio(); pintarCupones();
+}
+function agregarCupon(){
+  CFG.cupones.push({codigo:'NUEVO',tipo:'porcentaje',valor:10,minimo:0,activo:false,desc:''});
+  marcarSucio(); pintarCupones();
+}
+function quitarCupon(i){ CFG.cupones.splice(i,1); marcarSucio(); pintarCupones(); }
+
+function recogerTienda(){
+  CFG.tienda.nombre=$('tNombre').value.trim();
+  CFG.tienda.urlBase=$('tUrl').value.trim().replace(/\/$/,'');
+  CFG.tienda.descripcion=$('tDesc').value.trim();
+  CFG.tienda.direccion=$('tDir').value.trim();
+  CFG.tienda.horario=$('tHora').value.trim();
+  CFG.contacto.whatsapp=$('cWa').value.replace(/\D/g,'');
+  CFG.contacto.whatsappVisible=$('cWaVis').value.trim();
+  CFG.contacto.enlaceDirectoWhatsapp=$('cWaLink').value==='si';
+  CFG.contacto.telegram=$('cTg').value.trim();
+  CFG.contacto.messenger=$('cMs').value.trim();
+}
+
+/* ═════════════ guardar ═════════════ */
+
+async function guardar(){
+  recogerTienda();
+  $('btnGuardar').disabled=true;
+  try{
+    const r=await fetch('api/guardar',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(CFG,null,2)});
+    const d=await r.json();
+    if(!r.ok) throw new Error(d.error||'Error del servidor');
+    marcarLimpio('Guardado ✓ ('+d.productos+' productos)');
+    toast('Catálogo guardado ✓ Ya está en vivo en la tienda');
+  }catch(e){
+    $('btnGuardar').disabled=false;
+    toast('No se pudo guardar: '+e.message+'. Usá "Descargar JSON".');
+  }
+}
+
+function exportar(){
+  recogerTienda();
+  const b=new Blob([JSON.stringify(CFG,null,2)],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(b); a.download='productos.json';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  toast('Descargado. Subilo a tu hosting reemplazando productos.json');
+}
+
+/* ═════════════ estadísticas ═════════════ */
+
+async function cargarStats(){
+  let d;
+  try{ const r=await fetch('api/eventos'); d=await r.json(); }
+  catch(e){ $('kpis').innerHTML='<div class="kpi"><b>—</b><span>Servidor apagado</span></div>'; return; }
+
+  const sinStock=CFG?CFG.productos.filter(p=>!(Number(p.stock)>0)).length:0;
+  const pocos=CFG?CFG.productos.filter(p=>Number(p.stock)>0&&Number(p.stock)<=3).length:0;
+
+  $('statsDesde').textContent = d.desde ? 'Datos desde '+new Date(d.desde).toLocaleDateString('es-BO') : 'Sin datos todavía';
+  $('kpis').innerHTML=
+    kpi(d.pedidos.cantidad,'Pedidos iniciados')+
+    kpi(fmt(d.pedidos.promedio),'Ticket promedio')+
+    kpi(d.total,'Interacciones')+
+    kpi(sinStock,'Sin stock',sinStock>0)+
+    kpi(pocos,'Con poco stock',pocos>0);
+
+  $('listas').innerHTML=
+    caja('👀 Lo más mirado',d.vistas)+
+    caja('🛒 Lo más agregado al carrito',d.agregados)+
+    caja('🔍 Lo más buscado',d.busquedas)+
+    caja('❌ Buscaron y NO encontraron',d.sinResultado,'Nadie buscó algo que no exista. Cuando pase, acá vas a ver qué productos te conviene traer.');
+}
+function kpi(v,t,alerta){ return '<div class="kpi'+(alerta?' alerta':'')+'"><b>'+esc(v)+'</b><span>'+esc(t)+'</span></div>'; }
+function caja(titulo,lista,vacio){
+  return '<div class="caja"><h4>'+esc(titulo)+'</h4>'+
+    (lista&&lista.length
+      ? lista.map(x=>'<div class="barra"><span>'+esc(x.valor)+'</span><b>'+x.veces+'</b></div>').join('')
+      : '<p class="vacio">'+esc(vacio||'Todavía sin datos.')+'</p>')+
+    '</div>';
+}
+
+/* ═════════════ sesión ═════════════ */
+/* El botón Salir solo aparece si este servidor usa clave; en la computadora
+   del negocio, sin clave, no tendría sentido. */
+fetch('api/quien-soy').then(r=>r.json()).then(d=>{
+  if(d.conLogin){
+    $('btnSalir').hidden=false;
+    $('btnSalir').title='Salir ('+d.usuario+')';
+  }
+}).catch(()=>{});
+
+async function salir(){
+  if(sucio && !confirm('Tenés cambios sin guardar. ¿Salir igual?')) return;
+  try{ await fetch('api/salir',{method:'POST'}); }catch(e){}
+  location.href='entrar.html';
+}
+
+/* botón "Elegir fotos" y arrastrar-y-soltar sobre el diálogo */
+$('btnFoto').addEventListener('click',()=>$('eArchivo').click());
+$('eArchivo').addEventListener('change',function(){ subirFotos(this.files); this.value=''; });
+
+const cuerpoDlg=document.querySelector('.dlg-body');
+['dragenter','dragover'].forEach(ev=>cuerpoDlg.addEventListener(ev,e=>{
+  e.preventDefault(); cuerpoDlg.classList.add('soltando');
+}));
+['dragleave','drop'].forEach(ev=>cuerpoDlg.addEventListener(ev,e=>{
+  e.preventDefault();
+  if(ev==='dragleave' && cuerpoDlg.contains(e.relatedTarget)) return;
+  cuerpoDlg.classList.remove('soltando');
+}));
+cuerpoDlg.addEventListener('drop',e=>{
+  if(e.dataTransfer&&e.dataTransfer.files.length) subirFotos(e.dataTransfer.files);
+});
+
+cargar();
+</script>
+</body>
+</html>

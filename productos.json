@@ -1,0 +1,804 @@
+{
+  "_comentario": "Catalogo de Los Caseritos. Editar con admin.html o a mano. Los precios estan en bolivianos.",
+  "tienda": {
+    "nombre": "Los Caseritos",
+    "lema": "Ivirgarzama · Chapare",
+    "urlBase": "https://motoivir.com/caseritos",
+    "descripcion": "Tienda de artículos para el hogar, tecnología, belleza y herramientas en Ivirgarzama, trópico de Cochabamba.",
+    "direccion": "Av. Principal, Ivirgarzama",
+    "horario": "Todos los días · 24 horas",
+    "moneda": "Bs"
+  },
+  "contacto": {
+    "_nota": "enlaceDirectoWhatsapp:true SOLO porque el numero es WhatsApp Business. Con una cuenta normal, Meta suspende por volumen de mensajes entrantes desde wa.me.",
+    "enlaceDirectoWhatsapp": true,
+    "whatsapp": "59157384971",
+    "whatsappVisible": "5738 4971",
+    "telegram": "https://t.me/+d1nboxAY77E4ZTdh",
+    "messenger": "https://m.me/wings.terceros.2025",
+    "facebook": "https://www.facebook.com/wings.terceros.2025/?locale=es_LA"
+  },
+  "envios": [
+    {
+      "pueblo": "Ivirgarzama",
+      "costo": 0,
+      "nota": "Entrega el mismo día"
+    },
+    {
+      "pueblo": "Entre Ríos",
+      "costo": 10,
+      "nota": "24 horas"
+    },
+    {
+      "pueblo": "Chimoré",
+      "costo": 15,
+      "nota": "24 horas"
+    },
+    {
+      "pueblo": "Shinahota",
+      "costo": 20,
+      "nota": "24 a 48 horas"
+    },
+    {
+      "pueblo": "Villa Tunari",
+      "costo": 25,
+      "nota": "24 a 48 horas"
+    },
+    {
+      "pueblo": "Otro pueblo del trópico",
+      "costo": 30,
+      "nota": "Coordinamos por chat"
+    }
+  ],
+  "pagos": [
+    "Efectivo contra entrega",
+    "QR / transferencia bancaria"
+  ],
+  "analitica": {
+    "_nota": "Registra que se busca y que se mira. Solo funciona con serve.js corriendo; publicado en un hosting estatico se apaga solo.",
+    "activa": true,
+    "endpoint": "api/evento"
+  },
+  "cupones": [
+    {
+      "codigo": "TROPI10",
+      "tipo": "porcentaje",
+      "valor": 10,
+      "minimo": 300,
+      "activo": true,
+      "desc": "10% de descuento en compras desde Bs 300"
+    },
+    {
+      "codigo": "ENVIOGRATIS",
+      "tipo": "envio",
+      "valor": 0,
+      "minimo": 500,
+      "activo": true,
+      "desc": "Envío gratis en compras desde Bs 500"
+    }
+  ],
+  "categorias": [
+    {
+      "nombre": "Cocina",
+      "icono": "🍳",
+      "sub": [
+        "Sartenes y ollas",
+        "Vajilla",
+        "Cuchillos",
+        "Café"
+      ]
+    },
+    {
+      "nombre": "Electrodomésticos",
+      "icono": "🔌",
+      "sub": [
+        "Línea blanca",
+        "Pequeños electro",
+        "Climatización"
+      ]
+    },
+    {
+      "nombre": "Tecnología",
+      "icono": "📱",
+      "sub": [
+        "Celulares",
+        "Audio",
+        "Computación"
+      ]
+    },
+    {
+      "nombre": "Belleza",
+      "icono": "💄",
+      "sub": [
+        "Cabello",
+        "Cuidado personal"
+      ]
+    },
+    {
+      "nombre": "Hogar",
+      "icono": "🛋️",
+      "sub": [
+        "Dormitorio",
+        "Muebles",
+        "Iluminación"
+      ]
+    },
+    {
+      "nombre": "Herramientas",
+      "icono": "🔧",
+      "sub": [
+        "Manuales",
+        "Eléctricas"
+      ]
+    }
+  ],
+  "productos": [
+    {
+      "id": 1,
+      "cat": "Cocina",
+      "sub": "Sartenes y ollas",
+      "em": "🍳",
+      "marca": "",
+      "name": "Sartén antiadherente 28cm",
+      "desc": "Base de aluminio, mango ergonómico.",
+      "descLarga": "Sartén de aluminio fundido con recubrimiento antiadherente. Mango ergonómico que no transmite calor. Apto para cocina a gas y eléctrica.",
+      "price": 145,
+      "precioAntes": 190,
+      "stock": 12,
+      "nuevo": false,
+      "img": [
+        "img/p1.jpg"
+      ],
+      "variantes": {
+        "nombre": "Tamaño",
+        "opciones": [
+          {
+            "label": "24 cm",
+            "delta": -25
+          },
+          {
+            "label": "28 cm",
+            "delta": 0
+          },
+          {
+            "label": "32 cm",
+            "delta": 40
+          }
+        ]
+      },
+      "palabras": [
+        "sarten",
+        "teflon",
+        "freir",
+        "antiadherente"
+      ]
+    },
+    {
+      "id": 2,
+      "cat": "Cocina",
+      "sub": "Sartenes y ollas",
+      "em": "🥘",
+      "marca": "",
+      "name": "Juego de ollas 7 piezas",
+      "desc": "Acero inoxidable con tapa de vidrio.",
+      "descLarga": "Set de 7 piezas en acero inoxidable con fondo difusor. Tapas de vidrio templado con salida de vapor. Aptas para todo tipo de hornalla.",
+      "price": 520,
+      "precioAntes": 695,
+      "stock": 6,
+      "nuevo": false,
+      "img": [
+        "img/p2.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "ollas",
+        "batería de cocina",
+        "cacerolas",
+        "juego de ollas"
+      ]
+    },
+    {
+      "id": 3,
+      "cat": "Cocina",
+      "sub": "Cuchillos",
+      "em": "🔪",
+      "marca": "",
+      "name": "Set de cuchillos 6 piezas",
+      "desc": "Con soporte de madera incluido.",
+      "descLarga": "Seis cuchillos de acero inoxidable con filo templado y soporte de madera para la mesada.",
+      "price": 180,
+      "precioAntes": 0,
+      "stock": 9,
+      "nuevo": false,
+      "img": [
+        "img/p3.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "cuchillos",
+        "cuchilleria",
+        "navajas"
+      ]
+    },
+    {
+      "id": 4,
+      "cat": "Cocina",
+      "sub": "Vajilla",
+      "em": "🍽️",
+      "marca": "",
+      "name": "Vajilla 24 piezas",
+      "desc": "Porcelana para 6 personas.",
+      "descLarga": "Vajilla completa de porcelana para 6 personas: platos playos, hondos, de postre y tazas con plato.",
+      "price": 260,
+      "precioAntes": 0,
+      "stock": 5,
+      "nuevo": false,
+      "img": [
+        "img/p4.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "platos",
+        "vajilla",
+        "porcelana",
+        "juego de platos"
+      ]
+    },
+    {
+      "id": 5,
+      "cat": "Cocina",
+      "sub": "Café",
+      "em": "☕",
+      "marca": "",
+      "name": "Cafetera italiana 6 tazas",
+      "desc": "Aluminio, ideal para café espresso.",
+      "descLarga": "Cafetera tipo moka de aluminio para 6 tazas. Mango resistente al calor y válvula de seguridad.",
+      "price": 95,
+      "precioAntes": 0,
+      "stock": 14,
+      "nuevo": false,
+      "img": [
+        "img/p5.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "cafetera",
+        "greca",
+        "moka",
+        "cafe"
+      ]
+    },
+    {
+      "id": 6,
+      "cat": "Electrodomésticos",
+      "sub": "Pequeños electro",
+      "em": "🌀",
+      "marca": "",
+      "name": "Licuadora 1.5L 600W",
+      "desc": "3 velocidades y vaso de vidrio.",
+      "descLarga": "Licuadora de 600W con vaso de vidrio de 1.5 litros, 3 velocidades más función pulso y cuchillas de acero inoxidable.",
+      "price": 280,
+      "precioAntes": 0,
+      "stock": 11,
+      "nuevo": false,
+      "img": [
+        "img/p6.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "licuadora",
+        "batidora",
+        "moler",
+        "jugos"
+      ]
+    },
+    {
+      "id": 7,
+      "cat": "Electrodomésticos",
+      "sub": "Línea blanca",
+      "em": "📺",
+      "marca": "",
+      "name": "Televisor Smart 43\" 4K",
+      "desc": "Netflix, YouTube y WiFi integrado.",
+      "descLarga": "Smart TV de 43 pulgadas con resolución 4K UHD, WiFi integrado y aplicaciones de Netflix y YouTube preinstaladas. Incluye control remoto.",
+      "price": 2450,
+      "precioAntes": 0,
+      "stock": 4,
+      "nuevo": true,
+      "img": [
+        "img/p7.jpg"
+      ],
+      "variantes": {
+        "nombre": "Pulgadas",
+        "opciones": [
+          {
+            "label": "43\"",
+            "delta": 0
+          },
+          {
+            "label": "50\"",
+            "delta": 700
+          },
+          {
+            "label": "55\"",
+            "delta": 1250
+          }
+        ]
+      },
+      "palabras": [
+        "tv",
+        "tele",
+        "television",
+        "pantalla",
+        "smart tv",
+        "televisor",
+        "43 pulgadas"
+      ]
+    },
+    {
+      "id": 8,
+      "cat": "Electrodomésticos",
+      "sub": "Climatización",
+      "em": "❄️",
+      "marca": "",
+      "name": "Ventilador de pie 16\"",
+      "desc": "Ideal para el calor del trópico.",
+      "descLarga": "Ventilador de pie de 16 pulgadas con 3 velocidades, altura regulable y cabezal oscilante.",
+      "price": 210,
+      "precioAntes": 0,
+      "stock": 18,
+      "nuevo": false,
+      "img": [
+        "img/p8.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "ventilador",
+        "turbo",
+        "aire",
+        "calor",
+        "fresco"
+      ]
+    },
+    {
+      "id": 9,
+      "cat": "Electrodomésticos",
+      "sub": "Línea blanca",
+      "em": "🧺",
+      "marca": "",
+      "name": "Lavadora semiautomática 9kg",
+      "desc": "Doble tina, bajo consumo de agua.",
+      "descLarga": "Lavadora semiautomática de doble tina, capacidad de 9 kg. Lava y centrifuga por separado, con bajo consumo de agua y energía.",
+      "price": 1650,
+      "precioAntes": 0,
+      "stock": 3,
+      "nuevo": false,
+      "img": [
+        "img/p9.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "lavadora",
+        "lavarropas",
+        "lavar ropa"
+      ]
+    },
+    {
+      "id": 10,
+      "cat": "Electrodomésticos",
+      "sub": "Línea blanca",
+      "em": "🔥",
+      "marca": "",
+      "name": "Cocina a gas 4 hornallas",
+      "desc": "Con horno y encendido eléctrico.",
+      "descLarga": "Cocina a gas de 4 hornallas con horno, encendido eléctrico y puerta con visor de vidrio templado.",
+      "price": 1350,
+      "precioAntes": 0,
+      "stock": 4,
+      "nuevo": false,
+      "img": [
+        "img/p10.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "cocina",
+        "estufa",
+        "horno",
+        "hornillas",
+        "hornallas"
+      ]
+    },
+    {
+      "id": 11,
+      "cat": "Electrodomésticos",
+      "sub": "Pequeños electro",
+      "em": "🍞",
+      "marca": "",
+      "name": "Tostadora 2 panes",
+      "desc": "7 niveles de tostado.",
+      "descLarga": "Tostadora para 2 rebanadas con 7 niveles de tostado, bandeja recogemigas y función de descongelado.",
+      "price": 120,
+      "precioAntes": 0,
+      "stock": 16,
+      "nuevo": false,
+      "img": [
+        "img/p11.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "tostadora",
+        "tostador",
+        "pan"
+      ]
+    },
+    {
+      "id": 12,
+      "cat": "Electrodomésticos",
+      "sub": "Pequeños electro",
+      "em": "♨️",
+      "marca": "",
+      "name": "Arrocera 1.8L",
+      "desc": "Cocción automática y mantiene caliente.",
+      "descLarga": "Arrocera de 1.8 litros con apagado automático y función de mantener caliente. Incluye vaso medidor y paleta.",
+      "price": 175,
+      "precioAntes": 0,
+      "stock": 10,
+      "nuevo": false,
+      "img": [
+        "img/p12.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "arrocera",
+        "olla arrocera",
+        "arroz"
+      ]
+    },
+    {
+      "id": 13,
+      "cat": "Tecnología",
+      "sub": "Celulares",
+      "em": "📱",
+      "marca": "",
+      "name": "Smartphone 128GB",
+      "desc": "Pantalla 6.5\", cámara 50MP.",
+      "descLarga": "Smartphone con pantalla de 6.5 pulgadas, cámara principal de 50MP, batería de larga duración y lector de huella.",
+      "price": 1890,
+      "precioAntes": 0,
+      "stock": 7,
+      "nuevo": true,
+      "img": [
+        "img/p13.jpg"
+      ],
+      "variantes": {
+        "nombre": "Memoria",
+        "opciones": [
+          {
+            "label": "128 GB",
+            "delta": 0
+          },
+          {
+            "label": "256 GB",
+            "delta": 350
+          }
+        ]
+      },
+      "palabras": [
+        "celular",
+        "telefono",
+        "movil",
+        "smartphone",
+        "fono"
+      ]
+    },
+    {
+      "id": 14,
+      "cat": "Tecnología",
+      "sub": "Audio",
+      "em": "🎧",
+      "marca": "",
+      "name": "Audífonos Bluetooth",
+      "desc": "Inalámbricos con estuche de carga.",
+      "descLarga": "Audífonos inalámbricos Bluetooth con estuche de carga, hasta 5 horas de reproducción continua y micrófono para llamadas.",
+      "price": 160,
+      "precioAntes": 0,
+      "stock": 22,
+      "nuevo": false,
+      "img": [
+        "img/p14.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "audifonos",
+        "auriculares",
+        "cascos",
+        "manos libres",
+        "earbuds"
+      ]
+    },
+    {
+      "id": 15,
+      "cat": "Tecnología",
+      "sub": "Audio",
+      "em": "🔊",
+      "marca": "",
+      "name": "Parlante portátil 20W",
+      "desc": "Bluetooth, resistente al agua.",
+      "descLarga": "Parlante portátil de 20W con Bluetooth, resistencia a salpicaduras, entrada USB y micro SD. Batería recargable.",
+      "price": 230,
+      "precioAntes": 290,
+      "stock": 13,
+      "nuevo": false,
+      "img": [
+        "img/p15.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "parlante",
+        "altavoz",
+        "bocina",
+        "speaker",
+        "bafle"
+      ]
+    },
+    {
+      "id": 16,
+      "cat": "Tecnología",
+      "sub": "Computación",
+      "em": "💻",
+      "marca": "",
+      "name": "Laptop 15.6\" 8GB RAM",
+      "desc": "SSD 256GB, ideal estudio y trabajo.",
+      "descLarga": "Laptop de 15.6 pulgadas con 8GB de RAM y disco sólido de 256GB. Ideal para estudio, oficina y trabajo diario.",
+      "price": 4200,
+      "precioAntes": 0,
+      "stock": 2,
+      "nuevo": false,
+      "img": [
+        "img/p16.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "laptop",
+        "computadora",
+        "notebook",
+        "pc",
+        "portatil"
+      ]
+    },
+    {
+      "id": 17,
+      "cat": "Belleza",
+      "sub": "Cabello",
+      "em": "💇",
+      "marca": "",
+      "name": "Plancha de cabello cerámica",
+      "desc": "Calentamiento rápido, temperatura ajustable.",
+      "descLarga": "Plancha con placas de cerámica, calentamiento en 30 segundos y temperatura ajustable. Cable giratorio.",
+      "price": 140,
+      "precioAntes": 175,
+      "stock": 15,
+      "nuevo": false,
+      "img": [
+        "img/p17.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "plancha de pelo",
+        "alisadora",
+        "planchita",
+        "alisar"
+      ]
+    },
+    {
+      "id": 18,
+      "cat": "Belleza",
+      "sub": "Cabello",
+      "em": "💨",
+      "marca": "",
+      "name": "Secador de cabello 2000W",
+      "desc": "2 velocidades y aire frío.",
+      "descLarga": "Secador de 2000W con 2 velocidades, 3 temperaturas y botón de aire frío. Incluye concentrador.",
+      "price": 150,
+      "precioAntes": 0,
+      "stock": 12,
+      "nuevo": false,
+      "img": [
+        "img/p18.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "secador",
+        "secadora de pelo",
+        "secar cabello"
+      ]
+    },
+    {
+      "id": 19,
+      "cat": "Belleza",
+      "sub": "Cuidado personal",
+      "em": "✂️",
+      "marca": "",
+      "name": "Máquina de cortar cabello",
+      "desc": "Recargable, con 4 peines guía.",
+      "descLarga": "Máquina recargable con cuchillas de acero inoxidable, 4 peines guía, aceite y cepillo de limpieza.",
+      "price": 190,
+      "precioAntes": 0,
+      "stock": 9,
+      "nuevo": false,
+      "img": [
+        "img/p19.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "maquina de cortar pelo",
+        "peluqueria",
+        "rasuradora",
+        "cortapelo",
+        "trimmer"
+      ]
+    },
+    {
+      "id": 20,
+      "cat": "Belleza",
+      "sub": "Cabello",
+      "em": "🌀",
+      "marca": "",
+      "name": "Rizador de cabello",
+      "desc": "Barril cerámico anti-frizz.",
+      "descLarga": "Rizador con barril de cerámica que reduce el frizz, calentamiento rápido y punta fría de apoyo.",
+      "price": 130,
+      "precioAntes": 0,
+      "stock": 8,
+      "nuevo": false,
+      "img": [
+        "img/p20.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "rizador",
+        "bucles",
+        "ondulador",
+        "risador"
+      ]
+    },
+    {
+      "id": 21,
+      "cat": "Hogar",
+      "sub": "Dormitorio",
+      "em": "🛋️",
+      "marca": "",
+      "name": "Juego de sábanas 2 plazas",
+      "desc": "Algodón suave, incluye fundas.",
+      "descLarga": "Juego de sábanas de algodón con sábana ajustable, encimera y dos fundas de almohada.",
+      "price": 220,
+      "precioAntes": 0,
+      "stock": 11,
+      "nuevo": false,
+      "img": [
+        "img/p21.jpg"
+      ],
+      "variantes": {
+        "nombre": "Medida",
+        "opciones": [
+          {
+            "label": "2 plazas",
+            "delta": 0
+          },
+          {
+            "label": "Queen",
+            "delta": 60
+          },
+          {
+            "label": "King",
+            "delta": 110
+          }
+        ]
+      },
+      "palabras": [
+        "sabanas",
+        "ropa de cama",
+        "juego de cama",
+        "colcha"
+      ]
+    },
+    {
+      "id": 22,
+      "cat": "Hogar",
+      "sub": "Muebles",
+      "em": "🪑",
+      "marca": "",
+      "name": "Set de 4 sillas plásticas",
+      "desc": "Resistentes, apilables para patio.",
+      "descLarga": "Cuatro sillas plásticas reforzadas y apilables, ideales para patio, comedor o eventos. Resistentes a la intemperie.",
+      "price": 340,
+      "precioAntes": 0,
+      "stock": 7,
+      "nuevo": false,
+      "img": [
+        "img/p22.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "sillas",
+        "asientos",
+        "muebles",
+        "plasticas"
+      ]
+    },
+    {
+      "id": 23,
+      "cat": "Hogar",
+      "sub": "Iluminación",
+      "em": "💡",
+      "marca": "",
+      "name": "Foco LED inteligente RGB",
+      "desc": "Control por app, 16 millones de colores.",
+      "descLarga": "Foco LED WiFi controlable desde el celular. 16 millones de colores, regulación de intensidad y programación de horarios.",
+      "price": 85,
+      "precioAntes": 0,
+      "stock": 25,
+      "nuevo": true,
+      "img": [
+        "img/p23.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "foco",
+        "ampolleta",
+        "bombilla",
+        "luz led",
+        "lampara",
+        "inteligente"
+      ]
+    },
+    {
+      "id": 24,
+      "cat": "Herramientas",
+      "sub": "Manuales",
+      "em": "🔧",
+      "marca": "",
+      "name": "Caja de herramientas 129 pzas",
+      "desc": "Completa para el hogar.",
+      "descLarga": "Maletín con 129 piezas: llaves, dados, destornilladores, alicate, martillo y accesorios. Ideal para el hogar.",
+      "price": 390,
+      "precioAntes": 0,
+      "stock": 6,
+      "nuevo": true,
+      "img": [
+        "img/p24.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "herramientas",
+        "caja de herramientas",
+        "maletin",
+        "kit"
+      ]
+    },
+    {
+      "id": 25,
+      "cat": "Herramientas",
+      "sub": "Eléctricas",
+      "em": "🪚",
+      "marca": "",
+      "name": "Taladro inalámbrico 20V",
+      "desc": "Con 2 baterías y maletín.",
+      "descLarga": "Taladro atornillador inalámbrico de 20V con dos baterías, cargador rápido, set de puntas y maletín de transporte.",
+      "price": 520,
+      "precioAntes": 0,
+      "stock": 5,
+      "nuevo": false,
+      "img": [
+        "img/p25.jpg"
+      ],
+      "variantes": null,
+      "palabras": [
+        "taladro",
+        "atornillador",
+        "perforadora",
+        "inalambrico"
+      ]
+    }
+  ]
+}
