@@ -18,7 +18,7 @@ motoivir.com, www.motoivir.com {
 	# el servidor de la tienda recibe "/productos.json", no
 	# "/caseritos/productos.json", y por eso no hay que tocar su codigo.
 	handle_path /caseritos/* {
-		reverse_proxy localhost:3001
+		reverse_proxy localhost:4100
 	}
 
 	# Todo lo demas sigue yendo a MOTO-IVIR, igual que siempre.

@@ -5,13 +5,13 @@
       "name": "tienda",
       "runtimeExecutable": "node",
       "runtimeArgs": ["serve.js"],
-      "port": 3001
+      "port": 4100
     },
     {
       "name": "tienda-red",
       "runtimeExecutable": "node",
       "runtimeArgs": ["serve.js", "--red"],
-      "port": 3001
+      "port": 4100
     }
   ]
 }

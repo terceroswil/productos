@@ -11,8 +11,8 @@ en Ivirgarzama y todo el trópico de Cochabamba.
 node serve.js
 ```
 
-- Tienda → http://localhost:3001
-- Panel  → http://localhost:3001/admin.html
+- Tienda → http://localhost:4100
+- Panel  → http://localhost:4100/admin.html
 
 > ⚠️ **No abras `tienda-publicada.html` con doble clic.** El catálogo ahora vive en
 > `productos.json` y el navegador bloquea la lectura de archivos locales por seguridad.
@@ -29,7 +29,7 @@ conviene probarla ahí antes de publicar.
 node serve.js --red
 ```
 
-Al arrancar te muestra la dirección, algo como `http://192.168.1.2:3001`.
+Al arrancar te muestra la dirección, algo como `http://192.168.1.2:4100`.
 **Escribila en el navegador del celular** (tiene que estar en la misma WiFi que la PC).
 
 Qué probar en el celular, que en la PC no se ve igual:
@@ -50,7 +50,7 @@ computadora y el celular no lo va a encontrar.
    la red — hay que decir que **sí, en redes privadas**. Si le diste que no, se cambia en
    *Firewall de Windows → Permitir una aplicación*.
 3. **Escribí `http://`** adelante. Sin eso, el navegador lo toma como una búsqueda.
-4. **Que no falte el `:3001`** al final de la dirección.
+4. **Que no falte el `:4100`** al final de la dirección.
 
 ---
 
@@ -60,7 +60,7 @@ computadora y el celular no lo va a encontrar.
 node serve.js
 ```
 
-Abrí **http://localhost:3001/admin.html** y tocá **“+ Nuevo producto”**.
+Abrí **http://localhost:4100/admin.html** y tocá **“+ Nuevo producto”**.
 
 | Campo | Qué poner |
 |---|---|
@@ -298,7 +298,7 @@ Es la que aparece cuando mandás el link por WhatsApp, Facebook o Telegram (1200
 Para regenerarla — por ejemplo si cambiás el nombre o agregás categorías:
 
 1. `node serve.js`
-2. Abrí **http://localhost:3001/herramientas/og.html**
+2. Abrí **http://localhost:4100/herramientas/og.html**
 3. Botón **“Guardar como img/og.jpg”**
 
 Se arma sola con los datos de `productos.json`. Si el servidor no está corriendo,

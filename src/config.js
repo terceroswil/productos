@@ -63,7 +63,7 @@ const TRAS_PROXY = env.TRAS_PROXY !== undefined && env.TRAS_PROXY !== ''
 const config = {
   RAIZ,
   BASE,
-  PUERTO: Number(env.PORT) || 3001,
+  PUERTO: Number(env.PORT) || 4100,
   HOST: (EN_SERVIDOR || MODO_RED) ? '0.0.0.0' : '127.0.0.1',
   EN_SERVIDOR,
   MODO_RED,
