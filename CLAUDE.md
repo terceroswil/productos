@@ -193,7 +193,7 @@ Se llamaba TropiMarket hasta el 23/08/2026. "Casero/casera" = el trato de confia
 del mercado boliviano.
 
 ## Arranque
-- `node serve.js` → tienda en `http://localhost:4100`, panel en `/admin.html`
+- `node serve.js` → tienda en `http://localhost:3001`, panel en `/admin.html`
 - `node serve.js --red` → además contesta a la WiFi, para probar en el celular.
   Qué pasa con el panel en ese modo depende de si hay clave configurada:
   - **sin `.env`**: `admin.html`, `herramientas/`, `logos/` y `data/` solo contestan a
@@ -461,7 +461,7 @@ Se probó API, seguridad, panel y tienda de punta a punta. Lo que apareció:
   Falta ejecutar la mudanza: `deploy/MUDANZA-LOSCASERITOS.md` (guía concreta) y
   `deploy/Caddyfile-loscaseritos.txt` (el bloque). Va en el mismo VPS que
   motoivir.com, como sitio aparte y **proceso aparte** (no como subcarpeta):
-  motoivir.com → :3000, loscaseritos.com → :4100.
+  motoivir.com → :3000, loscaseritos.com → :3001.
   - ⚠️ **Los registros A van en "DNS only" (nube gris), no naranja.** Con el proxy
     de Cloudflare activo, Caddy ve la IP del borde de Cloudflare y `ipDe()` toma el
     ÚLTIMO valor de `X-Forwarded-For`: **todos los visitantes comparten el mismo

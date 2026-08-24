@@ -84,7 +84,7 @@ necesita el servidor de la tienda corriendo, y acá solo se copiaron archivos.
 Para cargar productos mientras tanto:
 
 1. `node serve.js` en tu computadora
-2. Cargás en `localhost:4100/panel`
+2. Cargás en `localhost:3001/panel`
 3. `node herramientas/copiar-a-motoivir.cjs`
 4. Subís la carpeta otra vez
 
@@ -167,7 +167,7 @@ Pegá lo que te imprimió el comando, más esto:
 
 ```
 MODO=produccion
-PORT=4100
+PORT=3001
 DATOS_DIR=/var/lib/caseritos
 BASE_PATH=/caseritos
 ```
@@ -182,7 +182,7 @@ Y cerralo a que solo root lo lea:
 chmod 600 /etc/caseritos.env
 ```
 
-> `PORT=4100` no choca con MOTO-IVIR, que usa el 3000.
+> `PORT=3001` no choca con MOTO-IVIR, que usa el 3000.
 
 ## Paso 5 — Encenderlo
 
@@ -215,7 +215,7 @@ motoivir.com, www.motoivir.com {
 	redir /caseritos /caseritos/
 
 	handle_path /caseritos/* {
-		reverse_proxy localhost:4100
+		reverse_proxy localhost:3001
 	}
 
 	handle {
@@ -318,7 +318,7 @@ de `motoivir.com` se queda como estaba:
 caseritos.com, www.caseritos.com {
 	encode gzip
 
-	reverse_proxy localhost:4100
+	reverse_proxy localhost:3001
 }
 ```
 

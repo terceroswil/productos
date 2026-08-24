@@ -24,7 +24,7 @@ Después de esto quedan **dos procesos separados en la misma máquina**:
 ```
                     ┌─ motoivir.com     → localhost:3000  (MOTO-IVIR)
 Cloudflare → Caddy ─┤
-                    └─ loscaseritos.com → localhost:4100  (Los Caseritos)
+                    └─ loscaseritos.com → localhost:3001  (Los Caseritos)
 ```
 
 Separados a propósito: MOTO-IVIR maneja saldos con dinero. Si la tienda se
@@ -153,7 +153,7 @@ Se **agrega** al `/etc/caddy/Caddyfile`; el de `motoivir.com` se queda:
 loscaseritos.com, www.loscaseritos.com {
 	encode gzip
 
-	reverse_proxy localhost:4100
+	reverse_proxy localhost:3001
 }
 ```
 

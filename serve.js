@@ -103,9 +103,30 @@ const esLocal = req => ['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socke
    el cliente.
 
    Por eso: solo se mira la cabecera si sabemos que hay un proxy adelante, y
-   se toma el ÚLTIMO valor, que es el que puso el proxy. */
+   se toma el ÚLTIMO valor, que es el que puso el proxy.
+
+   ── Y con Cloudflare adelante, ni eso alcanza ──
+   La tienda sale a internet por un túnel (cloudflared). Ahí las visitas NO
+   llegan desde la red: cloudflared corre en esta misma máquina y se conecta
+   al servidor por localhost. O sea que req.socket.remoteAddress es 127.0.0.1
+   para TODO el mundo, y el freno de 6 intentos pasa a ser uno solo repartido
+   entre todos los visitantes: seis fallos de cualquiera y el comerciante
+   queda 10 minutos afuera de su propio panel.
+
+   La IP verdadera viene en CF-Connecting-IP. Esa cabecera la escribe
+   Cloudflare y la PISA si el visitante intenta mandarla, así que no se puede
+   falsificar desde afuera. Se mira primero, y X-Forwarded-For queda de
+   respaldo para cuando el proxy sea otro (Caddy, nginx).
+
+   ⚠️ Todo esto vale porque el servidor escucha SOLO en 127.0.0.1 y el único
+   que le habla es cloudflared. Con --red escucharía en toda la WiFi y ahí sí
+   cualquiera del vecindario podría inventarse la cabecera. No combinar
+   TRAS_PROXY=1 con --red. */
 function ipDe(req){
   if (cfg.TRAS_PROXY){
+    const cloudflare = req.headers['cf-connecting-ip'];
+    if (cloudflare) return String(cloudflare).trim();
+
     const reenviada = req.headers['x-forwarded-for'];
     if (reenviada){
       const partes = String(reenviada).split(',');

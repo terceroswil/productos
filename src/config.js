@@ -63,7 +63,7 @@ const TRAS_PROXY = env.TRAS_PROXY !== undefined && env.TRAS_PROXY !== ''
 const config = {
   RAIZ,
   BASE,
-  PUERTO: Number(env.PORT) || 4100,
+  PUERTO: Number(env.PORT) || 3001,
   HOST: (EN_SERVIDOR || MODO_RED) ? '0.0.0.0' : '127.0.0.1',
   EN_SERVIDOR,
   MODO_RED,
@@ -123,6 +123,14 @@ if (config.EN_SERVIDOR && !config.SECRETO_FIJADO) {
 }
 if (config.CLAVE_TEXTO && !config.CLAVE_HASH) {
   config.avisos.push('⚠️  PANEL_CLAVE está en texto plano. Mejor: node herramientas/clave.cjs "tu clave"');
+}
+/* TRAS_PROXY hace que se le crea a las cabeceras CF-Connecting-IP y
+   X-Forwarded-For para saber quién se conecta. Eso es seguro mientras el
+   único que le hable al servidor sea el proxy (cloudflared, por localhost).
+   Con --red el servidor escucha en toda la WiFi: ahí cualquiera puede
+   inventarse la cabecera y esquivar el freno de intentos del login. */
+if (config.TRAS_PROXY && config.MODO_RED) {
+  config.avisos.push('⚠️  TRAS_PROXY + --red: el freno de intentos del login se esquiva mandando una cabecera falsa. Apagá uno de los dos.');
 }
 
 module.exports = config;

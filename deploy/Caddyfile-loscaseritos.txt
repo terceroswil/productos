@@ -6,7 +6,7 @@
 #  en el mismo servidor, cada uno apuntando a su propio proceso.
 #
 #      motoivir.com     ->  localhost:3000   (MOTO-IVIR)
-#      loscaseritos.com ->  localhost:4100   (Los Caseritos)
+#      loscaseritos.com ->  localhost:3001   (Los Caseritos)
 #
 #  ANTES de recargar Caddy, el DNS ya tiene que estar puesto y resolviendo.
 #  Sin eso Caddy no consigue el certificado y el sitio queda sin HTTPS.
@@ -15,7 +15,7 @@
 loscaseritos.com, www.loscaseritos.com {
 	encode gzip
 
-	reverse_proxy localhost:4100
+	reverse_proxy localhost:3001
 }
 
 
@@ -57,6 +57,6 @@ loscaseritos.com, www.loscaseritos.com {
 #  loscaseritos.com/caseritos/entrar.html y da 404. Es el error mas facil
 #  de cometer en esta mudanza.
 #
-#  El resto no cambia: mismo servicio de systemd, mismo puerto 4100, misma
+#  El resto no cambia: mismo servicio de systemd, mismo puerto 3001, misma
 #  carpeta de datos en /var/lib/caseritos.
 # ─────────────────────────────────────────────────────────────────────────
