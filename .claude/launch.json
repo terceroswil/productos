@@ -2,22 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "arbitraje",
-      "runtimeExecutable": "node",
-      "runtimeArgs": [
-        "server.js"
-      ],
-      "port": 4000,
-      "cwd": "arbitraje"
-    },
-    {
       "name": "tienda",
       "runtimeExecutable": "node",
-      "runtimeArgs": [
-        "serve.js"
-      ],
-      "port": 4100,
-      "cwd": "productos"
+      "runtimeArgs": ["serve.js"],
+      "port": 4100
     }
   ]
 }

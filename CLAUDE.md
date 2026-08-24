@@ -297,8 +297,36 @@ del mercado boliviano.
   en el cuerpo del nombre, así no entran `..` ni subcarpetas. Además se verifica que la
   ruta resuelta caiga dentro de `img/`. Probado con `../`, `img/../../`, `serve.js`,
   subcarpetas y extensiones no permitidas: los cinco rechazados.
-- Quitar una foto de un producto NO borra el archivo de `img/`: puede estar en uso en
-  otro producto o el admin puede arrepentirse.
+- Quitar una foto de un producto con la ✕ NO borra el archivo en el acto: puede estar
+  en uso en otro producto. Lo barre el diálogo al cerrarse, o el botón 🧹.
+
+## Panel: las dos trampas del guardado (23/08/2026)
+- **Las fotos se escriben apenas se eligen**, antes de que el producto exista, para
+  poder mostrar la miniatura al instante. El precio: si se cancela, el archivo queda
+  tirado. Ahora `fotosDeEstaPasada` anota lo subido en cada apertura del diálogo y el
+  evento `close` del `<dialog>` barre lo que sobró:
+  **Cancelar** → sobran todas; **Aceptar** → sobran las que se sacaron con la ✕.
+- **Botón 🧹 Fotos sueltas** (`limpiarFotos()`) para las que quedaron de antes.
+  `GET /api/fotos-sin-usar`, `POST /api/limpiar-fotos`, `POST /api/borrar-foto`.
+- ⚠️ **El barrido general se niega si `sucio === true`.** `fotosEnUso()` lee el catálogo
+  GUARDADO; un producto que todavía está solo en memoria no aparece ahí y sus fotos se
+  verían como huérfanas. Sin ese freno, limpiar borraría la foto recién subida.
+- `borrarFoto()` usa la misma `RE_FOTO` que para escribir, **y además** se niega si un
+  producto guardado usa esa foto (`img/og.jpg` incluida, va en `IMAGENES_PERMITIDAS`).
+  Copia a `data/respaldos/borrada-<fecha>-<nombre>` antes de borrar. Probado con
+  `../serve.js`, `img/../../serve.js`, subcarpetas, `.txt` y `img/../.env`: rechazados.
+- **Hay DOS guardados y confundían.** La foto es inmediata; el producto vive en memoria
+  hasta tocar 💾 Guardar cambios. El comerciante que cerraba la pestaña perdía el
+  trabajo. Ahora cada `marcarSucio()` anota un **borrador en `localStorage`**
+  (`lc_borrador`, con 700 ms de espera) y al volver el panel ofrece **Recuperar**.
+  `marcarLimpio()` lo borra.
+- ⚠️ El borrador hay que **leerlo antes** de `marcarLimpio()`, que lo borra, y guardarlo
+  en `borradorPendiente`: para cuando el admin toca "Recuperar", el de `localStorage`
+  ya no está. Por eso `cargar()` hace `leerBorrador()` primero.
+- `guardarBorrador()` llama a `recogerTienda()`: sin eso, lo que se edita en la pestaña
+  "Tienda y envíos" no entra en `CFG` hasta el guardado y el borrador lo perdía.
+- El pie del diálogo lo dice en palabras: *"Aceptar lo anota en la lista. Para que lo vea
+  el cliente falta 💾 Guardar cambios, arriba."*
 
 
 ## Control de versiones (desde el 23/08/2026)

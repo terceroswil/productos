@@ -231,6 +231,59 @@ function guardarImagen({ archivo, dataURL }){
   return { ok: true, archivo, bytes: buf.length };
 }
 
+/* ─────────── fotos que ya no usa ningun producto ───────────
+   Las fotos se escriben apenas se eligen, antes de que el producto exista:
+   asi el panel puede mostrar la miniatura al instante. El precio de eso es
+   que si el admin se arrepiente y cancela, el archivo igual quedo en disco.
+   Tambien quedan sueltas las que se sacan de un producto con la ✕.
+
+   Nada de esto rompe la tienda, pero se acumula: engorda los respaldos y el
+   scp al servidor. Estas dos funciones lo dejan barrer desde el panel. */
+
+function fotosEnUso(){
+  /* Lee el catalogo GUARDADO. Por eso el panel no deja limpiar con cambios
+     pendientes: un producto que todavia esta solo en memoria no aparece aca
+     y sus fotos se verian como huerfanas. */
+  const usadas = new Set(IMAGENES_PERMITIDAS.map(a => path.basename(a)));
+  if (!fs.existsSync(CATALOGO)) return usadas;
+  let datos;
+  try { datos = JSON.parse(fs.readFileSync(CATALOGO, 'utf8')); }
+  catch (e) { throw new Error('El catalogo no se puede leer, no se limpia nada'); }
+  for (const p of datos.productos || []){
+    for (const img of p.img || []) usadas.add(path.basename(String(img)));
+  }
+  return usadas;
+}
+
+function fotosHuerfanas(){
+  const usadas = fotosEnUso();
+  if (!fs.existsSync(FOTOS)) return [];
+  return fs.readdirSync(FOTOS)
+    .filter(f => /[.](jpg|jpeg|png|webp)$/i.test(f))
+    .filter(f => !usadas.has(f))
+    .map(f => ({ archivo: 'img/' + f, bytes: fs.statSync(path.join(FOTOS, f)).size }))
+    .sort((a, b) => b.bytes - a.bytes);
+}
+
+function borrarFoto(archivo){
+  /* Misma regla que para escribir: solo dentro de img/, nombre simple. */
+  if (!RE_FOTO.test(archivo)) throw new Error('Nombre de archivo no permitido: ' + archivo);
+  const nombre = path.basename(archivo);
+  if (fotosEnUso().has(nombre)) throw new Error('Esa foto la esta usando un producto: ' + archivo);
+
+  const destino = path.resolve(FOTOS, nombre);
+  if (!destino.startsWith(path.resolve(FOTOS) + path.sep)) throw new Error('Ruta fuera de la carpeta de fotos');
+  if (!fs.existsSync(destino)) return { ok: true, archivo, bytes: 0, yaNoEstaba: true };
+
+  /* Copia antes de borrar: es un boton de borrar, mas vale que tenga vuelta atras. */
+  const bytes = fs.statSync(destino).size;
+  fs.mkdirSync(path.join(DATOS, 'respaldos'), { recursive: true });
+  const sello = new Date().toISOString().replace(/[:.]/g, '-');
+  fs.copyFileSync(destino, path.join(DATOS, 'respaldos', 'borrada-' + sello + '-' + nombre));
+  fs.unlinkSync(destino);
+  return { ok: true, archivo, bytes };
+}
+
 /* ─────────────────────────────── servidor ─────────────────────────────── */
 
 const servidor = http.createServer(async (req, res) => {
@@ -301,6 +354,26 @@ const servidor = http.createServer(async (req, res) => {
         const r = guardarImagen(JSON.parse(await leerCuerpo(req, 12 * 1024 * 1024)));
         console.log('  ✔ imagen guardada: ' + r.archivo + ' (' + Math.round(r.bytes / 1024) + ' KB)');
         return json(res, 200, r);
+      }
+      if (ruta === '/api/fotos-sin-usar' && req.method === 'GET'){
+        const fotos = fotosHuerfanas();
+        return json(res, 200, { fotos, total: fotos.length, bytes: fotos.reduce((s, f) => s + f.bytes, 0) });
+      }
+      if (ruta === '/api/borrar-foto' && req.method === 'POST'){
+        const { archivo } = JSON.parse(await leerCuerpo(req, 4 * 1024));
+        const r = borrarFoto(archivo);
+        if (!r.yaNoEstaba) console.log('  ✔ foto borrada: ' + r.archivo);
+        return json(res, 200, r);
+      }
+      if (ruta === '/api/limpiar-fotos' && req.method === 'POST'){
+        let n = 0, bytes = 0;
+        const fallaron = [];
+        for (const f of fotosHuerfanas()){
+          try { const r = borrarFoto(f.archivo); n++; bytes += r.bytes; }
+          catch (e) { fallaron.push(f.archivo + ': ' + e.message); }
+        }
+        console.log('  ✔ limpieza de fotos: ' + n + ' borradas (' + Math.round(bytes / 1024) + ' KB)');
+        return json(res, 200, { ok: true, borradas: n, bytes, fallaron });
       }
       return json(res, 404, { error: 'Ruta no encontrada' });
     } catch (e) {

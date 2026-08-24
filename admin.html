@@ -77,7 +77,16 @@
   .dlg-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--line)}
   .dlg-head h3{margin:0;font-family:var(--f-display);font-size:1.2rem}
   .dlg-body{padding:20px 22px;overflow-y:auto;max-height:64vh}
-  .dlg-foot{display:flex;gap:10px;justify-content:flex-end;padding:16px 22px;border-top:1px solid var(--line)}
+  .dlg-foot{display:flex;gap:10px;align-items:center;padding:16px 22px;border-top:1px solid var(--line)}
+  /* La nota empuja los botones a la derecha y se queda con el espacio sobrante. */
+  .nota-dos-pasos{flex:1 1 0;min-width:0;line-height:1.35}
+  @media(max-width:720px){
+    .dlg-foot{flex-wrap:wrap}
+    .nota-dos-pasos{flex:1 1 100%;order:-1;margin-bottom:4px}
+  }
+  /* Aviso con botones adentro (el del borrador recuperable) */
+  .aviso .acciones{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+  .aviso .acciones button{font-size:.82rem;padding:6px 12px}
   .rejilla{display:grid;grid-template-columns:1fr 1fr;gap:14px}
   .campo{display:flex;flex-direction:column;gap:5px}
   .campo.ancho{grid-column:1/-1}
@@ -152,6 +161,9 @@
 
 <main class="wrap">
 
+  <!-- Aparece solo si la visita anterior quedó con cambios sin guardar -->
+  <div class="aviso" id="avisoBorrador" hidden></div>
+
   <!-- ══════════ PRODUCTOS ══════════ -->
   <section class="panel activo" id="pProductos">
     <div class="herramientas">
@@ -159,6 +171,7 @@
       <select class="buscador" id="fCat" style="flex:0 0 auto;min-width:150px" onchange="pintarTabla()"></select>
       <button class="primario" onclick="editar(null)">+ Nuevo producto</button>
       <button onclick="exportar()">⬇ Descargar JSON</button>
+      <button onclick="limpiarFotos()" title="Borra las fotos que ya no usa ningún producto">🧹 Fotos sueltas</button>
     </div>
     <p class="ayuda" style="margin:-6px 0 14px">
       Precio y stock se editan directo en la tabla. El resto, con el botón ✏️.
@@ -269,7 +282,6 @@
           <button type="button" class="btn-foto" id="btnFoto">📷 Elegir fotos</button>
           <span class="ayuda" id="ayudaFotos">La primera es la que se ve en el catálogo. Se achican solas
             para que la tienda cargue rápido. Podés arrastrarlas acá también.</span>
-          <textarea id="eImg" hidden></textarea>
         </div>
         <div class="campo ancho"><label>Variantes</label>
           <input id="eVarNom" placeholder="Nombre del grupo — ej: Tamaño, Color, Memoria">
@@ -279,6 +291,8 @@
       </div>
     </div>
     <div class="dlg-foot">
+      <span class="ayuda nota-dos-pasos">Aceptar lo anota en la lista. Para que lo vea el cliente falta
+        <b>💾 Guardar cambios</b>, arriba.</span>
       <button value="cancel">Cancelar</button>
       <button class="primario" value="ok" onclick="guardarProducto(event)">Aceptar</button>
     </div>
@@ -303,9 +317,11 @@ function marcarSucio(){
   $('estado').textContent='Cambios sin guardar';
   $('estado').className='estado sucio';
   $('btnGuardar').disabled=false;
+  guardarBorrador();
 }
 function marcarLimpio(msg){
   sucio=false;
+  olvidarBorrador();
   $('estado').textContent=msg||'Todo guardado';
   $('estado').className='estado ok';
   $('btnGuardar').disabled=true;
@@ -321,6 +337,95 @@ function verTab(cual,btn){
   if(cual==='stats') cargarStats();
 }
 
+/* ═════════════ borrador en esta computadora ═════════════
+   El panel trabaja sobre una copia en memoria y recién escribe el archivo
+   cuando se toca "Guardar cambios". Eso es a propósito: un solo respaldo por
+   tanda en vez de uno por tecla. El problema es que si se cierra la pestaña
+   —o se corta la luz, que en el trópico pasa— se perdía todo el trabajo.
+
+   Ahora cada cambio se anota tambien en el navegador. Al volver, si lo
+   anotado no coincide con lo guardado, el panel ofrece recuperarlo. */
+
+const CLAVE_BORRADOR='lc_borrador';
+let borradorT;
+/* Se lee al arrancar y se guarda acá: marcarLimpio() borra el de localStorage,
+   asi que para cuando el admin toca "Recuperar" ya no estaria. */
+let borradorPendiente=null;
+
+function leerBorrador(){
+  try{
+    const b=JSON.parse(localStorage.getItem(CLAVE_BORRADOR)||'null');
+    return (b && b.cfg && Array.isArray(b.cfg.productos)) ? b : null;
+  }catch(e){ return null; }
+}
+
+function guardarBorrador(){
+  clearTimeout(borradorT);
+  /* con espera: escribir en cada tecla del formulario no aporta nada */
+  borradorT=setTimeout(()=>{
+    if(!CFG) return;
+    try{ recogerTienda(); }catch(e){}   /* los campos de la pestaña Tienda */
+    try{
+      localStorage.setItem(CLAVE_BORRADOR, JSON.stringify({ ts:Date.now(), cfg:CFG }));
+    }catch(e){
+      /* sin espacio o en modo privado: no es grave, el aviso al cerrar sigue */
+      console.warn('no se pudo anotar el borrador:', e.message);
+    }
+  },700);
+}
+
+function olvidarBorrador(){
+  clearTimeout(borradorT);
+  try{ localStorage.removeItem(CLAVE_BORRADOR); }catch(e){}
+}
+
+function hace(ts){
+  const min=Math.round((Date.now()-ts)/60000);
+  if(min<1) return 'recién';
+  if(min<60) return 'hace '+min+' min';
+  const h=Math.round(min/60);
+  if(h<24) return 'hace '+h+(h===1?' hora':' horas');
+  const d=Math.round(h/24);
+  return 'hace '+d+(d===1?' día':' días');
+}
+
+function revisarBorrador(b, comoQuedoGuardado){
+  if(!b) return;
+  /* si el borrador es igual a lo guardado, ya cumplió: no molestar */
+  if(JSON.stringify(b.cfg)===comoQuedoGuardado) return;
+
+  borradorPendiente=b;
+  const n=b.cfg.productos.length;
+  const a=$('avisoBorrador');
+  a.innerHTML='⚠️ La última vez quedaron <b>cambios sin guardar</b> ('+hace(b.ts)+
+    ', '+n+' producto'+(n===1?'':'s')+'). Están anotados en esta computadora.'+
+    '<div class="acciones">'+
+      '<button class="primario" onclick="recuperarBorrador()">Recuperar</button>'+
+      '<button onclick="descartarBorrador()">Descartar</button>'+
+    '</div>';
+  a.style.background='color-mix(in srgb,var(--amber) 16%,transparent)';
+  a.style.borderColor='color-mix(in srgb,var(--amber) 45%,transparent)';
+  a.style.color='var(--amber)';
+  a.hidden=false;
+}
+
+function recuperarBorrador(){
+  if(!borradorPendiente){ toast('El borrador ya no está'); $('avisoBorrador').hidden=true; return; }
+  CFG=borradorPendiente.cfg;
+  borradorPendiente=null;
+  pintarFiltroCat(); pintarTabla(); pintarTienda(); pintarEnvios(); pintarCupones();
+  $('avisoBorrador').hidden=true;
+  marcarSucio();
+  toast('Recuperado. Revisalo y tocá 💾 Guardar cambios.');
+}
+
+function descartarBorrador(){
+  borradorPendiente=null;
+  olvidarBorrador();
+  $('avisoBorrador').hidden=true;
+  toast('Borrador descartado');
+}
+
 /* ═════════════ carga ═════════════ */
 
 async function cargar(){
@@ -328,8 +433,12 @@ async function cargar(){
     const r=await fetch('productos.json',{cache:'no-cache'});
     CFG=await r.json();
   }catch(e){ toast('No se pudo leer productos.json'); return; }
+  /* Leerlo ACA: marcarLimpio() borra el de localStorage un par de lineas mas
+     abajo, y para entonces ya no habria nada que ofrecer. */
+  const borrador=leerBorrador();
   pintarFiltroCat(); pintarTabla(); pintarTienda(); pintarEnvios(); pintarCupones();
   marcarLimpio('Catálogo cargado');
+  revisarBorrador(borrador, JSON.stringify(CFG));
 }
 
 /* ═════════════ productos ═════════════ */
@@ -398,6 +507,12 @@ const FOTO_CALIDAD  = 0.82;
 
 let fotosActuales = [];
 
+/* Las fotos se escriben en el servidor apenas se eligen, para poder mostrar la
+   miniatura al instante. Si despues se cancela el diálogo, esos archivos
+   quedarían tirados en img/ sin que ningun producto los use. Acá se anotan las
+   que se subieron en ESTA pasada, para poder barrerlas al cerrar. */
+let fotosDeEstaPasada = [];
+
 function pintarFotos(){
   $('eFotos').innerHTML = fotosActuales.map((f,i)=>
     '<div class="foto-item">'+
@@ -405,7 +520,6 @@ function pintarFotos(){
       '<button type="button" class="quitar-foto" onclick="quitarFoto('+i+')" title="Quitar">✕</button>'+
       (i===0?'<span class="principal">PRINCIPAL</span>':'')+
     '</div>').join('');
-  $('eImg').value = fotosActuales.join('\n');
 }
 function quitarFoto(i){
   /* solo se saca de la lista del producto; el archivo queda en img/ por si
@@ -467,6 +581,7 @@ async function subirFotos(files){
       const d = await r.json();
       if(!r.ok) throw new Error(d.error||'no se pudo guardar');
       fotosActuales.push(archivo);
+      fotosDeEstaPasada.push(archivo);
       n++;
       console.log('foto guardada:', archivo, w+'×'+h, Math.round(d.bytes/1024)+' KB');
     }catch(e){
@@ -488,6 +603,7 @@ function pintarSubs(){
 
 function editar(id){
   editandoId=id;
+  fotosDeEstaPasada=[];
   const p=id?CFG.productos.find(x=>x.id===id):null;
   $('dlgTitulo').textContent=p?'Editar producto':'Nuevo producto';
   $('eCat').innerHTML=CFG.categorias.map(c=>'<option>'+esc(c.nombre)+'</option>').join('');
@@ -549,6 +665,74 @@ function guardarProducto(ev){
     toast('Producto agregado (#'+datos.id+')');
   }
   marcarSucio(); pintarTabla();
+}
+
+/* ═════════════ fotos que quedaron sueltas ═════════════ */
+
+/* Borra del servidor las fotos que se subieron en esta pasada y no terminaron
+   en ningun producto: o porque se cancelo, o porque se sacaron con la ✕.
+   El servidor igual se niega si resulta que un producto guardado la usa. */
+async function barrerFotosSueltas(cuales){
+  for(const archivo of cuales){
+    try{
+      await fetch('api/borrar-foto',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ archivo:archivo })
+      });
+    }catch(e){ /* si falla, queda para el boton 🧹 Fotos sueltas */ }
+  }
+}
+
+/* El diálogo se cierra de dos maneras y cada una deja distinto:
+     Cancelar → no queda nada, sobran TODAS las de esta pasada
+     Aceptar  → sobran solo las que se sacaron con la ✕ antes de aceptar    */
+$('dlg').addEventListener('close',function(){
+  const sobran = this.returnValue==='ok'
+    ? fotosDeEstaPasada.filter(f=>!fotosActuales.includes(f))
+    : fotosDeEstaPasada.slice();
+  fotosDeEstaPasada=[];
+  if(sobran.length){
+    barrerFotosSueltas(sobran);
+    console.log('fotos descartadas:', sobran.join(', '));
+  }
+});
+
+/* Barrido general: las que quedaron de antes, de cuando el panel no limpiaba. */
+async function limpiarFotos(){
+  if(sucio){
+    toast('Guardá primero. Si hay productos sin guardar, sus fotos parecen sueltas.');
+    return;
+  }
+  let d;
+  try{
+    const r=await fetch('api/fotos-sin-usar');
+    d=await r.json();
+    if(!r.ok) throw new Error(d.error||'no se pudo revisar');
+  }catch(e){ toast('No se pudo revisar: '+e.message); return; }
+
+  if(!d.total){ toast('No hay fotos sueltas. Todo limpio ✓'); return; }
+
+  const kb=Math.round(d.bytes/1024);
+  const cuantas=d.total===1?'1 foto suelta':d.total+' fotos sueltas';
+  /* El navegador corta las lineas del confirm con saltos de verdad */
+  const listado = d.fotos.slice(0,8).map(f=>'  · '+f.archivo);
+  if(d.total>8) listado.push('  … y '+(d.total-8)+' más');
+  const mensaje = [
+    'Hay '+cuantas+' ('+kb+' KB) que no usa ningún producto.',
+    '',
+    listado.join('\n'),
+    '',
+    'Se guarda una copia en respaldos antes de borrarlas. ¿Borrar?'
+  ].join('\n');
+  if(!confirm(mensaje)) return;
+
+  try{
+    const r=await fetch('api/limpiar-fotos',{method:'POST'});
+    const res=await r.json();
+    if(!r.ok) throw new Error(res.error||'no se pudo limpiar');
+    toast('Borradas '+res.borradas+' foto'+(res.borradas===1?'':'s')+' · '+Math.round(res.bytes/1024)+' KB liberados');
+    if(res.fallaron&&res.fallaron.length) console.warn('no se pudieron borrar:', res.fallaron);
+  }catch(e){ toast('No se pudo limpiar: '+e.message); }
 }
 
 /* ═════════════ tienda, envíos y cupones ═════════════ */
