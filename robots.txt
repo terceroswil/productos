@@ -6,4 +6,4 @@ Disallow: /panel
 Disallow: /admin
 Disallow: /api/
 
-Sitemap: https://motoivir.com/caseritos/sitemap.xml
+Sitemap: https://loscaseritos.com/sitemap.xml
