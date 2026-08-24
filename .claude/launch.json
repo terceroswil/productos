@@ -6,6 +6,12 @@
       "runtimeExecutable": "node",
       "runtimeArgs": ["serve.js"],
       "port": 4100
+    },
+    {
+      "name": "tienda-red",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["serve.js", "--red"],
+      "port": 4100
     }
   ]
 }
