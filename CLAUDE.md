@@ -193,7 +193,16 @@ Se llamaba TropiMarket hasta el 23/08/2026. "Casero/casera" = el trato de confia
 del mercado boliviano.
 
 ## Arranque
-- `node serve.js` → tienda en `http://localhost:4100`, panel en `/admin.html`
+- **`INICIAR.bat`** (doble clic) es la forma normal de abrirla: deja la ventana
+  abierta, así se ve de un vistazo si está prendida. Celeste, para no confundirla
+  con la de MOTO-IVIR que es verde. Avisa si el puerto ya estaba ocupado y avisa
+  en rojo si el servidor se cayó, en vez de cerrarse sola.
+- `node serve.js` → tienda en `http://localhost:3001`, panel en `/admin.html`
+- ⚠️ **El 3001 lo comparte con el proyecto `autoventa` (AutoTrópico)**, que lo tiene
+  FIJO en el código (`const PORT = process.env.PORT || 3001`). No se pueden tener
+  los dos abiertos: el que arranque segundo no levanta. `INICIAR.bat` lo detecta y
+  lo dice, pero la ventana que ve el error es la de la tienda, así que si AutoTrópico
+  llegó primero hay que cerrarlo a él.
 - `node serve.js --red` → además contesta a la WiFi, para probar en el celular.
   Qué pasa con el panel en ese modo depende de si hay clave configurada:
   - **sin `.env`**: `admin.html`, `herramientas/`, `logos/` y `data/` solo contestan a
@@ -461,7 +470,7 @@ Se probó API, seguridad, panel y tienda de punta a punta. Lo que apareció:
   Falta ejecutar la mudanza: `deploy/MUDANZA-LOSCASERITOS.md` (guía concreta) y
   `deploy/Caddyfile-loscaseritos.txt` (el bloque). Va en el mismo VPS que
   motoivir.com, como sitio aparte y **proceso aparte** (no como subcarpeta):
-  motoivir.com → :3000, loscaseritos.com → :4100.
+  motoivir.com → :3000, loscaseritos.com → :3001.
   - ⚠️ **Los registros A van en "DNS only" (nube gris), no naranja.** Con el proxy
     de Cloudflare activo, Caddy ve la IP del borde de Cloudflare y `ipDe()` toma el
     ÚLTIMO valor de `X-Forwarded-For`: **todos los visitantes comparten el mismo

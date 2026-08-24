@@ -22,7 +22,7 @@
 caseritos.com, www.caseritos.com {
 	encode gzip
 
-	reverse_proxy localhost:4100
+	reverse_proxy localhost:3001
 }
 
 # ─────────────────────────────────────────────────────────────────────────
@@ -39,7 +39,7 @@ caseritos.com, www.caseritos.com {
 #  borrado. Si queda con /caseritos puesto, la pantalla de entrada del panel
 #  redirige a  caseritos.com/caseritos/entrar.html  y da 404.
 #
-#  El resto no cambia: mismo servicio de systemd, mismo puerto 4100, misma
+#  El resto no cambia: mismo servicio de systemd, mismo puerto 3001, misma
 #  carpeta de datos.
 # ─────────────────────────────────────────────────────────────────────────
 
