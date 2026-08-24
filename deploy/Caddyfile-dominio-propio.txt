@@ -1,0 +1,59 @@
+# ─────────────────────────────────────────────────────────────────────────
+#  La tienda con SU PROPIO dominio:  caseritos.com
+#
+#  Este es el bloque que va cuando el dominio ya esta comprado y apuntando
+#  al VPS. Es el reemplazo de Caddyfile-agregar.txt, que servia para tenerla
+#  colgada de  motoivir.com/caseritos.
+#
+#  AGREGA este bloque al Caddyfile. El de motoivir.com se queda como estaba:
+#  son dos sitios distintos en el mismo servidor, cada uno con lo suyo.
+#
+#  ANTES de recargar Caddy, el DNS del dominio tiene que estar puesto:
+#      Tipo A    @      IP-DEL-VPS
+#      Tipo A    www    IP-DEL-VPS
+#  Sin eso Caddy no consigue el certificado y el sitio queda sin HTTPS.
+#  El DNS tarda entre unos minutos y unas horas en propagarse.
+#
+#  Despues:  caddy validate --config /etc/caddy/Caddyfile
+#            systemctl reload caddy
+#  Caddy saca el certificado HTTPS solo, gratis. No hay que hacer nada mas.
+# ─────────────────────────────────────────────────────────────────────────
+
+caseritos.com, www.caseritos.com {
+	encode gzip
+
+	reverse_proxy localhost:4100
+}
+
+# ─────────────────────────────────────────────────────────────────────────
+#  Por que este bloque es tan corto y el otro no
+#
+#  Con dominio propio la tienda vive en la raiz, asi que desaparece TODA la
+#  gimnasia de la subcarpeta:
+#
+#    · no va  handle_path        no hay prefijo que quitar
+#    · no va  redir /caseritos/  no hay barra final que arreglar
+#    · no va  BASE_PATH          las redirecciones del servidor ya salen bien
+#
+#  En /etc/caseritos.env, BASE_PATH tiene que quedar VACIO o directamente
+#  borrado. Si queda con /caseritos puesto, la pantalla de entrada del panel
+#  redirige a  caseritos.com/caseritos/entrar.html  y da 404.
+#
+#  El resto no cambia: mismo servicio de systemd, mismo puerto 4100, misma
+#  carpeta de datos.
+# ─────────────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────────
+#  Opcional: si algun dia hay que mudar de motoivir.com/caseritos al dominio
+#  nuevo sin perder lo que Google ya tenga indexado, en el bloque de
+#  motoivir.com se pone esta linea y las visitas viejas se reenvian solas:
+#
+#      redir /caseritos/* https://caseritos.com{uri} permanent
+#
+#  (el {uri} conserva la ruta completa, asi  /caseritos/?p=3  llega a
+#   caseritos.com/caseritos/?p=3 ... ojo, para limpiar el prefijo:
+#      handle_path /caseritos/* {
+#          redir * https://caseritos.com{uri} permanent
+#      }
+#  )
+# ─────────────────────────────────────────────────────────────────────────

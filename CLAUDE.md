@@ -301,12 +301,39 @@ del mercado boliviano.
   otro producto o el admin puede arrepentirse.
 
 
+## Control de versiones (desde el 23/08/2026)
+- El proyecto **ya es un repo git**. Antes no lo era: un cambio que saliera mal no
+  tenía vuelta atrás. El commit `083efb0` es el punto de partida, con todo tal
+  como estaba ese día.
+- Fuera del repo por `.gitignore`: `.env` (tiene `SESION_SECRETO`), `publicar/`
+  (se regenera), `data/respaldos/` y `data/eventos.jsonl` (datos del comerciante).
+- `tienda-publicada.html.bak` se borró (1.3 MB, decía "Tropical Store"). Quedó
+  guardado en el primer commit: `git show 083efb0:tienda-publicada.html.bak`.
+
+## Dominio: subcarpeta vs. propio
+- Hoy la dirección configurada es `https://motoivir.com/caseritos`. Está puesta
+  en los 4 lugares y coinciden.
+- **Con dominio propio se simplifica**: desaparecen `handle_path`, el `redir` de
+  la barra final y `BASE_PATH`. El bloque de Caddy queda en 4 líneas
+  (`deploy/Caddyfile-dominio-propio.txt`).
+- ⚠️ Al mudarse hay que **vaciar `BASE_PATH`** en `/etc/caseritos.env`. Si queda
+  con `/caseritos`, la pantalla de entrada del panel redirige a
+  `caseritos.com/caseritos/entrar.html` → 404.
+- El DNS (2 registros A: `@` y `www` → IP del VPS) va **antes** de recargar Caddy:
+  sin eso no consigue el certificado y el sitio queda sin HTTPS.
+- `MOTO-IVIR/public/caseritos/` es solo el paquete estático que deja
+  `copiar-a-motoivir.cjs` — copia idéntica de `publicar/`, nada exclusivo. Con
+  dominio propio deja de hacer falta.
+
 ## Pendientes
+- **Dominio propio**: el cliente todavía no eligió el nombre. El candidato es
+  `caseritos.com`. Cuando confirme: `node herramientas/dominio.cjs https://…` +
+  el camino **C** de `deploy/DESPLIEGUE.md`. Va en el mismo VPS que motoivir.com,
+  como sitio aparte (no como subcarpeta).
 - Migrar el número a WhatsApp Business y recién ahí encender el enlace directo.
 - Iconos PWA en PNG (192/512); hoy son SVG.
 - Cargar el campo `marca` de los productos (está vacío a propósito).
 - Fotos a WebP.
-- Borrar `tienda-publicada.html.bak` (versión vieja, 1.2 MB, aún con el nombre TropiMarket).
 - Registrar el nombre en Facebook / TikTok / Instagram para que coincida con la web.
 - **Paso 3 pendiente**: subir a un VPS (~5 USD/mes) con `MODO=produccion` y `DATOS_DIR`
   apuntando a disco persistente. Los planes gratis de Render/Railway BORRAN el disco

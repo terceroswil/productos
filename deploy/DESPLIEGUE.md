@@ -26,6 +26,11 @@ motoivir.com/caseritos    →  la tienda + el panel del comerciante
 Si todavía estás mostrando la tienda para vender, el **A** alcanza y sobra.
 Cuando el cliente diga que sí, hacés el **B**.
 
+Y hay un tercero, para más adelante: **C · Dominio propio**, cuando el cliente
+elija el nombre y compres el dominio. No reemplaza al B — lo continúa: mismo
+servidor, mismo servicio, solo cambia por dónde entra la gente. Está al final
+de esta guía.
+
 ---
 
 # A · El camino rápido
@@ -238,20 +243,113 @@ Y comprobá que MOTO-IVIR sigue intacto: **https://motoivir.com**
 
 ---
 
-## Cuando el cliente lo compre
+# C · Pasar al dominio propio
+
+Cuando el cliente elija el nombre y compres el dominio, **no se rearma nada**:
+el mismo servidor, el mismo servicio, el mismo puerto. Lo único que cambia es
+por dónde entra la gente.
+
+Y se simplifica: al vivir en la raíz desaparece toda la gimnasia de la
+subcarpeta (`handle_path`, el `redir` de la barra final, `BASE_PATH`).
+
+## C1 — Apuntar el dominio al VPS
+
+En el panel de donde compraste el dominio, dos registros:
+
+| Tipo | Nombre | Valor |
+|---|---|---|
+| A | @ | IP-DEL-VPS |
+| A | www | IP-DEL-VPS |
+
+**Esto va primero.** Caddy saca el certificado HTTPS solo, pero para eso el
+dominio ya tiene que resolver a tu servidor. Tarda de unos minutos a unas horas
+en propagarse. Para saber si ya está:
+
+```bash
+dig +short caseritos.com
+```
+
+Si devuelve la IP del VPS, seguí. Si no devuelve nada, esperá.
+
+## C2 — Cambiar la dirección en el proyecto
+
+En tu computadora:
+
+```bash
+node herramientas/dominio.cjs https://caseritos.com
+```
+
+Deja la dirección puesta en los cuatro lugares de una (catálogo, `og:image`,
+`canonical`, datos de Google, sitemap y robots). Después regenerá la imagen de
+compartir con `herramientas/og.html` y subí los archivos:
+
+```bash
+scp -r . root@IP-DEL-VPS:/opt/caseritos
+```
+
+## C3 — Sacar BASE_PATH
+
+```bash
+nano /etc/caseritos.env
+```
+
+Borrá la línea `BASE_PATH=/caseritos` o dejala vacía.
+
+> Si queda puesta, la pantalla de entrada del panel redirige a
+> `caseritos.com/caseritos/entrar.html` y da 404. Es el error más fácil de
+> cometer en esta mudanza.
+
+```bash
+systemctl restart caseritos
+```
+
+## C4 — El bloque nuevo en Caddy
+
+Está entero en `deploy/Caddyfile-dominio-propio.txt`. **Se agrega**; el bloque
+de `motoivir.com` se queda como estaba:
+
+```
+caseritos.com, www.caseritos.com {
+	encode gzip
+
+	reverse_proxy localhost:4100
+}
+```
+
+Y del bloque de `motoivir.com` sacás el `redir /caseritos` y el
+`handle_path /caseritos/*`, que ya no hacen falta.
+
+Si Google ya indexó las páginas viejas, en vez de borrarlas las reenviás:
+
+```
+handle_path /caseritos/* {
+	redir * https://caseritos.com{uri} permanent
+}
+```
+
+```bash
+caddy validate --config /etc/caddy/Caddyfile
+systemctl reload caddy
+```
+
+## C5 — Probar
+
+- **https://caseritos.com** → la tienda, con candado verde
+- **https://caseritos.com/panel** → pide usuario y clave
+- **https://motoivir.com** → intacto
+
+Si el candado no aparece, casi siempre es el DNS que todavía no propagó:
+`journalctl -u caddy -n 40 --no-pager` lo dice.
+
+---
+
+## Si el cliente se lleva el proyecto a otro lado
 
 Es una mudanza, no un rearmado:
 
 1. En el VPS: `tar -czf caseritos.tgz /opt/caseritos /var/lib/caseritos /etc/caseritos.env`
-2. Lo llevás al servidor nuevo (o dejás el mismo y solo cambiás el dominio).
-3. `node herramientas/dominio.cjs https://eldominiodelcliente.com` — deja la
-   dirección puesta en los cuatro lugares de una.
-4. Sacá `BASE_PATH` de `/etc/caseritos.env` (en un dominio propio ya no cuelga
-   de ninguna subcarpeta).
-5. Bloque propio en el Caddyfile con el dominio del cliente, y sacás el
-   `handle_path /caseritos/*` del bloque de motoivir.com.
-
-Mientras tanto, en el subdominio tuyo, **no le cuesta nada a nadie**.
+2. Lo llevás al servidor nuevo.
+3. Los pasos C1 a C5 con el dominio que corresponda.
 
 ---
 
