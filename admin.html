@@ -38,6 +38,14 @@
   .peligro{color:var(--coral)}
   .mini{padding:6px 11px;font-size:.8rem}
 
+  /* Textos que cambian con el ancho de pantalla. Van en pares: en pantalla
+     grande se ve .ancho, en el celular .angosto. Asi el boton no pierde el
+     nombre en la computadora ni se come la pantalla en el telefono. */
+  .angosto{display:none}
+  /* En pantalla grande el ⋯ no existe y sus botones vuelven a la barra:
+     display:contents los deja participar del flex del padre. */
+  .mas{display:contents}
+
   .tabs{display:flex;gap:8px;padding:16px 0 0;flex-wrap:wrap}
   .tab{background:transparent;border:1px solid var(--line);color:var(--ink-soft);border-radius:999px;padding:9px 18px}
   .tab.activa{background:var(--grad);color:#05130d;border-color:transparent}
@@ -139,6 +147,88 @@
     .oculta-movil{display:none}
     .celda{width:70px}
   }
+
+  /* ══════════════════ CELULAR ══════════════════
+     El panel se usa parado en el negocio, con una mano. Antes de esto la
+     cabecera y los botones se comian 473px de los 812 de la pantalla y el
+     primer producto arrancaba recien a los 589px: se veian TRES.
+     Y peor: la tabla medía 524px en 343 visibles, asi que la columna Stock
+     quedaba fuera de pantalla. Justo la que mas se toca.
+
+     El corte va en 560px y no en 520: la tabla tiene min-width:520px y el
+     .wrap se lleva 32px de margenes, asi que entre 521 y 560 sobraban 16px
+     y quedaba un scroll lateral molesto por nada. Desde 561 ya entra sola. */
+  @media(max-width:560px){
+    .ancho{display:none}
+    .angosto{display:inline}
+
+    /* — cabecera — */
+    .bar{gap:8px;padding:10px 0}
+    .logo{font-size:1rem}
+    .logo .ic{width:29px;height:29px;border-radius:9px}
+    .marca-svg{width:19px;height:19px}
+    .estado{font-size:.72rem;padding:4px 10px}
+    .bar .btn,.bar button{padding:9px 12px}
+    /* La barra entra en dos filas si o si: logo + estado ya se comen 300px.
+       Sin el espaciador los tres primeros se juntan arriba, y Guardar se
+       estira en la segunda fila: queda un boton ancho, facil de acertar con
+       el pulgar, que es el que mas se toca. */
+    .sp{display:none}
+    #btnGuardar{flex:1}
+    .tabs{padding:11px 0 0;gap:6px}
+    .tab{padding:8px 13px;font-size:.83rem}
+
+    /* — barra de herramientas — */
+    .herramientas{gap:8px;margin-bottom:12px}
+    .buscador{min-width:0}
+    /* plegado: los dos botones de vez en cuando se esconden tras el ⋯ */
+    .mas{display:none;flex:1 1 100%;gap:8px}
+    .mas.abierto{display:flex}
+    .mas button{flex:1}
+
+    /* — la tabla de productos deja de ser tabla —
+       Cada producto pasa a ser una tarjeta de dos renglones. Se acaba el
+       scroll de costado y el stock vuelve a verse. Solo el catalogo: las
+       tablas de envios y cupones tienen pocas columnas y siguen como estan. */
+    #pProductos .tabla-caja{overflow-x:visible}
+    #pProductos table{min-width:0}
+    #pProductos thead{display:none}
+    #pProductos tbody{display:block}
+
+    #tabla tr{
+      display:grid;
+      grid-template-columns:44px 1fr auto;
+      grid-template-areas:
+        "foto nombre acciones"
+        "foto precio stock";
+      gap:5px 10px;
+      align-items:center;
+      padding:11px 2px;
+      border-bottom:1px solid var(--line);
+    }
+    /* :not(.oculta-movil) es imprescindible: este selector tiene mas peso que
+       el .oculta-movil de arriba y sin el volveria a mostrar las columnas. */
+    #tabla td:not(.oculta-movil){display:block;border:0;padding:0}
+    #tabla tr:hover td{background:transparent}
+    #tabla td:nth-child(1){grid-area:foto;align-self:start}
+    #tabla td:nth-child(2){grid-area:nombre}
+    #tabla td:nth-child(4){grid-area:precio}
+    #tabla td:nth-child(6){grid-area:stock}
+    #tabla td:nth-child(8){grid-area:acciones;text-align:right;white-space:nowrap}
+
+    /* sin encabezado de tabla, cada numero necesita decir que es */
+    #tabla td:nth-child(4),#tabla td:nth-child(6){display:flex;align-items:center;gap:5px}
+    #tabla td:nth-child(4)::before,#tabla td:nth-child(6)::before{
+      font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.06em;
+      color:var(--ink-soft);flex:0 0 auto}
+    #tabla td:nth-child(4)::before{content:"Bs"}
+    #tabla td:nth-child(6)::before{content:"Stock"}
+    #tabla td:nth-child(4) .celda{width:100%;min-width:0}
+    #tabla td:nth-child(6) .celda{width:58px}
+    /* el borde permanente avisa que se puede tocar: en el celular no hay hover */
+    #tabla .celda{border-color:var(--line);background:var(--surface)}
+    .nom{line-height:1.25}
+  }
 </style>
 </head>
 <body>
@@ -148,13 +238,13 @@
     <div class="logo"><span class="ic"><svg class="marca-svg" viewBox="0 0 100 100" aria-hidden="true" focusable="false"><mask id="mCanasta"><rect width="100" height="100" fill="black"/><path d="M50 10 L94 44 A5 5 0 0 1 91 52 H9 A5 5 0 0 1 6 44 Z" fill="white"/><rect x="13" y="58" width="74" height="12" rx="5" fill="white"/><path d="M20 72 H80 L71 91 A4 4 0 0 1 67 93 H33 A4 4 0 0 1 29 91 Z" fill="white"/><g stroke="black" stroke-width="4.5" stroke-linecap="round"><path d="M27 81 H73"/></g></mask><rect width="100" height="100" fill="#ffffff" mask="url(#mCanasta)"/></svg></span> Panel Los Caseritos</div>
     <span class="estado" id="estado">Cargando…</span>
     <div class="sp"></div>
-    <a class="btn" href="./" target="_blank">Ver tienda ↗</a>
-    <button id="btnGuardar" class="primario" onclick="guardar()" disabled>💾 Guardar cambios</button>
-    <button id="btnSalir" onclick="salir()" hidden title="Cerrar sesión">Salir</button>
+    <a class="btn" href="./" target="_blank" title="Ver la tienda" aria-label="Ver la tienda"><span class="ancho">Ver tienda ↗</span><span class="angosto" aria-hidden="true">🏪</span></a>
+    <button id="btnGuardar" class="primario" onclick="guardar()" disabled>💾<span class="ancho"> Guardar cambios</span><span class="angosto"> Guardar</span></button>
+    <button id="btnSalir" onclick="salir()" hidden title="Cerrar sesión" aria-label="Cerrar sesión"><span class="ancho">Salir</span><span class="angosto" aria-hidden="true">🚪</span></button>
   </div>
   <div class="wrap tabs">
     <button class="tab activa" onclick="verTab('productos',this)">📦 Productos</button>
-    <button class="tab" onclick="verTab('tienda',this)">🏪 Tienda y envíos</button>
+    <button class="tab" onclick="verTab('tienda',this)">🏪 Tienda<span class="ancho"> y envíos</span></button>
     <button class="tab" onclick="verTab('stats',this)">📊 Qué buscan</button>
   </div>
 </header>
@@ -170,8 +260,13 @@
       <input class="buscador" id="q" placeholder="Buscar producto…" oninput="pintarTabla()">
       <select class="buscador" id="fCat" style="flex:0 0 auto;min-width:150px" onchange="pintarTabla()"></select>
       <button class="primario" onclick="editar(null)">+ Nuevo producto</button>
-      <button onclick="exportar()">⬇ Descargar JSON</button>
-      <button onclick="limpiarFotos()" title="Borra las fotos que ya no usa ningún producto">🧹 Fotos sueltas</button>
+      <button class="mini angosto" id="btnMas" onclick="verMas(this)" title="Más opciones" aria-expanded="false">⋯</button>
+      <!-- En pantalla ancha estos dos van sueltos en la barra (display:contents);
+           en el celular se pliegan detrás del ⋯ para no comerse la pantalla. -->
+      <div class="mas" id="masHerramientas">
+        <button onclick="exportar()">⬇ Descargar JSON</button>
+        <button onclick="limpiarFotos()" title="Borra las fotos que ya no usa ningún producto">🧹 Fotos sueltas</button>
+      </div>
     </div>
     <p class="ayuda" style="margin:-6px 0 14px">
       Precio y stock se editan directo en la tabla. El resto, con el botón ✏️.
@@ -424,6 +519,15 @@ function descartarBorrador(){
   olvidarBorrador();
   $('avisoBorrador').hidden=true;
   toast('Borrador descartado');
+}
+
+/* Descargar JSON y Fotos sueltas son de vez en cuando, no de todos los dias.
+   En el celular viven detras del ⋯; en la computadora estan siempre a la vista
+   (el CSS le pone display:contents al contenedor y el ⋯ desaparece). */
+function verMas(btn){
+  const caja=$('masHerramientas');
+  const abierto=caja.classList.toggle('abierto');
+  btn.setAttribute('aria-expanded', abierto ? 'true' : 'false');
 }
 
 /* ═════════════ carga ═════════════ */
