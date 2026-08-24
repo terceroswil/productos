@@ -799,6 +799,31 @@
         "perforadora",
         "inalambrico"
       ]
+    },
+    {
+      "cat": "Tecnología",
+      "sub": "Celulares",
+      "em": "📦si",
+      "marca": "Redmi note 15 pro",
+      "name": "Wings",
+      "desc": "En buen estado",
+      "descLarga": "Nada malo",
+      "price": 1000,
+      "precioAntes": 1200,
+      "stock": 5,
+      "nuevo": true,
+      "palabras": [
+        "Fono móvil telefono"
+      ],
+      "img": [
+        "img/wings-mt7d5fq8elo.jpg",
+        "img/wings-mt7d5g0j079.jpg",
+        "img/wings-mt7d5ga2waq.jpg",
+        "img/wings-mt7d5gdc7a9.jpg",
+        "img/wings-mt7d5gg5hhm.jpg"
+      ],
+      "variantes": null,
+      "id": 26
     }
   ]
 }
