@@ -1,7 +1,7 @@
 /* ══════════════════════════════════════════════════════════════════════
    Deja la dirección pública puesta en todos los lugares donde hace falta.
 
-     node herramientas/dominio.cjs https://motoivir.com/caseritos
+     node herramientas/dominio.cjs https://loscaseritos.com
 
    El dominio vive en CUATRO lados y si no coinciden, el link se comparte
    sin foto ni título por WhatsApp:
@@ -21,7 +21,7 @@ const nueva = (process.argv[2] || '').replace(/\/+$/, '');
 if (!nueva || !/^https?:\/\/[^\s]+$/.test(nueva)) {
   console.log('');
   console.log('  Uso:  node herramientas/dominio.cjs https://tudominio.com');
-  console.log('        node herramientas/dominio.cjs https://motoivir.com/caseritos');
+  console.log('        node herramientas/dominio.cjs https://loscaseritos.com');
   console.log('');
   const actual = JSON.parse(fs.readFileSync(path.join(RAIZ, 'productos.json'), 'utf8')).tienda.urlBase;
   console.log('  Dirección actual: ' + actual);
@@ -64,10 +64,12 @@ console.log('');
 console.log('  Dirección nueva: ' + nueva);
 console.log('');
 if (/\/[^/]+$/.test(nueva.replace(/^https?:\/\//, '').replace(/^[^/]+/, ''))) {
-  console.log('  Como está en una subcarpeta, acordate de:');
-  console.log('    · usar el bloque de deploy/Caddyfile-agregar.txt (handle_path)');
-  console.log('    · poner BASE_PATH=/' + nueva.split('/').pop() + ' en /etc/caseritos.env');
+  console.log('  Ojo: esa dirección cuelga de una subcarpeta. Además de esto hay que');
+  console.log('  poner BASE_PATH=/' + nueva.split('/').pop() + ' donde corra el servidor, o la');
+  console.log('  pantalla de entrada del panel manda al visitante fuera de la tienda.');
   console.log('');
 }
-console.log('  Regenerá la imagen de compartir: herramientas/og.html → "Guardar como img/og.jpg"');
+console.log('  Falta un paso más: cambiar el Nombre de host de la ruta en el túnel de');
+console.log('  Cloudflare, o el dominio nuevo no le llega a nadie.');
+console.log('  Ver deploy/COMO-ESTA-PUBLICADA.md');
 console.log('');

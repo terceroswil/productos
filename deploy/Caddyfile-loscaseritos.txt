@@ -1,14 +1,14 @@
 # ─────────────────────────────────────────────────────────────────────────
-#  Los Caseritos con su dominio propio:  loscaseritos.com
+#  Bloque de Caddy para Los Caseritos.
 #
-#  AGREGA este bloque al /etc/caddy/Caddyfile del VPS.
-#  El bloque de motoivir.com se queda como esta: son dos sitios distintos
-#  en el mismo servidor, cada uno apuntando a su propio proceso.
+#  OJO: esto NO es lo que esta funcionando hoy. Hoy la tienda sale por un
+#  tunel de Cloudflare desde la computadora, sin Caddy y sin certificados
+#  que gestionar. Ver COMO-ESTA-PUBLICADA.md.
 #
-#      motoivir.com     ->  localhost:3000   (MOTO-IVIR)
-#      loscaseritos.com ->  localhost:3001   (Los Caseritos)
+#  Este archivo es para el dia que la tienda se mude a un VPS. Va junto con
+#  DESPLIEGUE.md, caseritos.service y caseritos.env.ejemplo.
 #
-#  ANTES de recargar Caddy, el DNS ya tiene que estar puesto y resolviendo.
+#  ANTES de recargar Caddy, el DNS ya tiene que apuntar al VPS y resolver.
 #  Sin eso Caddy no consigue el certificado y el sitio queda sin HTTPS.
 # ─────────────────────────────────────────────────────────────────────────
 
@@ -20,43 +20,16 @@ loscaseritos.com, www.loscaseritos.com {
 
 
 # ─────────────────────────────────────────────────────────────────────────
-#  Y en el bloque que YA tenes de motoivir.com:
+#  Por que es tan corto
 #
-#  1. Sacar las dos lineas de la subcarpeta, que ya no hacen falta:
-#         redir /caseritos /caseritos/
-#         handle_path /caseritos/* { ... }
-#
-#  2. En su lugar, reenviar las visitas viejas al dominio nuevo. Google ya
-#     tiene indexadas las 32 URLs de /caseritos y los links que mandaste por
-#     WhatsApp siguen dando vueltas:
-#
-#         handle_path /caseritos/* {
-#             redir * https://loscaseritos.com{uri} permanent
-#         }
-#
-#     handle_path quita el prefijo antes del redir, asi
-#     motoivir.com/caseritos/?p=8  aterriza en  loscaseritos.com/?p=8
-#     y no en  loscaseritos.com/caseritos/?p=8 .
-#
-#  Ojo con el ORDEN: handle_path va ANTES que cualquier handle general.
-# ─────────────────────────────────────────────────────────────────────────
-
-
-# ─────────────────────────────────────────────────────────────────────────
-#  Por que este bloque es tan corto
-#
-#  Con dominio propio la tienda vive en la raiz y desaparece toda la
-#  gimnasia de la subcarpeta:
+#  La tienda vive en la raiz de su propio dominio, asi que no hace falta
+#  nada de la gimnasia que pide una subcarpeta:
 #
 #    · no va  handle_path        no hay prefijo que quitar
-#    · no va  redir /caseritos/  no hay barra final que arreglar
-#    · no va  BASE_PATH          las redirecciones del servidor salen bien solas
+#    · no va  redir              no hay barra final que arreglar
+#    · no va  BASE_PATH          las redirecciones salen bien solas
 #
-#  En /etc/caseritos.env, BASE_PATH tiene que quedar VACIO o borrado. Si
-#  queda con /caseritos puesto, la pantalla de entrada del panel redirige a
-#  loscaseritos.com/caseritos/entrar.html y da 404. Es el error mas facil
-#  de cometer en esta mudanza.
-#
-#  El resto no cambia: mismo servicio de systemd, mismo puerto 3001, misma
-#  carpeta de datos en /var/lib/caseritos.
+#  En /etc/caseritos.env, BASE_PATH tiene que quedar VACIO. Si queda con
+#  algo puesto, la pantalla de entrada del panel redirige a
+#  loscaseritos.com/eso/entrar.html y da 404.
 # ─────────────────────────────────────────────────────────────────────────

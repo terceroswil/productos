@@ -194,18 +194,18 @@ productos y las fotos que cargó el comerciante.
 
 ---
 
-## Mostrarla rápido dentro de MOTO-IVIR
+## Cómo está publicada hoy
 
-Si ya tenés MOTO-IVIR andando en un servidor, la forma más rápida de mostrar la
-tienda es dejarla colgada de ahí:
+La tienda ya está en internet, en **https://loscaseritos.com**, y el panel en
+**https://loscaseritos.com/panel**.
 
-```bash
-node herramientas/copiar-a-motoivir.cjs
-```
+No hay servidor alquilado: corre en esta misma computadora y sale por un **túnel
+de Cloudflare**. Se prende con doble clic en **`INICIAR.bat`** y vive mientras
+esa ventana esté abierta.
 
-Queda en **motoivir.com/caseritos**. Sirve para mostrársela a un cliente sin
-gastar un peso más. El **panel no funciona así** (los productos los cargás en tu
-PC y volvés a copiar). Todo explicado en `deploy/DESPLIEGUE.md`.
+Todo el detalle —cómo está armado, qué mirar cuando algo falla y qué haría falta
+para mudarla a un servidor propio— está en
+[deploy/COMO-ESTA-PUBLICADA.md](deploy/COMO-ESTA-PUBLICADA.md).
 
 ---
 

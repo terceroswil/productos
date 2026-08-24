@@ -1,7 +1,7 @@
 # Servicio de Los Caseritos. Va en /etc/systemd/system/caseritos.service
 #
-# Corre APARTE de MOTO-IVIR a propósito: si uno falla, el otro sigue.
-# MOTO-IVIR maneja saldos con dinero; no conviene compartir proceso.
+# OJO: esto es para un VPS. No es lo que corre hoy en la computadora, que
+# sale por un tunel de Cloudflare. Ver COMO-ESTA-PUBLICADA.md.
 
 [Unit]
 Description=Los Caseritos (tienda web)

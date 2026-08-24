@@ -43,10 +43,11 @@ const CON_LOGIN = !!(CLAVE_HASH || CLAVE_TEXTO);
 const EN_SERVIDOR = env.MODO === 'produccion' || !!env.RENDER || !!env.RAILWAY_ENVIRONMENT || !!env.FLY_APP_NAME;
 const MODO_RED = banderas.includes('--red') || env.RED === '1';
 
-/* Si la tienda vive en una subcarpeta del dominio (motoivir.com/caseritos),
+/* Si la tienda vive en una subcarpeta de otro dominio (ejemplo.com/tienda),
    el proxy quita ese prefijo antes de pasarnos la petición, así que acá las
    rutas llegan normales. Pero las REDIRECCIONES que mandamos al navegador sí
-   tienen que llevarlo, o el visitante termina fuera de la tienda. */
+   tienen que llevarlo, o el visitante termina fuera de la tienda.
+   Hoy va VACÍO: la tienda vive en la raíz de loscaseritos.com. */
 const BASE = (env.BASE_PATH || '').replace(/\/+$/, '');
 
 /* ¿Hay un proxy adelante (Caddy, nginx)? De eso depende si se le cree a la

@@ -1,190 +1,3 @@
-# MOTO-IVIR — Notas del proyecto
-
-Sistema de delivery / mandados / mototaxi por WhatsApp para pueblos del Trópico
-de Cochabamba (Ivirgarzama y alrededores). Node + Express + SQLite nativo de Node
-(`node:sqlite`, requiere Node ≥ 22.13). Incluye un módulo aparte de ruleta/sorteos
-con dinero (`/ruleta`).
-
-## Arranque
-- `npm start` → panel en `http://localhost:3000`
-- Config en `.env` (copiar de `.env.example`). NO commitear `.env`.
-- `WHATSAPP_MODE`: `simulador` | `qr` (whatsapp-web.js) | `meta` (Cloud API)
-
-## Mapa rápido de archivos
-- `src/server.js` — servidor y montaje de rutas.
-- `src/db.js` — esquema SQLite + migraciones suaves.
-- `src/routes/api.js` — API del panel admin (`/api`, auth por token Bearer).
-- `src/routes/ruleta.js` — módulo ruleta (usuarios, saldos, sorteos).
-- `src/routes/publico.js` — **página del cliente** (`/`). Ver nota abajo.
-- `public/app.jsx` — panel admin (React por CDN, un solo archivo).
-- `public/ruleta/` — front del jugador; `public/ruleta/admin/` — panel de ruleta.
-
-## ⚠️ Gotchas importantes
-- **`publico.js` genera TODO el HTML+CSS+JS de la página del cliente como un
-  string concatenado** (700+ líneas). Para editar: buscar por clase/comentario.
-  El `<script>` está partido como `'<scr'+'ipt>'` a propósito.
-- La página del cliente **no usa HTML semántico** (no hay `<h1>`, `<header>`,
-  `<section>`, `<nav>`, `<footer>`). Todo son `<div>` con clases. Mejora pendiente
-  para SEO/accesibilidad.
-- **weasyprint NO aplica los `@media (max-width:480px)`** al renderizar para
-  previsualizar el celular. Para verificar el look móvil hay que forzar las reglas
-  (inyectar un `<style>` con `!important`) o probar en un navegador real.
-- El SQLite de Node emite `ExperimentalWarning` — es normal.
-
-## Seguridad (commit c3e6b20)
-- **Ruleta admin protegida**: todas las rutas `/api/ruleta/admin/*`, el giro
-  oficial `/spin` y el `/reset` exigen token de admin (`requireAdmin`). Antes
-  estaban ABIERTAS (cualquiera podía cambiar saldos / aprobar recargas).
-- **PIN hasheados** con scrypt (`s2$salt$hash`), con migración transparente en el
-  login. El login ya no devuelve el PIN.
-- **Sin credenciales fijas**: el admin de ruleta sale de `RULETA_ADMIN_IDENTIFIER`
-  / `RULETA_ADMIN_PIN` en `.env`. `api.js` aborta si falta `ADMIN_PASSWORD`.
-- Rate-limit en el login de ruleta.
-- **Restablecer PIN de jugador**: los PIN están hasheados (scrypt), NO se pueden
-  recuperar. Si un jugador olvida el suyo, el admin usa el botón **🔑 Clave** en
-  el panel (`POST /admin/users/:id/reset-pin`, `requireAdmin`): genera un PIN
-  temporal de 4 dígitos, lo guarda hasheado y lo muestra UNA sola vez para
-  dictarlo. No se guardan claves en texto a propósito (hay dinero de por medio).
-  Auditado como `reset_pin`. El PIN del admin NO se resetea aquí: va por `.env`.
-- Pendiente del usuario: cambiar `RULETA_ADMIN_PIN` por uno propio.
-
-## Página del cliente (commit 0c6a7fe)
-- **Bugs arreglados**: se definió `aplicarFiltrosCombinados()` (faltaba → error JS);
-  el selector de ciudad ahora **filtra de verdad** (se agregó `m.pueblo_id` a la
-  query y `data-pueblo` a cada tarjeta); se quitó ~45 líneas de código muerto.
-- **Portada simplificada**: se quitaron el banner de TikTok, el reproductor de
-  música, los sellos de confianza y la sección "Nuestros Servicios" (4 tarjetas).
-  El paso 1 "¿Qué necesitas?" (Mandado/Carrera/Bici) SÍ se mantiene.
-- **Contacto sin enlace directo**: tarjeta compacta con el número GRANDE como
-  texto real + botón/número "toca para copiar". Motivo: el WhatsApp personal se
-  bloqueaba por volumen de mensajes. Plan: pasar el número a **WhatsApp Business**
-  y recién ahí reactivar enlace directo.
-  - El número está en la variable JS `NUM_CONSULTAS` y en el texto grande de la
-    tarjeta. Al cambiar de número hay que actualizar **ambos**.
-- **Espaciado**: ritmo vertical ~3–4px entre bloques de la portada. Se quitó el
-  `margin-top:-10px` de `.lista` (complicaba el cálculo del gap).
-
-- **El hash de la clave usa "." como separador, NO "$".** Un hash con `# MOTO-IVIR — Notas del proyecto
-
-Sistema de delivery / mandados / mototaxi por WhatsApp para pueblos del Trópico
-de Cochabamba (Ivirgarzama y alrededores). Node + Express + SQLite nativo de Node
-(`node:sqlite`, requiere Node ≥ 22.13). Incluye un módulo aparte de ruleta/sorteos
-con dinero (`/ruleta`).
-
-## Arranque
-- `npm start` → panel en `http://localhost:3000`
-- Config en `.env` (copiar de `.env.example`). NO commitear `.env`.
-- `WHATSAPP_MODE`: `simulador` | `qr` (whatsapp-web.js) | `meta` (Cloud API)
-
-## Mapa rápido de archivos
-- `src/server.js` — servidor y montaje de rutas.
-- `src/db.js` — esquema SQLite + migraciones suaves.
-- `src/routes/api.js` — API del panel admin (`/api`, auth por token Bearer).
-- `src/routes/ruleta.js` — módulo ruleta (usuarios, saldos, sorteos).
-- `src/routes/publico.js` — **página del cliente** (`/`). Ver nota abajo.
-- `public/app.jsx` — panel admin (React por CDN, un solo archivo).
-- `public/ruleta/` — front del jugador; `public/ruleta/admin/` — panel de ruleta.
-
-## ⚠️ Gotchas importantes
-- **`publico.js` genera TODO el HTML+CSS+JS de la página del cliente como un
-  string concatenado** (700+ líneas). Para editar: buscar por clase/comentario.
-  El `<script>` está partido como `'<scr'+'ipt>'` a propósito.
-- La página del cliente **no usa HTML semántico** (no hay `<h1>`, `<header>`,
-  `<section>`, `<nav>`, `<footer>`). Todo son `<div>` con clases. Mejora pendiente
-  para SEO/accesibilidad.
-- **weasyprint NO aplica los `@media (max-width:480px)`** al renderizar para
-  previsualizar el celular. Para verificar el look móvil hay que forzar las reglas
-  (inyectar un `<style>` con `!important`) o probar en un navegador real.
-- El SQLite de Node emite `ExperimentalWarning` — es normal.
-
-## Seguridad (commit c3e6b20)
-- **Ruleta admin protegida**: todas las rutas `/api/ruleta/admin/*`, el giro
-  oficial `/spin` y el `/reset` exigen token de admin (`requireAdmin`). Antes
-  estaban ABIERTAS (cualquiera podía cambiar saldos / aprobar recargas).
-- **PIN hasheados** con scrypt (`s2$salt$hash`), con migración transparente en el
-  login. El login ya no devuelve el PIN.
-- **Sin credenciales fijas**: el admin de ruleta sale de `RULETA_ADMIN_IDENTIFIER`
-  / `RULETA_ADMIN_PIN` en `.env`. `api.js` aborta si falta `ADMIN_PASSWORD`.
-- Rate-limit en el login de ruleta.
-- **Restablecer PIN de jugador**: los PIN están hasheados (scrypt), NO se pueden
-  recuperar. Si un jugador olvida el suyo, el admin usa el botón **🔑 Clave** en
-  el panel (`POST /admin/users/:id/reset-pin`, `requireAdmin`): genera un PIN
-  temporal de 4 dígitos, lo guarda hasheado y lo muestra UNA sola vez para
-  dictarlo. No se guardan claves en texto a propósito (hay dinero de por medio).
-  Auditado como `reset_pin`. El PIN del admin NO se resetea aquí: va por `.env`.
-- Pendiente del usuario: cambiar `RULETA_ADMIN_PIN` por uno propio.
-
-## Página del cliente (commit 0c6a7fe)
-- **Bugs arreglados**: se definió `aplicarFiltrosCombinados()` (faltaba → error JS);
-  el selector de ciudad ahora **filtra de verdad** (se agregó `m.pueblo_id` a la
-  query y `data-pueblo` a cada tarjeta); se quitó ~45 líneas de código muerto.
-- **Portada simplificada**: se quitaron el banner de TikTok, el reproductor de
-  música, los sellos de confianza y la sección "Nuestros Servicios" (4 tarjetas).
-  El paso 1 "¿Qué necesitas?" (Mandado/Carrera/Bici) SÍ se mantiene.
-- **Contacto sin enlace directo**: tarjeta compacta con el número GRANDE como
-  texto real + botón/número "toca para copiar". Motivo: el WhatsApp personal se
-  bloqueaba por volumen de mensajes. Plan: pasar el número a **WhatsApp Business**
-  y recién ahí reactivar enlace directo.
-  - El número está en la variable JS `NUM_CONSULTAS` y en el texto grande de la
-    tarjeta. Al cambiar de número hay que actualizar **ambos**.
-- **Espaciado**: ritmo vertical ~3–4px entre bloques de la portada. Se quitó el
-  `margin-top:-10px` de `.lista` (complicaba el cálculo del gap).
-
- se rompe al
-  pasar por variables de entorno: el shell y los paneles de hosting lo expanden como
-  si fuera una variable. Ya nos pasó en las pruebas. `verificarClave()` acepta ambos
-  por compatibilidad.
-- `/api/evento` (analítica) es la ÚNICA ruta `/api/` sin auth: la manda la tienda
-  pública. Todo lo demás pasa por `tienePermiso()`.
-- En modo login, las rutas de `SOLO_LOCAL` devuelven **302 a /entrar.html**, no 403:
-  así el comerciante llega solo a la pantalla de entrada.
-- `.env` y `.env.ejemplo` están en `PROHIBIDOS` de `publicar.cjs`.
-- ⚠️ **Los estáticos van por LISTA BLANCA** (`esPublico()`), no lista negra. Con lista
-  negra el `.env` quedó descargable en las pruebas — con `SESION_SECRETO` adentro,
-  o sea que se podía fabricar una sesión válida sin la clave. Un archivo nuevo debe
-  nacer privado; si hay que publicarlo, se agrega a `PUBLICO_EXACTO`.
-- Con `DATOS_DIR`, el catálogo y las fotos viven ahí (`cfg.CATALOGO`, `cfg.FOTOS`) y se
-  copian del proyecto la primera vez. Así actualizar el código no borra lo que cargó
-  el comerciante. Los estáticos de `/productos.json` y `/img/` se sirven desde ahí.
-- `deploy/` tiene el systemd, el env de ejemplo, el bloque de Caddy y la guía para
-  montarlo en **motoivir.com/caseritos** (subcarpeta del VPS de MOTO-IVIR, procesos
-  separados a propósito: MOTO-IVIR maneja saldos con dinero).
-- **Vive en una subcarpeta**: Caddy usa `handle_path /caseritos/*` (quita el prefijo,
-  así el servidor recibe rutas normales) + `redir /caseritos /caseritos/` (sin la barra
-  final las rutas relativas apuntan al dominio raíz). `handle_path` va ANTES que `handle`.
-- **Todas las rutas del front son RELATIVAS** (`api/guardar`, `entrar.html`, `href="./"`).
-  Nunca poner `/api/...`: rompe cuando la tienda cuelga de una subcarpeta.
-- `BASE_PATH=/caseritos` solo se usa para las REDIRECCIONES que emite el servidor
-  (302 a la pantalla de entrada). Sin eso el comerciante termina fuera de la tienda.
-- El `volver=` del login va SIN barra inicial y se usa como ruta relativa.
-- `herramientas/dominio.cjs` deja la dirección puesta en los 4 lugares de una.
-- **Dos formas de publicar**: `herramientas/copiar-a-motoivir.cjs` deja el paquete
-  estático en `MOTO-IVIR/public/caseritos/` (rápido, la tienda anda, el panel NO);
-  o el despliegue propio de `deploy/DESPLIEGUE.md` (systemd + Caddy, con panel).
-- La línea `app.use('/caseritos', express.static(...))` en `MOTO-IVIR/src/server.js`
-  va **antes** de `app.use('/', publico)`: si no, la página del cliente se come la
-  petición y devuelve 404.
-
-## Pendientes / siguientes pasos
-- Paso 2: **HTML semántico** en la página del cliente (h1, header, section, footer)
-  sin cambiar el diseño → mejor SEO/accesibilidad.
-- Limpiar código muerto que quedó sin uso: CSS de `.sec-servicios-vir` /
-  `.card-vir-*` y la función JS `explorarServicio` en `publico.js`.
-- Rendimiento: `loading="lazy"` en imágenes, cachear la página.
-- Cambiar `RULETA_ADMIN_PIN` y actualizar `NUM_CONSULTAS` cuando esté el número
-  de WhatsApp Business.
-- `git push` (aún no se ha subido a GitHub).
-
-## Cómo verificar cambios en la página del cliente (local, sin tocar datos reales)
-```
-DATA_DIR=/tmp/test PORT=3999 WHATSAPP_MODE=simulador ADMIN_PASSWORD=x \
-RULETA_ADMIN_PIN=1 node src/server.js
-# luego: curl http://localhost:3999/  y revisar el HTML/JS
-node -c src/routes/publico.js   # chequeo de sintaxis
-```
-
----
-
 # LOS CASERITOS — tienda web (`productos/`)
 
 Tienda de venta de artículos generales (hogar, tecnología, belleza, herramientas)
@@ -319,6 +132,29 @@ del mercado boliviano.
 - Quitar una foto de un producto con la ✕ NO borra el archivo en el acto: puede estar
   en uso en otro producto. Lo barre el diálogo al cerrarse, o el botón 🧹.
 
+- **El hash de la clave usa "." como separador, NO "$".** Un hash con `$` se rompe
+  al pasar por variables de entorno: el shell y los paneles de hosting lo expanden
+  como si fuera una variable. Ya nos pasó en las pruebas. `verificarClave()` acepta
+  los dos por compatibilidad.
+- `/api/evento` (analítica) es la ÚNICA ruta `/api/` sin auth: la manda la tienda
+  pública. Todo lo demás pasa por `tienePermiso()`.
+- En modo login, las rutas de `SOLO_LOCAL` devuelven **302 a /entrar.html**, no 403:
+  así el comerciante llega solo a la pantalla de entrada.
+- `.env` y `.env.ejemplo` están en `PROHIBIDOS` de `publicar.cjs`.
+- ⚠️ **Los estáticos van por LISTA BLANCA** (`esPublico()`), no lista negra. Con lista
+  negra el `.env` quedó descargable en las pruebas — con `SESION_SECRETO` adentro,
+  o sea que se podía fabricar una sesión válida sin la clave. Un archivo nuevo debe
+  nacer privado; si hay que publicarlo, se agrega a `PUBLICO_EXACTO`.
+- Con `DATOS_DIR`, el catálogo y las fotos viven ahí (`cfg.CATALOGO`, `cfg.FOTOS`) y se
+  copian del proyecto la primera vez. Así actualizar el código no borra lo que cargó
+  el comerciante. Los estáticos de `/productos.json` y `/img/` se sirven desde ahí.
+- **Todas las rutas del front son RELATIVAS** (`api/guardar`, `entrar.html`, `href="./"`).
+  Nunca poner `/api/...`: rompe si algún día la tienda cuelga de una subcarpeta.
+- `BASE_PATH` solo se usa para las REDIRECCIONES que emite el servidor (302 a la
+  pantalla de entrada). Hoy va VACÍO: la tienda vive en la raíz de su dominio.
+- El `volver=` del login va SIN barra inicial y se usa como ruta relativa.
+- `herramientas/dominio.cjs` deja la dirección puesta en los 4 lugares de una. Ojo:
+  además hay que cambiar el Nombre de host de la ruta en el túnel de Cloudflare.
 ## Panel: las dos trampas del guardado (23/08/2026)
 - **Las fotos se escriben apenas se eligen**, antes de que el producto exista, para
   poder mostrar la miniatura al instante. El precio: si se cancela, el archivo queda
@@ -399,20 +235,28 @@ Todo vive en un solo `@media(max-width:560px)`; la computadora no cambia.
 - `tienda-publicada.html.bak` se borró (1.3 MB, decía "Tropical Store"). Quedó
   guardado en el primer commit: `git show 083efb0:tienda-publicada.html.bak`.
 
-## Dominio: subcarpeta vs. propio
-- Hoy la dirección configurada es `https://motoivir.com/caseritos`. Está puesta
-  en los 4 lugares y coinciden.
-- **Con dominio propio se simplifica**: desaparecen `handle_path`, el `redir` de
-  la barra final y `BASE_PATH`. El bloque de Caddy queda en 4 líneas
-  (`deploy/Caddyfile-dominio-propio.txt`).
-- ⚠️ Al mudarse hay que **vaciar `BASE_PATH`** en `/etc/caseritos.env`. Si queda
-  con `/caseritos`, la pantalla de entrada del panel redirige a
-  `caseritos.com/caseritos/entrar.html` → 404.
-- El DNS (2 registros A: `@` y `www` → IP del VPS) va **antes** de recargar Caddy:
-  sin eso no consigue el certificado y el sitio queda sin HTTPS.
-- `MOTO-IVIR/public/caseritos/` es solo el paquete estático que deja
-  `copiar-a-motoivir.cjs` — copia idéntica de `publicar/`, nada exclusivo. Con
-  dominio propio deja de hacer falta.
+## Cómo está publicada (24/08/2026)
+Detalle completo en **`deploy/COMO-ESTA-PUBLICADA.md`**. El resumen:
+
+- **`https://loscaseritos.com`**, con el panel en `/panel`. Dominio propio, en la
+  raíz: nada de subcarpetas, `handle_path` ni `BASE_PATH`.
+- **No hay servidor alquilado.** Corre en esta computadora (`apolcalipsis`) y sale
+  por un **túnel de Cloudflare** (`cloudflared`, servicio de Windows). El túnel se
+  llama `moto-ivir` y publica los dos sitios: `motoivir.com` → :3000 y
+  `loscaseritos.com` → :3001. Un túnel admite varias rutas.
+- Por eso acá **no hay** registros A, ni Caddy, ni certificados, ni systemd.
+  Cloudflare pone el HTTPS.
+- Se prende con **`INICIAR.bat`** y vive mientras esa ventana esté abierta.
+- ⚠️ **Con el túnel, todas las visitas llegan desde `127.0.0.1`**, porque
+  `cloudflared` corre en la misma máquina. La IP real viene en `CF-Connecting-IP`
+  y `ipDe()` la lee; necesita `TRAS_PROXY=1`, que ya está en el `.env`. Sin eso el
+  freno de 6 intentos es un cupo único para todos y seis fallos de cualquier bot
+  dejan al comerciante 10 min afuera. NO combinar `TRAS_PROXY=1` con `--red`.
+- `motoivir.com/caseritos` ya no sirve la tienda: `MOTO-IVIR/src/server.js` la
+  reenvía con un **301** a `loscaseritos.com` conservando la consulta, porque hay
+  links viejos dando vueltas por WhatsApp. Los dos proyectos quedaron
+  **desacoplados**: la tienda no vive más dentro de MOTO-IVIR.
+- Para mudarla a un VPS algún día: `deploy/DESPLIEGUE.md`.
 
 ## Repaso a fondo del 24/08/2026 (98 pruebas)
 Se probó API, seguridad, panel y tienda de punta a punta. Lo que apareció:
@@ -466,27 +310,14 @@ Se probó API, seguridad, panel y tienda de punta a punta. Lo que apareció:
   pestaña "Qué buscan". Conviene filtrarlos por fecha al terminar.
 
 ## Pendientes
-- **Dominio propio: ya está comprado — `loscaseritos.com`, en Cloudflare** (24/08/2026).
-  Falta ejecutar la mudanza: `deploy/MUDANZA-LOSCASERITOS.md` (guía concreta) y
-  `deploy/Caddyfile-loscaseritos.txt` (el bloque). Va en el mismo VPS que
-  motoivir.com, como sitio aparte y **proceso aparte** (no como subcarpeta):
-  motoivir.com → :3000, loscaseritos.com → :3001.
-  - ⚠️ **Los registros A van en "DNS only" (nube gris), no naranja.** Con el proxy
-    de Cloudflare activo, Caddy ve la IP del borde de Cloudflare y `ipDe()` toma el
-    ÚLTIMO valor de `X-Forwarded-For`: **todos los visitantes comparten el mismo
-    cupo del freno de intentos**. Seis logins fallidos de cualquiera dejan al
-    comerciante 10 min afuera de su panel. Para prender la nube naranja hay que
-    enseñarle antes a `ipDe()` a leer `CF-Connecting-IP`, y poner el modo SSL en
-    Full (strict). En ese orden.
-  - No correr `dominio.cjs` hasta que el DNS resuelva: si se publica antes, las
-    vistas previas de WhatsApp apuntan a un dominio muerto y salen sin foto.
-- Migrar el número a WhatsApp Business y recién ahí encender el enlace directo.
+- **Los 26 productos del catálogo son de muestra.** El comerciante los va a borrar y
+  cargar los suyos, así que no hay que preocuparse por los textos de relleno, el
+  campo `marca` vacío ni el cupón `TROPI10` (resto del nombre viejo).
 - Iconos PWA en PNG (192/512); hoy son SVG.
-- Cargar el campo `marca` de los productos (está vacío a propósito).
 - Fotos a WebP.
 - Registrar el nombre en Facebook / TikTok / Instagram para que coincida con la web.
-- **Paso 3 pendiente**: subir a un VPS (~5 USD/mes) con `MODO=produccion` y `DATOS_DIR`
-  apuntando a disco persistente. Los planes gratis de Render/Railway BORRAN el disco
-  en cada reinicio: se pierden catálogo y fotos.
+- **Que la tienda no dependa de esta computadora**: hoy vive mientras el
+  `INICIAR.bat` esté abierto y la PC prendida. Un VPS (~5 USD/mes) lo resuelve —
+  `deploy/DESPLIEGUE.md`. No es urgente, pero es el techo del montaje actual.
 - **Paso 4 pendiente**: multi-tienda (varios comerciantes en el mismo servidor, cada
   uno con su usuario y su carpeta de datos). Recién cuando haya un segundo cliente.
