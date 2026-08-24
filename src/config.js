@@ -49,6 +49,17 @@ const MODO_RED = banderas.includes('--red') || env.RED === '1';
    tienen que llevarlo, o el visitante termina fuera de la tienda. */
 const BASE = (env.BASE_PATH || '').replace(/\/+$/, '');
 
+/* ¿Hay un proxy adelante (Caddy, nginx)? De eso depende si se le cree a la
+   cabecera X-Forwarded-For para saber quién se está conectando.
+   La cabecera la puede escribir cualquiera, así que en tu computadora NO se
+   mira: si se mirara, el freno de intentos del login se esquivaría mandando
+   una IP inventada distinta en cada prueba.
+   En el VPS va detrás de Caddy, así que ahí sí. Se puede forzar con
+   TRAS_PROXY=1 o apagar con TRAS_PROXY=0. */
+const TRAS_PROXY = env.TRAS_PROXY !== undefined && env.TRAS_PROXY !== ''
+  ? env.TRAS_PROXY === '1'
+  : EN_SERVIDOR;
+
 const config = {
   RAIZ,
   BASE,
@@ -56,6 +67,7 @@ const config = {
   HOST: (EN_SERVIDOR || MODO_RED) ? '0.0.0.0' : '127.0.0.1',
   EN_SERVIDOR,
   MODO_RED,
+  TRAS_PROXY,
 
   CON_LOGIN,
   USUARIO: env.PANEL_USUARIO || 'admin',

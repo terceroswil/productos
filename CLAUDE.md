@@ -395,6 +395,57 @@ Todo vive en un solo `@media(max-width:560px)`; la computadora no cambia.
   `copiar-a-motoivir.cjs` — copia idéntica de `publicar/`, nada exclusivo. Con
   dominio propio deja de hacer falta.
 
+## Repaso a fondo del 24/08/2026 (98 pruebas)
+Se probó API, seguridad, panel y tienda de punta a punta. Lo que apareció:
+
+- ⚠️ **"Salir" no cerraba nada.** Solo borraba la cookie del navegador; el token
+  seguía siendo válido, así que quien lo tuviera copiado entraba igual. Ahora
+  `crearSesion()` le pone la hora de nacimiento (`n`) y `revocarSesiones()` anota
+  la hora del último Salir en `data/sesiones-cortadas`: toda sesión anterior a esa
+  hora queda muerta. Va a un archivo para que el corte sobreviva a los reinicios.
+  Hay un solo comerciante por tienda, así que un corte global alcanza.
+- ⚠️ **`{"productos":[]}` borraba la tienda entera.** El archivo no es solo la lista
+  de productos: adentro están categorías, pueblos de envío, cupones y los datos del
+  negocio. `guardarCatalogo()` ahora exige `tienda`, `contacto`, `categorias` y
+  `envios`, y que haya al menos una categoría y un pueblo. **Pasó de verdad durante
+  las pruebas** — se recuperó del commit.
+- **Freno de mano al guardar**: si un guardado deja menos de la mitad de los productos
+  que había (y había 5 o más), el servidor responde **409** con `confirmable:true` en
+  vez de obedecer. El panel lo convierte en una pregunta y reintenta con
+  `?confirmar=1`. Perder 20 productos de golpe casi siempre es un accidente.
+- ⚠️ **El freno de intentos se esquivaba con `X-Forwarded-For`.** Se tomaba el primer
+  valor de la cadena, que lo escribe el cliente: mandando una IP distinta en cada
+  intento se probaban claves para siempre (12 de 12 pasaron). Y no alcanzaba con estar
+  detrás de Caddy, porque Caddy **agrega** la IP real al final de la lista que ya venía.
+  Ahora la cabecera solo se mira si `cfg.TRAS_PROXY`, y se toma el **último** valor.
+  `TRAS_PROXY` sale de `MODO=produccion`; se fuerza con `TRAS_PROXY=1` o se apaga con `0`.
+- **Un cuerpo pasado de tamaño cortaba la conexión** sin contestar: `leerCuerpo()` hacía
+  `req.destroy()` y el catch ya no tenía dónde escribir. Ahora devuelve **413** con
+  mensaje y recién corta cuando la respuesta salió (`res.on('finish')`).
+- **Las fotos descartadas no siempre se barrían.** El evento `close` del `<dialog>` es
+  asincrónico: abriendo otro producto rápido, `editar()` vaciaba la lista pendiente
+  antes de que corriera. Ahora `cerrarPasadaDeFotos()` no mira si se aceptó o canceló
+  —borra lo que no quedó puesto en ningún producto de `CFG`— y se llama desde tres
+  lados: al aceptar (sincrónico), en el `close`, y al abrir el siguiente producto.
+- **`<img src="">` en la ficha**: con src vacío el navegador pide la **página entera**
+  como si fuera una imagen. Una descarga de más en cada visita, y con datos móviles
+  eso se paga. Se quitó el atributo; lo pone `pintarGaleria()`.
+- **`imgFalla()` apilaba emojis**: al pasar de una foto a otra insertaba un div nuevo
+  cada vez. Ahora es idempotente (`.sin-foto`) y `pintarGaleria()` limpia el anterior.
+- El botón flotante tapaba la barra de guardar: el override iba con
+  `body.hay-cambios #btnNuevo` (sin `.flotante`).
+
+### Al probar en el navegador, cuidado con esto
+- **`getComputedStyle` se atrasa un ciclo** dentro de la misma ejecución: después de
+  tocar una clase, la primera lectura devuelve el valor viejo. Medir en llamadas
+  separadas, o se diagnostican bugs que no existen (perdí un buen rato con eso).
+- **Los `confirm()` se cancelan solos** en modo automático: hay que sustituirlos antes
+  de probar `limpiarFotos()`, `borrar()` o `vaciarCarrito()`.
+- **`pkill` no mata procesos en Windows.** Quedó un servidor vivo en el 4199 media
+  sesión. Va `Get-NetTCPConnection -LocalPort N | Stop-Process`.
+- Los eventos de analítica de las pruebas se van a `data/eventos.jsonl` y ensucian la
+  pestaña "Qué buscan". Conviene filtrarlos por fecha al terminar.
+
 ## Pendientes
 - **Dominio propio**: el cliente todavía no eligió el nombre. El candidato es
   `caseritos.com`. Cuando confirme: `node herramientas/dominio.cjs https://…` +

@@ -64,6 +64,11 @@ const EVENTOS = path.join(DATOS, 'eventos.jsonl');
 const CATALOGO = cfg.CATALOGO;   // en servidor vive en DATOS_DIR
 const FOTOS    = cfg.FOTOS;      // idem: las fotos que sube el comerciante
 
+/* Dónde se anota la hora del último "Salir", para que ese corte sobreviva a
+   los reinicios. Ver la explicación en src/seguridad.js. */
+fs.mkdirSync(DATOS, { recursive: true });
+seg.configurarRevocacion(path.join(DATOS, 'sesiones-cortadas'), fs);
+
 const TIPOS = {
   '.html': 'text/html; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
@@ -87,11 +92,26 @@ function cache(ext){
 
 const esLocal = req => ['127.0.0.1','::1','::ffff:127.0.0.1'].includes(req.socket.remoteAddress);
 
-/* Detrás de un hosting la IP real viene en una cabecera; sin eso, el freno a
-   los intentos de clave castigaría a todos por igual. */
+/* Detrás de un proxy la IP real viene en una cabecera; sin eso, el freno a
+   los intentos de clave castigaría a todos por igual.
+
+   ⚠️ Pero X-Forwarded-For la escribe CUALQUIERA. Antes se tomaba el primer
+   valor de la lista y eso dejaba el freno en nada: mandando una IP distinta
+   en cada intento se prueban claves para siempre (probado: 12 de 12 pasaron).
+   Y no alcanza con estar detrás de Caddy, porque Caddy AGREGA la IP real al
+   final de la lista que ya venía: el primer valor sigue siendo el que eligió
+   el cliente.
+
+   Por eso: solo se mira la cabecera si sabemos que hay un proxy adelante, y
+   se toma el ÚLTIMO valor, que es el que puso el proxy. */
 function ipDe(req){
-  const reenviada = req.headers['x-forwarded-for'];
-  if (reenviada) return String(reenviada).split(',')[0].trim();
+  if (cfg.TRAS_PROXY){
+    const reenviada = req.headers['x-forwarded-for'];
+    if (reenviada){
+      const partes = String(reenviada).split(',');
+      return partes[partes.length - 1].trim();
+    }
+  }
   return req.socket.remoteAddress || 'desconocida';
 }
 
@@ -123,14 +143,29 @@ function json(res, codigo, obj){
 
 function leerCuerpo(req, limite = 2 * 1024 * 1024){
   return new Promise((ok, mal) => {
-    let n = 0; const trozos = [];
+    let n = 0, cortado = false;
+    const trozos = [];
     req.on('data', c => {
+      if (cortado) return;
       n += c.length;
-      if (n > limite) { mal(new Error('Cuerpo demasiado grande')); req.destroy(); return; }
+      if (n > limite) {
+        cortado = true;
+        /* ⚠️ Acá NO va req.destroy(). Cortar el socket en el medio deja al
+           cliente con "conexión cerrada" en lugar de un error legible: el
+           catch de más abajo alcanza a armar la respuesta, pero ya no hay
+           por dónde mandarla. Se marca el pedido y el que llama contesta
+           un 413 de verdad; recién cuando esa respuesta salió se corta. */
+        const e = new Error('El contenido es demasiado grande (máximo ' + Math.round(limite / 1024) + ' KB)');
+        e.codigo = 413;
+        e.sobra = true;
+        mal(e);
+        return;
+      }
       trozos.push(c);
     });
-    req.on('end', () => ok(Buffer.concat(trozos).toString('utf8')));
+    req.on('end', () => { if (!cortado) ok(Buffer.concat(trozos).toString('utf8')); });
     req.on('error', mal);
+    req.on('aborted', () => { if (!cortado) mal(new Error('La petición se cortó por el camino')); });
   });
 }
 
@@ -180,12 +215,40 @@ function resumenEventos(){
 
 /* ─────────────────── guardar el catálogo desde admin.html ─────────────────── */
 
-function guardarCatalogo(texto){
+function guardarCatalogo(texto, confirmado){
   const datos = JSON.parse(texto);                 // si el JSON está mal, revienta acá y no se escribe nada
   if (!Array.isArray(datos.productos)) throw new Error('Falta el arreglo "productos"');
 
+  /* ⚠️ Esto no es puntillosidad: un PUT con {"productos":[]} borraba de un
+     saque las categorías, los pueblos de envío, los cupones y los datos del
+     negocio. El archivo es la tienda entera, no solo la lista de productos.
+     Ya pasó una vez, en una prueba. */
+  for (const parte of ['tienda', 'contacto', 'categorias', 'envios']){
+    if (!datos[parte]) throw new Error('Falta "' + parte + '": eso no es un catálogo completo, es un pedazo suelto');
+  }
+  if (!Array.isArray(datos.categorias) || !datos.categorias.length){
+    throw new Error('El catálogo necesita al menos una categoría');
+  }
+  if (!Array.isArray(datos.envios) || !datos.envios.length){
+    throw new Error('El catálogo necesita al menos un pueblo de envío');
+  }
+
   const ids = datos.productos.map(p => p.id);
   if (new Set(ids).size !== ids.length) throw new Error('Hay IDs de producto repetidos');
+
+  /* Freno de mano: perder la mitad de los productos de golpe casi siempre es
+     un accidente, no una decisión. Se pregunta antes en vez de obedecer. */
+  if (!confirmado && fs.existsSync(CATALOGO)){
+    let previos = 0;
+    try { previos = (JSON.parse(fs.readFileSync(CATALOGO, 'utf8')).productos || []).length; } catch (e) {}
+    if (previos >= 5 && datos.productos.length < previos / 2){
+      const e = new Error('Este guardado deja ' + datos.productos.length + ' productos de los ' + previos +
+                          ' que había. Si es a propósito, confirmá.');
+      e.codigo = 409;
+      e.confirmable = true;
+      throw e;
+    }
+  }
 
   /* Copia de seguridad antes de pisar el archivo bueno */
   if (fs.existsSync(CATALOGO)){
@@ -330,7 +393,11 @@ const servidor = http.createServer(async (req, res) => {
       }
 
       if (ruta === '/api/salir' && req.method === 'POST'){
+        /* Borrar la cookie solo la saca de ESTE navegador. Además hay que
+           matar el token, o quien lo tenga copiado sigue entrando. */
+        seg.revocarSesiones(fs);
         res.setHeader('Set-Cookie', 'lc_sesion=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
+        console.log('  · sesión cerrada (las abiertas quedaron invalidadas)');
         return json(res, 200, { ok: true });
       }
 
@@ -346,7 +413,7 @@ const servidor = http.createServer(async (req, res) => {
         return json(res, 200, resumenEventos());
       }
       if (ruta === '/api/guardar' && req.method === 'POST'){
-        const n = guardarCatalogo(await leerCuerpo(req));
+        const n = guardarCatalogo(await leerCuerpo(req), url.searchParams.get('confirmar') === '1');
         console.log('  ✔ catálogo guardado (' + n + ' productos)');
         return json(res, 200, { ok: true, productos: n });
       }
@@ -377,7 +444,11 @@ const servidor = http.createServer(async (req, res) => {
       }
       return json(res, 404, { error: 'Ruta no encontrada' });
     } catch (e) {
-      return json(res, 400, { error: e.message });
+      /* Un cuerpo pasado de tamaño da 413, el resto 400. Si quedaron bytes
+         viniendo, se corta la conexión DESPUÉS de que salió la respuesta:
+         al revés, el cliente se queda sin saber qué pasó. */
+      if (e.sobra) res.on('finish', () => req.destroy());
+      return json(res, e.codigo || 400, { error: e.message, confirmable: !!e.confirmable });
     }
   }
 

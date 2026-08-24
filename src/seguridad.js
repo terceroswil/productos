@@ -49,9 +49,37 @@ function firmar(texto, secreto){
 function crearSesion(usuario, secreto, dias = 30){
   const datos = Buffer.from(JSON.stringify({
     u: usuario,
+    n: Date.now(),                       // cuándo nació, para poder revocarla
     exp: Date.now() + dias * DIAS
   })).toString('base64url');
   return datos + '.' + firmar(datos, secreto);
+}
+
+/* ── Revocar al salir ──
+   La cookie es autocontenida: el servidor no guarda sesiones. Eso está bien
+   (sobrevive a los reinicios) pero tiene un agujero: "Salir" solo borraba la
+   cookie DEL NAVEGADOR. El token seguía siendo válido, así que quien lo
+   hubiera copiado entraba igual. En un panel que se abre desde el celular en
+   la tienda, eso no sirve.
+
+   Solución mínima: se anota la hora del último "Salir". Toda sesión nacida
+   antes de esa hora queda muerta. Hay un solo comerciante por tienda, así
+   que un corte global alcanza y sobra. Va a un archivo para que el corte
+   sobreviva a los reinicios del servidor. */
+let cortarAntesDe = 0;
+let archivoCorte = null;
+
+function configurarRevocacion(ruta, fs){
+  archivoCorte = ruta;
+  try { cortarAntesDe = Number(fs.readFileSync(ruta, 'utf8')) || 0; } catch (e) { cortarAntesDe = 0; }
+}
+
+function revocarSesiones(fs){
+  cortarAntesDe = Date.now();
+  if (archivoCorte && fs) {
+    try { fs.writeFileSync(archivoCorte, String(cortarAntesDe), 'utf8'); } catch (e) {}
+  }
+  return cortarAntesDe;
 }
 
 function leerSesion(cookie, secreto){
@@ -69,6 +97,10 @@ function leerSesion(cookie, secreto){
   try {
     const obj = JSON.parse(Buffer.from(datos, 'base64url').toString('utf8'));
     if (!obj.exp || obj.exp < Date.now()) return null;   // vencida
+    /* nacida antes del último "Salir" → muerta. Las de antes de este cambio
+       no traen "n": se las trata como viejas, así que un Salir también
+       las corta. */
+    if (cortarAntesDe && (obj.n || 0) <= cortarAntesDe) return null;
     return obj;
   } catch (e) { return null; }
 }
@@ -124,6 +156,7 @@ setInterval(() => {
 module.exports = {
   hashClave, verificarClave,
   crearSesion, leerSesion, leerCookies,
+  configurarRevocacion, revocarSesiones,
   estaBloqueado, anotarFallo, limpiarIntentos, intentosRestantes,
   LIMITE
 };

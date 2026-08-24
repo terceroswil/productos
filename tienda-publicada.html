@@ -790,7 +790,10 @@
   <button class="m-close" onclick="closeProduct()" aria-label="Cerrar ficha">✕</button>
   <div class="modal-in">
     <div class="m-img">
-      <div class="principal"><img id="mImg" src="" alt=""></div>
+      <!-- Sin src= a propósito: con src="" el navegador pide la PÁGINA ENTERA
+           como si fuera una imagen. Era una descarga de más en cada visita,
+           y con datos móviles eso se paga. El src lo pone abrirProducto(). -->
+      <div class="principal"><img id="mImg" alt=""></div>
       <div class="m-galeria" id="mGaleria"></div>
     </div>
     <div class="m-body">
@@ -1145,8 +1148,12 @@ function render(){
 function imgFalla(img,id){
   const p=products.find(x=>x.id===id); if(!p)return;
   img.style.display='none';
-  img.parentNode.insertAdjacentHTML('beforeend',
-    '<div style="display:grid;place-items:center;height:100%;font-size:3rem">'+esc(p.em||'📦')+'</div>');
+  /* Una sola vez por caja: en la ficha se puede llamar varias veces (al pasar
+     de una foto a otra) y antes se apilaban emojis uno debajo del otro. */
+  const caja=img.parentNode;
+  if(caja.querySelector('.sin-foto')) return;
+  caja.insertAdjacentHTML('beforeend',
+    '<div class="sin-foto" style="display:grid;place-items:center;height:100%;font-size:3rem">'+esc(p.em||'📦')+'</div>');
 }
 
 function irAlCatalogo(){ $('catalogo').scrollIntoView({behavior:'smooth'}); }
@@ -1697,9 +1704,17 @@ function pintarRelacionados(){
 
 function pintarGaleria(){
   const fotos=(mProd.img&&mProd.img.length?mProd.img:['']);
-  $('mImg').src=fotos[mFoto]||'';
+  const ruta=fotos[mFoto]||'';
   $('mImg').alt=mProd.name;
   $('mImg').onerror=function(){ imgFalla(this,mProd.id); };
+  /* borrar el emoji de la foto anterior, si lo hubo */
+  const previo=$('mImg').parentNode.querySelector('.sin-foto');
+  if(previo) previo.remove();
+  /* Producto sin foto: se quita el atributo y se muestra el emoji de una.
+     Poner src="" no sirve —el navegador pide la página entera como imagen—
+     y encima no dispara onerror, así que el respaldo nunca aparecía. */
+  if(ruta){ $('mImg').style.display=''; $('mImg').src=ruta; }
+  else { $('mImg').removeAttribute('src'); imgFalla($('mImg'),mProd.id); }
   $('mGaleria').innerHTML=fotos.map((f,i)=>
     '<button class="'+(i===mFoto?'activa':'')+'" onclick="verFoto('+i+')" aria-label="Foto '+(i+1)+'">'+
     '<img src="'+esc(f)+'" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover"></button>').join('');

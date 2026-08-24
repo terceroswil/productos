@@ -221,7 +221,7 @@
       border-radius:999px;padding:14px 20px;font-size:.95rem;
       box-shadow:0 6px 20px rgba(0,0,0,.45);
     }
-    body.hay-cambios #btnNuevo.flotante{bottom:74px}
+    body.hay-cambios #btnNuevo{bottom:74px}
     /* aire para que el flotante no tape el ultimo producto */
     .panel{padding-bottom:80px}
     /* plegado: los dos botones de vez en cuando se esconden tras el ⋯ */
@@ -760,6 +760,9 @@ function pintarSubs(){
 }
 
 function editar(id){
+  /* Por si el 'close' del diálogo anterior todavía no corrió: primero se
+     salda esa cuenta, después se arranca la pasada nueva. */
+  cerrarPasadaDeFotos();
   editandoId=id;
   fotosDeEstaPasada=[];
   const p=id?CFG.productos.find(x=>x.id===id):null;
@@ -823,6 +826,9 @@ function guardarProducto(ev){
     toast('Producto agregado (#'+datos.id+')');
   }
   marcarSucio(); pintarTabla();
+  /* Ya sabemos qué fotos quedaron puestas: se barre acá mismo, sin esperar al
+     evento 'close', que es asincrónico y a veces tarda. */
+  cerrarPasadaDeFotos();
 }
 
 /* ═════════════ fotos que quedaron sueltas ═════════════ */
@@ -841,19 +847,31 @@ async function barrerFotosSueltas(cuales){
   }
 }
 
-/* El diálogo se cierra de dos maneras y cada una deja distinto:
-     Cancelar → no queda nada, sobran TODAS las de esta pasada
-     Aceptar  → sobran solo las que se sacaron con la ✕ antes de aceptar    */
-$('dlg').addEventListener('close',function(){
-  const sobran = this.returnValue==='ok'
-    ? fotosDeEstaPasada.filter(f=>!fotosActuales.includes(f))
-    : fotosDeEstaPasada.slice();
+/* Cierra la pasada: de lo que se subió recién, borra lo que no quedó puesto
+   en ningún producto de la lista.
+
+   No mira si se aceptó o se canceló, y es a propósito: es la misma pregunta
+   contestada sola. Si se canceló, el producto nunca entró y su foto no figura
+   en ningún lado. Si se aceptó, figuran las que sobrevivieron a la ✕. */
+function cerrarPasadaDeFotos(){
+  if(!fotosDeEstaPasada.length) return;
+  const enUso=new Set();
+  for(const p of (CFG&&CFG.productos)||[]) for(const i of (p.img||[])) enUso.add(i);
+  const sobran=fotosDeEstaPasada.filter(f=>!enUso.has(f));
   fotosDeEstaPasada=[];
   if(sobran.length){
     barrerFotosSueltas(sobran);
     console.log('fotos descartadas:', sobran.join(', '));
   }
-});
+}
+
+/* Se llama desde tres lados, y hacen falta los tres:
+     · al aceptar (guardarProducto), que es sincrónico y no puede fallar
+     · al cerrarse el diálogo, que cubre Cancelar, la ✕ y la tecla Escape
+     · al abrir otro producto, por si el evento 'close' —que es asincrónico—
+       todavía no corrió. Sin eso, abrir el siguiente producto rápido borraba
+       la lista pendiente y las fotos descartadas quedaban tiradas. */
+$('dlg').addEventListener('close', cerrarPasadaDeFotos);
 
 /* Barrido general: las que quedaron de antes, de cuando el panel no limpiaba. */
 async function limpiarFotos(){
@@ -972,13 +990,23 @@ function recogerTienda(){
 
 /* ═════════════ guardar ═════════════ */
 
-async function guardar(){
+async function guardar(confirmado){
   recogerTienda();
   $('btnGuardar').disabled=true;
   try{
-    const r=await fetch('api/guardar',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(CFG,null,2)});
+    const r=await fetch('api/guardar'+(confirmado?'?confirmar=1':''),
+      {method:'POST',headers:{'Content-Type':'application/json'},
+       body:JSON.stringify(CFG,null,2)});
     const d=await r.json();
+    /* El servidor frena los guardados que borran de golpe la mayoría de los
+       productos. No es un error: es una pregunta. Se traslada al comerciante
+       en vez de obedecer callado. */
+    if(r.status===409 && d.confirmable && !confirmado){
+      $('btnGuardar').disabled=false;
+      if(confirm(d.error+'\n\n¿Guardar igual?')) return guardar(true);
+      toast('No se guardó nada');
+      return;
+    }
     if(!r.ok) throw new Error(d.error||'Error del servidor');
     marcarLimpio('Guardado ✓ ('+d.productos+' productos)');
     toast('Catálogo guardado ✓ Ya está en vivo en la tienda');

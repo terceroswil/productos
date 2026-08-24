@@ -11,6 +11,8 @@ publicar/
 # Respaldos automaticos del catalogo y estadisticas de visitas.
 data/respaldos/
 data/eventos.jsonl
+# hora del ultimo "Salir": corta las sesiones abiertas y es de esta instalacion
+data/sesiones-cortadas
 
 # ── Ruido del sistema ─────────────────────────────────────────────
 node_modules/
