@@ -41,15 +41,101 @@ del mercado boliviano.
   y freno de 6 intentos / 10 min por IP. Sin librerías externas.
 - `entrar.html` — pantalla de login. `herramientas/clave.cjs` genera el hash.
 - `generar-sitemap.js` — regenera `sitemap.xml` y `robots.txt` desde el catálogo.
-- `herramientas/logo.cjs` — **única fuente del logo**: genera `logo.svg`, `icono.svg`,
+- `herramientas/logo-dibujo.cjs` — **única fuente del dibujo del logo** (un león,
+  desde el 25/08/2026; antes era una casita sobre una canasta). Solo geometría,
+  no escribe nada. Lo usan los dos scripts de abajo, así no hay paths duplicados.
+  Saca **tres versiones del mismo león**, y cada una tiene su lugar:
+  - `LEON()` — silueta blanca calada, para el cuadrito verde. Aguanta 16 px
+    porque no tiene nada que perder. Favicon, ícono de la app, panel, login.
+  - `LEON_COLOR()` — la plana de tres colores. Hoy no se usa; quedó como respaldo.
+  - `LEON_DETALLE()` — la ilustrada: melena en tres capas de tufos irregulares,
+    cara con volumen, ojos con iris y brillo, hocico con nariz y almohadillas.
+    Va en la imagen de compartir y en el encabezado de la tienda.
+- ⚠️ **La variación de los tufos de la melena usa semilla fija**, no `Math.random()`.
+  Con azar de verdad el logo saldría distinto en cada corrida del generador y el
+  git se llenaría de ruido. Con semilla fija el archivo es siempre igual.
+- **Lo que hace que un león dibujado no parezca un sol** (cada punto costó una
+  vuelta): la melena no puede ser una estrella regular, tienen que ser tufos de
+  largo y ancho desparejos en varias capas de tono; la cabeza tiene que ser
+  ANCHA y pisar la melena —si queda un filo del fondo entre las dos, se ve
+  recortada y pegada—; las orejas tienen que asomar AFUERA de la silueta de la
+  cabeza o no se ven; y las almohadillas de los bigotes van en un tono cercano
+  al de la cara, porque en crema se leen como un bigote blanco.
+  Lo que NO funcionó: dibujar una sombra de melena sobre la frente. Se veía como
+  una vincha. El volumen lo da el degradado radial de la cara y nada más.
+- `herramientas/logo.cjs` — lo viste y lo reparte: genera `logo.svg`, `icono.svg`,
   `icono-mascara.svg`, el data URI del favicon, Y lo inyecta en `tienda-publicada.html`,
-  `admin.html` (encabezado + favicon) y en el bloque `<!--SIMBOLO-->` de
-  `herramientas/og.html`. No editar esos SVG ni esos bloques a mano.
+  `admin.html`, `entrar.html` (encabezado + favicon) y en el bloque `<!--SIMBOLO-->`
+  de `herramientas/og.html`. No editar esos SVG ni esos bloques a mano.
+- `herramientas/logo-franja.cjs` — la versión a color con el nombre al lado. Saca
+  dos cosas distintas y **no son la misma achicada**:
+  - el logo del **encabezado** (300×56), que inyecta incrustado en el
+    `<svg class="marca-franja">` de `tienda-publicada.html`;
+  - la **franja de la portada** (400×100, `logos/franja-{clara,oscura}.svg`),
+    que sigue **sin usarse**: es la candidata para reemplazar al `<h1>`.
+  Más `logos/logo-tamanos.html`, para verlo a los tamaños de uso real.
+- ⚠️ **El logo del encabezado NO es la franja achicada.** En la franja el león es
+  tan alto como todo el bloque y el nombre mide 38 de 100; a los ~42 px que hay
+  en el encabezado eso daba "LOS CASERITOS" a 16 px y "DEL TRÓPICO" a 6 —peor
+  que el texto que reemplazaba—. El que tiene que achicarse es el **león**: en la
+  versión del encabezado ocupa todo el alto pero solo el 19% del ancho.
+- Como la tienda ya no tiene `<svg class="marca-svg">`, `logo.cjs` dice
+  "sin cambios" para `tienda-publicada.html`. No está roto: ahí ya solo le queda
+  el favicon, y eso lo sigue reemplazando.
 - `herramientas/og.html` — genera `img/og.jpg` (1200×630) dibujando un SVG en un canvas
   y mandándolo a `POST /api/guardar-imagen` (lista blanca: solo puede escribir og.jpg/png).
 - `herramientas/publicar.cjs` — arma `publicar/` con SOLO lo que va a internet
   (tienda-publicada.html → index.html, ajusta `sw.js`, reemplaza el dominio en todos
   lados). Aborta si detecta `admin.html`/`serve.js`/`data` colados. Netlify Drop.
+
+## Los tres aspectos (25/08/2026)
+La tienda tiene **tres temas**: Claro, Oscuro y **Dorado**. El dorado traduce el
+aspecto de `motoivir.com` —azul noche `#0b1020` con acento oro `#eab308`— y está
+puesto **para que el comerciante compare y elija**: la idea es que al final quede
+uno solo, no los tres para siempre.
+
+- Todo sale de las **18 variables CSS** de `:root`. Un tema es un bloque más.
+  `:root[data-theme="oro"]` va DESPUÉS del bloque claro: le tiene que ganar al
+  `@media (prefers-color-scheme:dark)`, que cuelga de `:root` pelado.
+- ⚠️ **`--green` no quiere decir "verde"**, quiere decir "el color de lo que se
+  toca" — botones de comprar, precios, chips activos. Por eso el oro entra por
+  esa variable y no hizo falta tocar ninguna regla de los componentes.
+- ⚠️ **`--sobre-acento`**: el texto encima del acento estaba escrito a mano
+  (`color:#fff`) en 4 reglas — `.btn-primary`, `.chip.active`, `.tag.nuevo` y
+  `.add`. Sobre el dorado el blanco no se lee (1,9:1). Ahora sale de variable:
+  blanco en claro/oscuro, `#1a1205` en dorado. Medido: **9,67:1**.
+- ⚠️ **`color-scheme` en cada bloque de tema, o los `<select>` quedan ilegibles**
+  (26/08/2026). La lista que se abre al tocar un desplegable **no la dibuja la
+  página, la dibuja el sistema**: hereda el color del TEXTO de la hoja de estilos,
+  pero el fondo lo elige el navegador — y si nadie le dice en qué tema está,
+  elige blanco. En oscuro y en dorado las opciones salían con el casi blanco de
+  `--ink` sobre blanco: **1,12:1**, invisibles salvo la fila resaltada que pinta
+  Windows. Ahora los cuatro bloques declaran `color-scheme` (`light` en `:root` y
+  en `[data-theme="light"]`; `dark` en el `@media`, en `[data-theme="dark"]` y en
+  `[data-theme="oro"]`) y hay una regla `select option{background:var(--surface);
+  color:var(--ink)}`, que es lo que respetan Chrome y Firefox en Windows. Medido:
+  **15,09** oscuro / **15,14** dorado / **16,77** claro.
+  Es el mismo error que `--sobre-acento`: un color que vivía fuera del sistema de
+  variables y se rompía al cambiar de tema. **Cualquier control que pinte el
+  sistema operativo hay que revisarlo tema por tema** — el CSS no lo alcanza.
+  Ojo: `color-scheme` también oscurece las barras de scroll y los controles
+  nativos en los temas oscuros. Es lo correcto, pero es un cambio visual de más.
+  `admin.html` tenía lo mismo en sus 7 desplegables (es oscuro fijo → `dark`);
+  `entrar.html` no tiene ninguno. En la tienda caían tres: Ordenar, y el Pueblo y
+  la Forma de pago del paso de envío.
+- El botón **abre una lista con los nombres**, no cicla. Con dos temas ciclar
+  andaba; con tres, un sol que no dice qué sigue es una lotería, y el cliente
+  tiene que poder ir a uno a propósito para compararlos.
+- ⚠️ **Escape cierra primero el menú y recién después llama a `cerrarTodo()`**,
+  que hace `history.back()`. Sin ese freno, apretar Escape con solo el menú
+  abierto sacaba al cliente de la tienda.
+- `.tema-lista` va con `position:absolute`, **nunca `fixed`**: el header lleva
+  `backdrop-filter` y eso crea bloque contenedor (el mismo problema que la barra
+  de guardar del panel).
+- `.tema-lista[hidden]{display:none}` es obligatorio: es `display:grid` y el
+  grid ignora el atributo `hidden`. Mismo caso que `.fila[hidden]`.
+- El `<meta name="theme-color">` se reescribe con cada tema; si no, en el dorado
+  la tienda es azul noche y la barra del navegador queda verde.
 
 ## ⚠️ Gotchas
 - **Regla del WhatsApp**: hoy `contacto.enlaceDirectoWhatsapp` está en **`true`**, y solo
@@ -66,16 +152,66 @@ del mercado boliviano.
   atributo `hidden` salvo que se lo anule explícitamente.
 - **El stock es por producto, no por variante**: `enCarrito()` suma todas las líneas
   del mismo id antes de dejar agregar.
+- **`cart` es un OBJETO indexado por `"id|variante"`, no un array.** No tiene `length`:
+  se cuenta con `Object.keys(cart)`. Meterle una clave que no sea una línea rompe
+  `cantidadTotal()`, que hace `cart[k].q` sobre todas las claves y devuelve NaN.
+  Al restaurarlo de `localStorage` la cantidad se fuerza a entero (`Math.floor(Number())`)
+  y se descarta lo que no sea >0: con un `"3"` de texto los totales se concatenaban
+  en vez de sumar, y con `1e999` daban Infinity.
 - Las variantes arrancan en la opción con `delta:0`, que es la que corresponde al
   nombre y al precio base del producto.
 - Al publicar hay que cambiar el dominio en **4 lugares** (ver `LEEME.md`), porque
   WhatsApp no lee rutas relativas en `og:image`.
+- ⚠️ **Regenerar `img/og.jpg` NO cambia lo que ve WhatsApp.** Esa imagen se cachea
+  muy lejos: el servidor manda `max-age=604800` (7 días) y adelante está Cloudflare.
+  Pasó de verdad (26/08/2026): el disco tenía la imagen nueva y
+  `loscaseritos.com/img/og.jpg` seguía devolviendo la vieja, con
+  `cf-cache-status: HIT` y 33 horas de antigüedad. Como la URL no cambia, nadie
+  se entera de que hay otra versión.
+  Lo resuelve **estampar una versión en la URL** (`img/og.jpg?v=mt9l3v16`), que
+  `guardarImagen()` ahora hace solo cada vez que se reescribe la imagen —
+  `sellarOG()` en `serve.js`. Con otra URL, Cloudflare está obligado a pedirla.
+  `dominio.cjs` y `publicar.cjs` sobreviven al `?v=`: solo reemplazan el dominio.
+- ⚠️ **Después de estampar la versión, la imagen queda FRÍA en Cloudflare**, y el
+  primer pedido tiene que viajar hasta esta PC por el túnel. El robot de WhatsApp
+  se cansa de esperar y arma la vista previa **sin imagen** — pasó el 26/08/2026.
+  Y como guarda ese resultado por URL, esa dirección queda con la previa rota.
+  **Antes de compartir, abrí una vez la URL nueva de la imagen en el navegador**
+  para calentar la caché; con eso baja de un MISS lento a un HIT de 0,27 s.
+- **Y encima WhatsApp guarda su propia vista previa por página.** Aunque la imagen
+  ya esté bien, el link que ya compartiste sigue mostrando la vieja. Para forzarla,
+  compartí una vez la dirección con algo pegado atrás (`loscaseritos.com/?v=2`):
+  al ser otra URL de página, la vuelve a leer. Ojo — eso **solo** funciona si la
+  URL de la imagen también cambió; si no, refresca la página y sigue bajando la
+  imagen cacheada. Son dos cachés distintas y hay que romper las dos.
 - **El logo se genera, no se edita**: si tocás un SVG a mano, el próximo
-  `node herramientas/logo.cjs` lo pisa. Editá el script.
+  `node herramientas/logo.cjs` lo pisa. Editá `logo-dibujo.cjs`.
+- ⚠️ **`entrar.html` estaba fuera del reparto y con el dibujo copiado a mano**
+  (otra clase, otra máscara), así que el reemplazo nunca la alcanzaba: al cambiar
+  el logo se quedó con la canasta mientras las otras tres ya tenían el león. Ahora
+  usa `<svg class="marca-svg">` y está en la lista de `logo.cjs`. **Una página
+  nueva con el logo hay que agregarla a esa lista**, si no nace desincronizada.
+- ⚠️ **El símbolo suelto va con `CENTRAR('1')` aunque no se achique.** La canasta
+  ocupaba y10–93 y entraba sola en el viewBox; la melena del león llega a y−1, o
+  sea que la punta de arriba caía afuera y el navegador la recortaba. `CENTRAR`
+  no escala ahí: solo lo baja las 4 unidades que le faltan.
+- **`img/og.jpg` no se regenera solo.** `logo.cjs` deja el león puesto en
+  `herramientas/og.html`, pero el JPG que ve WhatsApp se dibuja abriendo esa
+  página en el navegador. Hasta que se haga, la vista previa muestra el logo viejo.
 - **El data URI del favicon necesita los espacios como %20**, si no algunos navegadores
   cortan la URL y no se ve el ícono.
-- `.brand .leaf` necesita `flex:0 0 auto`: sin eso el flex del header le come ancho
-  al cuadrito y el logo sale deformado.
+- **El encabezado de la tienda ya no es "cuadrito + nombre escrito": es el logo
+  entero** (león a color + LOS CASERITOS DEL TRÓPICO), incrustado como SVG. El
+  cuadrito verde con el símbolo blanco sigue en `admin.html` y `entrar.html`.
+  `.marca-franja` necesita `flex:0 0 auto`: sin eso el flex del header le come
+  ancho y el logo sale deformado.
+- ⚠️ **Al logo del encabezado se le fija el ANCHO, no el alto.** Con `height` fijo,
+  el `max-width:58vw` del celular lo aplastaba en vez de achicarlo entero. Con
+  `width` + `height:auto` el SVG saca el alto de su propia proporción.
+  El `58vw` es el freno para teléfonos angostos: a 375 px el logo mide 218 y
+  sobran 100 para el sol y el carrito, pero a 320 px se pasaba y empujaba el
+  carrito fuera de la pantalla. Medido: encabezado 61 px y primer producto en
+  387 px, los mismos que antes del cambio.
 - **El service worker NO se registra en localhost ni en IPs 192.168/10./172.16-31**
   (`enDesarrollo` en el JS). Sin eso te muestra la versión cacheada de la página y
   parece que los cambios de CSS "no se aplican". Ya pasó una vez.
@@ -145,6 +281,18 @@ del mercado boliviano.
   negra el `.env` quedó descargable en las pruebas — con `SESION_SECRETO` adentro,
   o sea que se podía fabricar una sesión válida sin la clave. Un archivo nuevo debe
   nacer privado; si hay que publicarlo, se agrega a `PUBLICO_EXACTO`.
+- ⚠️ **Y hay una SEGUNDA lista, `NUNCA`, que se mira ANTES del permiso** (25/08/2026).
+  Son dos preguntas distintas: la lista blanca dice qué ve un desconocido; `NUNCA`
+  dice qué no sale jamás. Hacía falta porque el guardián era "si no es público,
+  pedí permiso" — y **una vez con permiso se servía cualquier archivo de la
+  carpeta, `.env` incluido**. Con `SESION_SECRETO` en la mano se fabrican cookies
+  válidas para siempre, y "Salir" no las corta (el corte es por hora de nacimiento
+  y una cookie fabricada se pone la que quiera): un robo de sesión pasajero se
+  volvía permanente. Cubre `.env*`, `data/`, `src/`, `.git/`, `node_modules/`,
+  `*.cjs`, `serve.js`, `generar-sitemap.js` y `package*.json`. Devuelve **404 y no
+  403**, que confirma que el archivo existe.
+  Ojo con los `.js` sueltos: `sw.js` es público, así que van nombrados uno por uno
+  y no por extensión.
 - Con `DATOS_DIR`, el catálogo y las fotos viven ahí (`cfg.CATALOGO`, `cfg.FOTOS`) y se
   copian del proyecto la primera vez. Así actualizar el código no borra lo que cargó
   el comerciante. Los estáticos de `/productos.json` y `/img/` se sirven desde ahí.
@@ -302,6 +450,12 @@ Se probó API, seguridad, panel y tienda de punta a punta. Lo que apareció:
 - **`getComputedStyle` se atrasa un ciclo** dentro de la misma ejecución: después de
   tocar una clase, la primera lectura devuelve el valor viejo. Medir en llamadas
   separadas, o se diagnostican bugs que no existen (perdí un buen rato con eso).
+- Y peor: **si la ventana no está pintando** (pestaña de fondo, vista previa
+  cerrada), el navegador ni siquiera recalcula los estilos de los hijos. Las
+  variables de `:root` sí responden, pero `.card` y compañía devuelven los
+  valores del tema anterior. Parecía que el tema dorado no se aplicaba y estaba
+  perfecto. **Para medir estilos hay que recargar la página con el tema ya
+  puesto**, no cambiarlo en caliente.
 - **Los `confirm()` se cancelan solos** en modo automático: hay que sustituirlos antes
   de probar `limpiarFotos()`, `borrar()` o `vaciarCarrito()`.
 - **`pkill` no mata procesos en Windows.** Quedó un servidor vivo en el 4199 media
