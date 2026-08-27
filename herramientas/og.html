@@ -45,64 +45,101 @@ let CFG={tienda:{nombre:'Los Caseritos',lema:'Ivirgarzama · Chapare'}};
 /* Todo el diseño es un solo SVG: se dibuja igual en pantalla y en el archivo final. */
 function dibujar(){
   const t=CFG.tienda||{};
-  /* A 27px entran ~55 caracteres en el ancho libre. Con más categorías el texto
-     se salía del borde derecho, así que se reparte en dos renglones. */
-  const nombresCat=(CFG.categorias||[]).map(c=>c.nombre);
-  const mitad=Math.ceil(nombresCat.length/2);
-  const cats1=nombresCat.slice(0,mitad).join('  ·  ');
-  const cats2=nombresCat.slice(mitad).join('  ·  ');
-  const nombre=(t.nombre||'Los Caseritos').split(' ');
-  const primera=nombre.shift();          // "Los"
-  const resto=nombre.join(' ');          // "Caseritos"
+
+  /* ⚠️ TODO VA CENTRADO, y no es capricho.
+     WhatsApp, Telegram y Facebook muestran la tarjeta grande de 1200×630 en el
+     chat, pero en el cuadro de escribir —y en varias listas— recortan un
+     CUADRADO DEL CENTRO. El diseño anterior repartía el logo en x=96 y el
+     nombre en x=308: ese recorte los partía por la mitad y quedaba una franja
+     de texto suelto. Por eso ahora nada importante sale de la zona segura.
+
+        zona segura = el cuadrado central, x de 285 a 915
+
+     Y por eso también se fueron las dos filas con los nombres de las
+     categorías (27 px: ilegibles en cualquier miniatura) y la frase larga del
+     pie. En una tarjeta de compartir entran tres cosas y ninguna más. */
+  const SEGURO = 580;   // ancho utilizable dentro del cuadrado central
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630"
-      font-family="Trebuchet MS, Segoe UI, DejaVu Sans, sans-serif">
+      font-family="Trebuchet MS, Segoe UI, DejaVu Sans, sans-serif" text-anchor="middle">
   <defs>
     <linearGradient id="fondo" x1="0" y1="0" x2=".6" y2="1">
       <stop offset="0" stop-color="#0a7d54"/><stop offset=".5" stop-color="#0ea06a"/><stop offset="1" stop-color="#14b3a6"/>
     </linearGradient>
-    <linearGradient id="cuadro" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#d9f7e8"/>
-    </linearGradient>
-    <!--SIMBOLO: lo reescribe herramientas/logo.cjs, no editar a mano-->
-    <mask id="simbolo">
-    <rect width="100" height="100" fill="black"/>
-    <path d="M50 10 L94 44 A5 5 0 0 1 91 52 H9 A5 5 0 0 1 6 44 Z" fill="white"/>
-    <rect x="13" y="58" width="74" height="12" rx="5" fill="white"/>
-    <path d="M20 72 H80 L71 91 A4 4 0 0 1 67 93 H33 A4 4 0 0 1 29 91 Z" fill="white"/>
-    <g stroke="black" stroke-width="4.5" stroke-linecap="round">
-      <path d="M27 81 H73"/>
-    </g>
-  </mask>
-    <!--/SIMBOLO-->
+    <radialGradient id="brillo" cx=".5" cy=".28" r=".62">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".18"/><stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
   </defs>
 
   <rect width="1200" height="630" fill="url(#fondo)"/>
-  <circle cx="1080" cy="90" r="240" fill="#ffffff" opacity=".07"/>
-  <circle cx="120" cy="580" r="200" fill="#ffffff" opacity=".05"/>
+  <rect width="1200" height="630" fill="url(#brillo)"/>
+  <circle cx="1085" cy="70" r="240" fill="#ffffff" opacity=".06"/>
+  <circle cx="115" cy="590" r="210" fill="#ffffff" opacity=".05"/>
 
-  <!-- logo -->
-  <g transform="translate(96,168)">
-    <rect width="168" height="168" rx="44" fill="url(#cuadro)"/>
-    <g transform="translate(84,84) scale(1.24) translate(-50,-52)">
-      <rect width="100" height="100" fill="#0a7d54" mask="url(#simbolo)"/>
-    </g>
+  <!-- el león, arriba y al medio: es lo único que se reconoce a 90 px, así que
+       va grande. Con la escala chica quedaba una insignia perdida en el verde. -->
+  <g transform="translate(600,190) scale(2.72) translate(-50,-48)">
+    <!--LEONCOLOR: lo reescribe herramientas/logo-franja.cjs, no editar a mano-->
+  <defs>
+    <linearGradient id="mAog" x1=".2" y1="0" x2=".8" y2="1">
+      <stop offset="0" stop-color="#c2500f"/><stop offset="1" stop-color="#8f3406"/>
+    </linearGradient>
+    <linearGradient id="mBog" x1=".2" y1="0" x2=".8" y2="1">
+      <stop offset="0" stop-color="#f08a1e"/><stop offset="1" stop-color="#c2500f"/>
+    </linearGradient>
+    <linearGradient id="mCog" x1=".3" y1="0" x2=".7" y2="1">
+      <stop offset="0" stop-color="#ffcb4d"/><stop offset="1" stop-color="#f08a1e"/>
+    </linearGradient>
+    <radialGradient id="caraog" cx=".5" cy=".33" r=".72">
+      <stop offset="0" stop-color="#ffdba6"/><stop offset=".62" stop-color="#f0ad5c"/>
+      <stop offset="1" stop-color="#c9761f"/>
+    </radialGradient>
+  </defs>
+
+  <path d="M78.3 41.7Q89.6 41.5 99.1 49.5Q89.6 54.5 78.3 54.3ZM79.0 49.6Q89.4 52.2 96.2 62.2Q86.2 64.1 75.9 61.1ZM77.5 57.3Q88.1 63.0 93.7 73.7Q82.1 73.5 71.8 67.1ZM73.3 65.2Q82.0 73.5 85.3 84.2Q75.5 80.0 67.2 71.3ZM68.2 70.6Q74.1 80.4 76.2 90.2Q66.0 85.1 60.4 75.1ZM61.9 74.5Q64.2 83.4 60.2 92.5Q55.4 85.8 52.9 76.9ZM54.7 76.6Q54.7 86.7 48.7 95.1Q45.3 86.7 45.3 76.6ZM46.7 76.8Q44.0 87.2 35.5 94.1Q35.6 84.9 38.5 74.6ZM40.3 75.3Q35.7 83.0 28.5 87.6Q26.8 77.9 31.2 70.1ZM33.0 71.5Q25.0 79.7 14.1 82.4Q18.3 73.0 26.5 65.0ZM28.7 67.7Q20.1 72.8 9.1 71.0Q13.6 61.5 22.3 56.5ZM23.7 60.2Q16.0 62.1 8.6 60.3Q13.5 52.8 21.1 50.5ZM21.5 53.6Q13.5 53.3 6.7 48.9Q13.5 42.7 21.5 42.4ZM21.1 46.2Q10.9 43.6 3.1 38.3Q13.9 32.2 24.0 35.1ZM22.3 39.4Q15.3 35.1 11.9 26.8Q21.4 24.4 28.7 28.3ZM25.6 32.3Q17.8 24.8 15.0 14.5Q26.8 15.8 34.3 23.6ZM31.7 25.5Q26.8 17.1 27.7 7.2Q34.8 12.5 39.7 20.9ZM37.7 21.8Q35.8 14.0 38.9 6.2Q45.3 11.4 47.6 19.1ZM44.8 19.5Q44.6 7.9 53.0 -1.7Q55.4 7.9 55.2 19.5ZM51.5 19.0Q54.0 9.0 60.0 1.5Q66.0 12.2 63.2 22.2ZM59.3 20.5Q64.7 10.7 72.3 4.1Q75.0 16.6 69.1 26.2ZM65.8 23.7Q72.3 17.4 79.6 14.0Q80.6 25.7 74.3 32.2ZM71.3 28.3Q78.6 24.4 88.6 27.6Q84.7 35.1 77.7 39.4ZM75.9 34.9Q84.1 32.9 91.7 33.6Q87.1 44.0 79.0 46.4Z"  fill="url(#mAog)"/>
+  <path d="M77.0 46.9Q83.3 48.1 88.3 51.1Q82.2 56.5 75.8 56.0ZM76.1 54.8Q81.6 57.8 85.6 61.4Q78.0 65.5 72.3 63.3ZM73.2 61.8Q78.2 66.6 80.1 73.2Q71.7 73.8 66.4 69.5ZM68.4 67.8Q71.6 73.7 71.7 80.3Q62.7 79.1 58.9 73.5ZM62.5 71.9Q63.9 78.9 60.7 86.1Q52.2 81.8 50.2 75.0ZM55.3 74.5Q54.6 82.1 50.2 88.5Q41.7 81.4 41.8 73.7ZM45.2 74.6Q42.0 83.2 33.1 88.2Q33.1 80.0 36.4 71.3ZM38.5 72.4Q34.2 77.4 26.5 78.8Q25.7 70.9 29.4 65.5ZM31.6 67.7Q25.8 71.4 18.4 70.9Q20.0 63.1 25.3 58.9ZM27.1 62.3Q18.7 65.1 8.8 59.4Q14.7 52.9 23.1 50.1ZM23.5 53.2Q14.5 53.4 6.8 46.2Q14.3 44.0 23.3 43.9ZM23.1 45.9Q15.7 43.6 10.0 39.6Q18.5 33.5 26.1 35.5ZM25.2 37.4Q17.1 32.2 11.4 26.2Q22.3 24.2 30.3 29.5ZM28.5 31.6Q24.3 26.0 22.8 19.5Q33.1 18.7 37.9 23.9ZM34.7 25.7Q32.5 19.4 32.9 13.1Q42.1 15.4 45.0 21.5ZM41.4 22.4Q41.0 14.8 47.9 7.6Q52.6 13.7 53.6 21.2ZM50.8 21.0Q52.5 14.1 57.5 8.9Q61.2 15.9 60.0 22.9ZM57.6 22.1Q61.5 15.6 69.2 12.5Q71.2 21.0 67.8 27.7ZM64.3 25.1Q69.3 21.0 76.0 20.0Q77.6 29.7 73.4 34.5ZM70.6 30.5Q78.1 26.9 85.9 26.7Q83.6 37.9 76.3 41.8ZM75.1 38.2Q82.2 37.3 88.8 39.7Q84.0 47.4 77.0 48.9Z"  fill="url(#mBog)"/>
+  <path d="M72.0 47.7Q80.5 49.7 86.7 55.7Q77.0 62.2 68.7 59.6ZM70.6 55.8Q78.3 60.9 82.2 69.2Q71.4 70.5 64.1 64.9ZM67.2 61.7Q72.3 68.6 69.2 79.9Q61.3 76.2 56.6 69.0ZM61.2 67.0Q63.1 74.3 56.9 82.8Q51.3 77.4 49.4 70.0ZM53.3 69.8Q52.7 77.8 48.6 84.4Q41.7 76.8 42.6 68.7ZM44.8 69.4Q41.2 77.5 35.2 82.9Q32.6 73.4 36.7 65.5ZM39.1 67.1Q33.2 73.2 24.8 75.1Q24.6 64.4 30.7 58.6ZM33.2 62.2Q27.0 64.8 18.3 59.9Q22.2 54.4 28.3 51.4ZM29.5 56.0Q22.5 56.5 15.9 52.1Q21.5 44.0 28.5 43.3ZM28.0 48.1Q22.0 46.2 17.9 40.1Q25.1 35.2 31.2 36.6ZM29.2 40.8Q23.1 36.5 21.8 27.0Q30.4 26.4 36.4 30.7ZM33.9 33.0Q29.8 27.0 29.3 19.8Q37.6 21.6 41.7 27.6ZM39.7 28.6Q38.0 21.9 38.4 15.8Q47.8 19.4 49.6 26.0ZM46.5 26.3Q47.0 17.1 54.2 9.8Q58.8 18.2 57.6 27.3ZM55.4 26.7Q58.3 20.9 63.5 17.4Q65.8 24.5 63.2 30.4ZM60.4 28.6Q66.7 21.8 76.6 20.2Q76.4 31.7 69.5 37.9ZM67.6 34.8Q74.9 31.4 84.2 35.4Q78.9 40.1 71.5 43.3ZM70.5 40.1Q77.2 39.7 83.7 48.0Q78.2 51.9 71.5 52.6Z" fill="url(#mCog)"/>
+
+  <path d="M50 16C65 16 76 25 77 39C78 48 74 54 70 59C66 64 62 68 58 71C56 75 53 78 50 78C47 78 44 75 42 71C38 68 34 64 30 59C26 54 22 48 23 39C24 25 35 16 50 16Z" fill="url(#caraog)"/>
+  <path d="M35 27C27 25 20 19 23 13C26 8.5 34 13 39 21Z" fill="#d98a2c"/><path d="M65 27C73 25 80 19 77 13C74 8.5 66 13 61 21Z" fill="#d98a2c"/>
+  <path d="M34 24C29 22 25 18.5 26.5 15.5C28.5 13 33 16 36 21Z" fill="#8f3a08"/><path d="M66 24C71 22 75 18.5 73.5 15.5C71.5 13 67 16 64 21Z" fill="#8f3a08"/>
+  <!-- ⚠️ Acá había una sombra de melena sobre la frente. Se veía como una
+       VINCHA: una banda horizontal cruzando la cabeza. El volumen ya lo da el
+       degradado radial de la cara, que aclara la frente y oscurece los bordes.
+       Una sombra dibujada encima sobra y encima estorba. -->
+
+  <path d="M29 40Q37 35.5 44.5 39.5L44 41Q37 38 30 41.5ZM71 40Q63 35.5 55.5 39.5L56 41Q63 38 70 41.5Z" fill="#7a2f06" opacity=".85"/>
+  
+    <path d="M30 46.5Q37.5 39.5 45 44.5Q37.5 50.5 30 46.5Z" fill="#fff3dc"/>
+    <circle cx="37.5" cy="45" r="3.6" fill="#a8620d"/>
+    <circle cx="37.5" cy="45" r="1.8" fill="#2a1204"/>
+    <circle cx="36.2" cy="43.7" r="0.95" fill="#ffffff" opacity=".9"/>
+  
+    <path d="M55 43.5Q62.5 39.5 70 45.5Q62.5 50.5 55 43.5Z" fill="#fff3dc"/>
+    <circle cx="62.5" cy="45" r="3.6" fill="#a8620d"/>
+    <circle cx="62.5" cy="45" r="1.8" fill="#2a1204"/>
+    <circle cx="61.2" cy="43.7" r="0.95" fill="#ffffff" opacity=".9"/>
+
+  <path d="M47 49Q50 47 53 49L52 58H48Z" fill="#e5a352" opacity=".5"/>
+  <path d="M50 66Q41.5 66 38 71.5Q40.5 76 45.5 74.5Q49 73.2 50 69.5ZM50 66Q58.5 66 62 71.5Q59.5 76 54.5 74.5Q51 73.2 50 69.5Z" fill="#f7c98a"/>
+  <path d="M43 56H57Q57.5 61.5 50 65Q42.5 61.5 43 56Z" fill="#5c2408"/>
+  <path d="M45.8 58.6Q47.4 57.6 48.4 59.1Q47.3 60.1 45.8 58.6ZM54.2 58.6Q52.6 57.6 51.6 59.1Q52.7 60.1 54.2 58.6Z" fill="#2a1204"/>
+  <path d="M50 65V69M50 69Q45 73.5 40.5 71M50 69Q55 73.5 59.5 71" fill="none" stroke="#5c2408" stroke-width="2.4" stroke-linecap="round"/>
+  <path d="M41.5 69.5h-2M42 71.8h-2.2M43 73.8h-2M58.5 69.5h2M58 71.8h2.2M57 73.8h2" fill="none" stroke="#8f5a2a" stroke-width="1" stroke-linecap="round" opacity=".8"/>
+    <!--/LEONCOLOR-->
   </g>
 
-  <!-- nombre -->
-  <text x="308" y="252" font-size="104" font-weight="bold" fill="#ffffff" letter-spacing="-3">
-    ${primera} <tspan fill="#c9f9e3">${resto}</tspan>
-  </text>
-  <text x="312" y="304" font-size="27" font-weight="bold" fill="#eafff3" opacity=".9" letter-spacing="7">
-    ${(t.lema||'').toUpperCase()}
-  </text>
-  <text x="312" y="366" font-size="27" fill="#eafff3" opacity=".95">${cats1}</text>
-  <text x="312" y="408" font-size="27" fill="#eafff3" opacity=".95">${cats2}</text>
+  <!-- el nombre, con el ancho fijado para que entre justo en la zona segura
+       en cualquier aparato, tenga o no la tipografía -->
+  <text x="600" y="400" font-size="86" font-weight="bold" fill="#ffffff"
+        textLength="${SEGURO}" lengthAdjust="spacingAndGlyphs">LOS CASERITOS</text>
+  <text x="600" y="452" font-size="30" font-weight="bold" fill="#ffe08a"
+        textLength="${SEGURO-120}" lengthAdjust="spacing">DEL TRÓPICO</text>
 
-  <!-- franja de abajo -->
-  <rect x="0" y="516" width="1200" height="114" fill="#05301f" opacity=".28"/>
-  <text x="96" y="588" font-size="34" font-weight="bold" fill="#ffffff">
-    🧺 Entrega rápida en todo el trópico de Cochabamba
+  <line x1="480" y1="500" x2="720" y2="500" stroke="#ffffff" stroke-opacity=".35" stroke-width="3"/>
+
+  <text x="600" y="560" font-size="31" font-weight="bold" fill="#eafff3" opacity=".95">
+    ${(t.lema||'Ivirgarzama · Chapare')} &#183; entregas en todo el trópico
   </text>
 </svg>`;
 }

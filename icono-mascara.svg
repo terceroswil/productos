@@ -1,14 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
   <rect width="100" height="100" fill="#0a7d54"/>
-  <g transform="translate(50,50) scale(.58) translate(-50,-51.5)">
-  <mask id="mCanasta">
+  <g transform="translate(50,50) scale(.6) translate(-50,-46)">
+  <mask id="mLeon">
     <rect width="100" height="100" fill="black"/>
-    <path d="M50 10 L94 44 A5 5 0 0 1 91 52 H9 A5 5 0 0 1 6 44 Z" fill="white"/>
-    <rect x="13" y="58" width="74" height="12" rx="5" fill="white"/>
-    <path d="M20 72 H80 L71 91 A4 4 0 0 1 67 93 H33 A4 4 0 0 1 29 91 Z" fill="white"/>
-    <g stroke="black" stroke-width="4.5" stroke-linecap="round">
-      <path d="M27 81 H73"/>
-    </g>
+    <path d="M50.0 -1.0Q58.3 15.1 70.0 11.4Q73.5 22.5 88.5 23.8Q81.4 37.6 91.5 46.0Q80.2 54.1 90.7 69.5Q72.6 68.6 70.0 80.6Q58.6 78.1 50.0 90.5Q41.6 77.4 29.3 81.9Q27.9 68.1 9.3 69.5Q19.1 54.3 10.0 46.0Q17.9 37.4 11.5 23.8Q27.0 23.0 29.2 10.1Q41.9 15.8 50.0 -1.0Z" fill="white"/>
+    <path d="M50 13a35 35 0 1 0 .01 0Z" fill="black"/>
+    <path d="M50 16a32 32 0 1 1-.01 0Z" fill="white"/>
+    <path d="M22 32a9 9 0 0 1 13-9l3 12Z M78 32a9 9 0 0 0-13-9l-3 12Z" fill="white"/>
+    <path d="M29 38L45 45L41 52C33 52 29 46 29 38ZM71 38L55 45L59 52C67 52 71 46 71 38Z" fill="black"/>
+    <path d="M41 57H59Q59 68 50 71Q41 68 41 57Z" fill="black"/>
+    <path d="M50 70q-5 6-11 3M50 70q5 6 11 3" fill="none" stroke="black" stroke-width="4" stroke-linecap="round"/>
   </mask>
-  <rect width="100" height="100" fill="#ffffff" mask="url(#mCanasta)"/></g>
+  <rect width="100" height="100" fill="#ffffff" mask="url(#mLeon)"/></g>
 </svg>
