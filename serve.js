@@ -51,6 +51,23 @@ function esPublico(rel){
   return false;
 }
 
+/* Lo que no se sirve por HTTP bajo ninguna circunstancia — ver el comentario
+   largo en el manejador de estáticos. Es a prueba de sesión: no pregunta quién
+   sos, sencillamente no lo manda.
+   Ojo con los `.js` sueltos: `sw.js` es público y tiene que seguir saliendo,
+   así que van nombrados uno por uno y no por extensión. */
+const NUNCA = [
+  /^\/\.env/i,                        // .env y .env.ejemplo
+  /^\/\.git\//i,
+  /^\/data\//i,                       // respaldos, analítica, corte de sesiones
+  /^\/src\//i,                        // el código del servidor
+  /^\/node_modules\//i,
+  /\.cjs$/i,                          // las herramientas de línea de comandos
+  /^\/(serve|generar-sitemap)\.js$/i,
+  /^\/package(-lock)?\.json$/i
+];
+const nuncaSale = (rel) => NUNCA.some(re => re.test(rel));
+
 function ipsDeLaWifi(){
   const salida = [];
   const redes = os.networkInterfaces();
@@ -312,7 +329,33 @@ function guardarImagen({ archivo, dataURL }){
   }
   const buf = Buffer.from(m[2], 'base64');
   fs.writeFileSync(destino, buf);
+  if (IMAGENES_PERMITIDAS.includes(archivo)) sellarOG();
   return { ok: true, archivo, bytes: buf.length };
+}
+
+/* ⚠️ Cambiar el archivo de la imagen de compartir NO alcanza.
+   Esa imagen se cachea muy lejos: el servidor manda `max-age=604800` (7 días)
+   y adelante hay un Cloudflare. Pasó de verdad — se regeneró la imagen, el
+   disco tenía la nueva, y `loscaseritos.com/img/og.jpg` seguía devolviendo la
+   vieja con `cf-cache-status: HIT` y 33 horas de antigüedad. WhatsApp encima
+   guarda la suya. Como la URL nunca cambia, nadie se entera de que hay una
+   versión nueva.
+   La solución es estampar una versión en la URL del <head>: con otra URL,
+   Cloudflare y WhatsApp están obligados a pedirla de nuevo. Se hace acá, al
+   escribirla, para que nadie tenga que acordarse. */
+function sellarOG(){
+  const ruta = path.join(RAIZ, 'tienda-publicada.html');
+  if (!fs.existsSync(ruta)) return;
+  try {
+    const s = fs.readFileSync(ruta, 'utf8');
+    /* el `(\?v=[^"]*)?` es para reemplazar la versión anterior, no encadenarlas */
+    const nuevo = s.replace(/(content="[^"]*\/img\/og\.(?:jpg|png))(\?v=[^"]*)?"/g,
+                            '$1?v=' + Date.now().toString(36) + '"');
+    if (nuevo !== s){
+      fs.writeFileSync(ruta, nuevo, 'utf8');
+      console.log('  ✔ versión de la imagen de compartir actualizada en el <head>');
+    }
+  } catch (e) { /* que no tumbe el guardado de la imagen */ }
 }
 
 /* ─────────── fotos que ya no usa ningun producto ───────────
@@ -484,6 +527,22 @@ const servidor = http.createServer(async (req, res) => {
     '/entrar': '/entrar.html','/entrar/': '/entrar.html'
   };
   if (ATAJOS[rel]) rel = ATAJOS[rel];
+
+  /* ⚠️ Lo que no sale NUNCA, ni con la sesión abierta. Va ANTES del permiso.
+     La lista blanca de arriba decide qué ve un desconocido; esta decide qué no
+     sale jamás, y son dos preguntas distintas. Hacía falta porque el guardián
+     de abajo dice "si no es público, pedí permiso" — y una vez con permiso se
+     servía CUALQUIER archivo de la carpeta, incluido el `.env`. Ahí adentro
+     está SESION_SECRETO: quien lo tenga se fabrica cookies válidas para
+     siempre, sin la clave, y "Salir" no las corta (el corte es por hora de
+     nacimiento, y una cookie fabricada se pone la que quiera). O sea que un
+     robo de sesión pasajero se volvía permanente.
+     Va 404 y no 403 a propósito: un 403 confirma que el archivo existe. */
+  if (nuncaSale(rel)){
+    res.writeHead(404, { 'Content-Type': TIPOS['.html'] });
+    return res.end('<h1>404</h1><p>No existe <code>' + rel.replace(/[<>&]/g, '') +
+                   '</code></p><p><a href="/">Volver a la tienda</a></p>');
+  }
 
   /* Todo lo que no esté en la lista blanca exige permiso */
   if (!esPublico(rel) && !tienePermiso(req)){
