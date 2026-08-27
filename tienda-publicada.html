@@ -50,7 +50,7 @@
   try{var t=localStorage.getItem('lc_theme');if(t)document.documentElement.setAttribute('data-theme',t)}catch(e){}
 </script>
 <style>
-  :root{
+  :root{ color-scheme:light;
     --bg:#f5f7f1; --surface:#ffffff; --surface-2:#eaf3ec;
     --ink:#0f2119; --ink-soft:#566b60; --line:#e4e9dd;
     --green:#0ea06a; --green-deep:#0a7d54; --amber:#ff9a3d; --amber-soft:#ffc06b;
@@ -66,7 +66,7 @@
     --f-body:"Segoe UI",system-ui,-apple-system,sans-serif;
   }
   @media (prefers-color-scheme:dark){
-    :root{ --bg:#0a140f; --surface:#11201a; --surface-2:#183026;
+    :root{ color-scheme:dark; --bg:#0a140f; --surface:#11201a; --surface-2:#183026;
       --ink:#eaf5ee; --ink-soft:#9fb6a8; --line:#223a2e;
       --green:#2fd08f; --green-deep:#18a870; --amber:#ffb056; --amber-soft:#ff8f3d;
       --teal:#2bd0c2; --coral:#ff8378; --sobre-acento:#ffffff;
@@ -75,7 +75,7 @@
       --grad-hero:linear-gradient(155deg,#093a29 0%,#0f6b4a 50%,#12817a 100%);
       --shadow:0 8px 28px rgba(0,0,0,.45); --shadow-hover:0 18px 42px rgba(0,0,0,.55); }
   }
-  :root[data-theme="dark"]{ --bg:#0a140f; --surface:#11201a; --surface-2:#183026;
+  :root[data-theme="dark"]{ color-scheme:dark; --bg:#0a140f; --surface:#11201a; --surface-2:#183026;
     --ink:#eaf5ee; --ink-soft:#9fb6a8; --line:#223a2e;
     --green:#2fd08f; --green-deep:#18a870; --amber:#ffb056; --amber-soft:#ff8f3d;
     --teal:#2bd0c2; --coral:#ff8378; --sobre-acento:#ffffff;
@@ -83,7 +83,7 @@
     --grad-sun:linear-gradient(135deg,#ffb056,#ff7a59);
     --grad-hero:linear-gradient(155deg,#093a29 0%,#0f6b4a 50%,#12817a 100%);
     --shadow:0 8px 28px rgba(0,0,0,.45); --shadow-hover:0 18px 42px rgba(0,0,0,.55); }
-  :root[data-theme="light"]{ --bg:#f5f7f1; --surface:#ffffff; --surface-2:#eaf3ec;
+  :root[data-theme="light"]{ color-scheme:light; --bg:#f5f7f1; --surface:#ffffff; --surface-2:#eaf3ec;
     --ink:#0f2119; --ink-soft:#566b60; --line:#e4e9dd;
     --green:#0ea06a; --green-deep:#0a7d54; --amber:#ff9a3d; --amber-soft:#ffc06b;
     --teal:#12b3a6; --coral:#ff6f61; --sobre-acento:#ffffff;
@@ -106,7 +106,7 @@
 
      Va DESPUÉS del bloque claro a propósito: `:root[data-theme]` le gana al
      `@media (prefers-color-scheme:dark)`, que cuelga de `:root` pelado. */
-  :root[data-theme="oro"]{
+  :root[data-theme="oro"]{ color-scheme:dark;
     --bg:#0b1020; --surface:#131b30; --surface-2:#0f1728;
     --ink:#eef1f8; --ink-soft:#94a3b8; --line:rgba(255,255,255,.10);
     --green:#eab308; --green-deep:#facc15; --amber:#ffe94d; --amber-soft:#fde68a;
@@ -234,6 +234,11 @@
     border-radius:999px;padding:8px 14px;font-size:.84rem;color:var(--ink-soft);font-weight:600}
   .campo select,.campo input{border:0;background:transparent;outline:none;color:var(--ink);
     font-family:var(--f-body);font-size:.84rem;font-weight:700;cursor:pointer}
+  /* La lista que se abre al tocar un <select> la dibuja el sistema, no la pagina:
+     hereda el color del texto pero NO el fondo, asi que en oscuro/dorado quedaba
+     texto casi blanco sobre blanco. Se arregla con color-scheme en :root (ver arriba)
+     y pintando la opcion a mano, que es lo que respetan Chrome y Firefox en Windows. */
+  select option{background:var(--surface);color:var(--ink)}
   .campo input{width:66px;cursor:text;font-weight:700}
   .link-limpiar{background:transparent;border:0;color:var(--green);font-weight:800;font-size:.84rem;
     cursor:pointer;text-decoration:underline;padding:8px 4px}

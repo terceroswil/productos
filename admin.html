@@ -7,7 +7,7 @@
 <title>Panel — Los Caseritos</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'%20width='100'%20height='100'%3E%3Crect%20width='100'%20height='100'%20rx='22'%20fill='%230a7d54'/%3E%3Cg%20transform='translate(50,50)%20scale(.8)%20translate(-50,-46)'%3E%3Cmask%20id='mFav'%3E%3Crect%20width='100'%20height='100'%20fill='black'/%3E%3Cpath%20d='M50.0%20-1.0Q58.3%2015.1%2070.0%2011.4Q73.5%2022.5%2088.5%2023.8Q81.4%2037.6%2091.5%2046.0Q80.2%2054.1%2090.7%2069.5Q72.6%2068.6%2070.0%2080.6Q58.6%2078.1%2050.0%2090.5Q41.6%2077.4%2029.3%2081.9Q27.9%2068.1%209.3%2069.5Q19.1%2054.3%2010.0%2046.0Q17.9%2037.4%2011.5%2023.8Q27.0%2023.0%2029.2%2010.1Q41.9%2015.8%2050.0%20-1.0Z'%20fill='white'/%3E%3Cpath%20d='M50%2011a37%2037%200%201%200%20.01%200Z'%20fill='black'/%3E%3Cpath%20d='M50%2016a32%2032%200%201%201-.01%200Z'%20fill='white'/%3E%3Cpath%20d='M22%2032a9%209%200%200%201%2013-9l3%2012Z%20M78%2032a9%209%200%200%200-13-9l-3%2012Z'%20fill='white'/%3E%3Cpath%20d='M29%2038L45%2045L41%2052C33%2052%2029%2046%2029%2038ZM71%2038L55%2045L59%2052C67%2052%2071%2046%2071%2038Z'%20fill='black'/%3E%3Cpath%20d='M41%2057H59Q59%2068%2050%2071Q41%2068%2041%2057Z'%20fill='black'/%3E%3C/mask%3E%3Crect%20width='100'%20height='100'%20fill='%23ffffff'%20mask='url(%23mFav)'/%3E%3C/g%3E%3C/svg%3E">
 <style>
-  :root{
+  :root{ color-scheme:dark;
     --bg:#0a140f; --surface:#11201a; --surface-2:#183026;
     --ink:#eaf5ee; --ink-soft:#9fb6a8; --line:#223a2e;
     --green:#2fd08f; --green-deep:#18a870; --amber:#ffb056; --coral:#ff8378;
@@ -102,6 +102,9 @@
   .campo label{font-size:.72rem;font-weight:800;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.07em}
   .campo input,.campo select,.campo textarea{background:var(--bg);border:1px solid var(--line);border-radius:10px;
     padding:10px 12px;color:var(--ink);font-family:var(--f-body);font-size:.92rem;outline:none;width:100%}
+  /* El desplegable del select lo pinta el sistema y solo hereda el color del texto:
+     sin esto queda texto casi blanco sobre fondo blanco. Mismo caso en la tienda. */
+  select option{background:var(--surface);color:var(--ink)}
   .campo input:focus,.campo select:focus,.campo textarea:focus{border-color:var(--green)}
   .campo textarea{resize:vertical;min-height:70px}
   .ayuda{font-size:.72rem;color:var(--ink-soft)}
