@@ -1,0 +1,2285 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Axie Survivors: Core Evolution | Axie Vibeathon 2026</title>
+  <meta name="description" content="Juego roguelite de supervivencia con evolución de partes corporales Axie Core para el Axie Vibeathon 2026.">
+  <meta property="og:title" content="Axie Survivors: Core Evolution">
+  <meta property="og:description" content="Defiende Lunacia contra oleadas de Quimeras, recolecta AXP y evoluciona tu Axie.">
+  <meta property="og:image" content="thumbnail.jpg">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #0d131a;
+      color: #fff;
+    }
+
+    #game-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    canvas {
+      display: block;
+      background: #142018;
+      touch-action: none;
+    }
+
+    /* Interfaz Superior (HUD) */
+    #hud {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      right: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    .hud-panel {
+      background: rgba(13, 22, 28, 0.85);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 14px;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .stat-bar-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 160px;
+    }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .bar-container {
+      width: 100%;
+      height: 9px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bar-fill {
+      height: 100%;
+      transition: width 0.15s ease-out;
+      border-radius: 5px;
+    }
+
+    #hp-fill {
+      background: linear-gradient(90deg, #ff416c, #ff4b2b);
+      box-shadow: 0 0 10px rgba(255, 75, 43, 0.6);
+    }
+
+    #axp-fill {
+      background: linear-gradient(90deg, #00b4db, #0083b0);
+      box-shadow: 0 0 10px rgba(0, 180, 219, 0.6);
+    }
+
+    .hud-timer {
+      font-size: 22px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      color: #ffd152;
+      text-shadow: 0 2px 8px rgba(255, 209, 82, 0.4);
+    }
+
+    .hud-stats {
+      font-size: 13px;
+      font-weight: 700;
+      color: #9fe2bf;
+    }
+
+    .hud-btn {
+      pointer-events: auto;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: white;
+      border-radius: 10px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s ease;
+    }
+
+    .hud-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+    }
+
+    /* Modales y Pantallas */
+    .overlay-screen {
+      position: absolute;
+      inset: 0;
+      background: rgba(8, 14, 20, 0.88);
+      backdrop-filter: blur(10px);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 50;
+      padding: 20px;
+      text-align: center;
+      opacity: 1;
+      transition: opacity 0.3s ease;
+    }
+
+    .overlay-screen.hidden {
+      display: none;
+      opacity: 0;
+    }
+
+    .game-logo {
+      font-size: 42px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #ffe066, #ff8800, #ff0077);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      filter: drop-shadow(0 4px 15px rgba(255, 136, 0, 0.4));
+    }
+
+    .badge-vibeathon {
+      background: linear-gradient(90deg, #12c2e9, #c471ed, #f64f59);
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 10px rgba(196, 113, 237, 0.4);
+    }
+
+    /* Selector de Axies */
+    .axie-selector {
+      display: flex;
+      gap: 16px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .axie-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 2px solid rgba(255, 255, 255, 0.12);
+      border-radius: 18px;
+      padding: 16px;
+      width: 170px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .axie-card:hover, .axie-card.selected {
+      border-color: #ffd152;
+      background: rgba(255, 209, 82, 0.12);
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(255, 209, 82, 0.3);
+    }
+
+    .axie-preview-icon {
+      width: 70px;
+      height: 70px;
+      border-radius: 50%;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 34px;
+    }
+
+    .btn-start {
+      background: linear-gradient(135deg, #17c07f, #0a7d54);
+      border: none;
+      color: white;
+      font-size: 18px;
+      font-weight: 800;
+      padding: 14px 44px;
+      border-radius: 30px;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(23, 192, 127, 0.5);
+      transition: all 0.2s ease;
+      margin-top: 15px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .btn-start:hover {
+      transform: scale(1.04);
+      box-shadow: 0 8px 26px rgba(23, 192, 127, 0.7);
+    }
+
+    /* Modal de Subida de Nivel / Evolución de Axie Core */
+    .upgrade-container {
+      display: flex;
+      gap: 16px;
+      margin-top: 24px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 800px;
+    }
+
+    .upgrade-card {
+      background: rgba(20, 32, 42, 0.95);
+      border: 2px solid rgba(0, 180, 219, 0.4);
+      border-radius: 16px;
+      padding: 18px;
+      width: 220px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .upgrade-card:hover {
+      transform: translateY(-6px);
+      border-color: #ffe066;
+      box-shadow: 0 10px 30px rgba(255, 224, 102, 0.4);
+      background: rgba(26, 44, 60, 1);
+    }
+
+    .upgrade-icon {
+      font-size: 32px;
+      margin-bottom: 4px;
+    }
+
+    .upgrade-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #ffe066;
+    }
+
+    .upgrade-part {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      color: #12c2e9;
+      letter-spacing: 0.5px;
+    }
+
+    .upgrade-desc {
+      font-size: 13px;
+      color: #d1dbe5;
+      line-height: 1.35;
+    }
+
+    .upgrade-level {
+      margin-top: auto;
+      font-size: 11px;
+      font-weight: 800;
+      color: #8be4b1;
+      padding-top: 6px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Joystick Táctil en Móvil */
+    #joystick-zone {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      display: none;
+      pointer-events: auto;
+      touch-action: none;
+      z-index: 20;
+    }
+
+    #joystick-thumb {
+      position: absolute;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background: rgba(255, 209, 82, 0.7);
+      border: 2px solid #fff;
+      top: 35px;
+      left: 35px;
+      pointer-events: none;
+    }
+
+    /* ═══ AXIE CORE: el panel del Axie que es tuyo entre partidas ═══ */
+    .axie-panel {
+      background: rgba(20, 32, 42, 0.92);
+      border: 2px solid rgba(255, 209, 82, 0.35);
+      border-radius: 20px;
+      padding: 18px 22px;
+      width: 100%;
+      max-width: 560px;
+      margin: 4px 0 10px;
+      text-align: left;
+      box-shadow: 0 10px 34px rgba(0, 0, 0, 0.45);
+    }
+
+    .axie-cabecera {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 12px;
+    }
+
+    .axie-nombre {
+      font-size: 21px;
+      font-weight: 900;
+      color: #ffd152;
+      line-height: 1.15;
+    }
+
+    .axie-clase {
+      font-size: 12px;
+      font-weight: 700;
+      color: #a9bac7;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .axie-nivel {
+      margin-left: auto;
+      text-align: right;
+      flex: 0 0 auto;
+    }
+
+    .axie-nivel b {
+      display: block;
+      font-size: 26px;
+      font-weight: 900;
+      color: #00e5ff;
+      line-height: 1;
+    }
+
+    .axie-nivel span {
+      font-size: 10px;
+      font-weight: 700;
+      color: #697d8c;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .sellos {
+      display: flex;
+      gap: 5px;
+      margin-top: 5px;
+      justify-content: flex-end;
+    }
+
+    .sello {
+      font-size: 9px;
+      font-weight: 800;
+      padding: 2px 7px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #4c6478;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .sello.logrado {
+      background: linear-gradient(90deg, #c471ed, #12c2e9);
+      color: #fff;
+      border-color: transparent;
+      box-shadow: 0 2px 8px rgba(196, 113, 237, 0.5);
+    }
+
+    .axie-barra {
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 5px;
+      overflow: hidden;
+    }
+
+    .axie-barra div {
+      height: 100%;
+      background: linear-gradient(90deg, #00b4db, #c471ed);
+      border-radius: 5px;
+      transition: width 0.4s ease;
+    }
+
+    .axie-cifras {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-weight: 700;
+      color: #8ea6b8;
+      margin: 4px 0 12px;
+    }
+
+    .axie-cifras b { color: #ffe066; }
+
+    .partes-grilla {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .parte-chip {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 8px 9px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .parte-chip .ico { font-size: 17px; line-height: 1; }
+    .parte-chip .txt { flex: 1; min-width: 0; }
+    .parte-chip .nom {
+      display: block;
+      font-weight: 800;
+      color: #d1dbe5;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .parte-chip .niv { display: block; font-size: 10px; font-weight: 700; color: #8be4b1; }
+
+    .parte-comprar {
+      background: rgba(23, 192, 127, 0.9);
+      border: none;
+      color: #fff;
+      font-weight: 800;
+      font-size: 10px;
+      padding: 5px 8px;
+      border-radius: 9px;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+    }
+
+    .parte-comprar:hover:not(:disabled) { background: #17c07f; transform: scale(1.06); }
+    .parte-comprar:disabled { background: rgba(255, 255, 255, 0.07); color: #4c6478; cursor: default; }
+
+    .campo-nombre {
+      background: rgba(255, 255, 255, 0.07);
+      border: 2px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 11px 16px;
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      text-align: center;
+      width: 260px;
+      margin-top: 6px;
+    }
+
+    .campo-nombre:focus { outline: none; border-color: #ffd152; }
+
+    .btn-sec {
+      background: none;
+      border: none;
+      color: #697d8c;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+      text-decoration: underline;
+      margin-top: 12px;
+      padding: 4px;
+    }
+
+    .btn-sec:hover { color: #a9bac7; }
+
+    .nota-core {
+      max-width: 560px;
+      font-size: 11px;
+      color: #566b7d;
+      line-height: 1.45;
+      margin-top: 10px;
+    }
+
+    .ganancia {
+      font-size: 15px;
+      font-weight: 800;
+      color: #8be4b1;
+    }
+
+    .ganancia b { color: #ffe066; font-size: 19px; }
+
+    @media (max-width: 768px) {
+      .game-logo { font-size: 30px; }
+      .upgrade-card { width: 100%; max-width: 280px; }
+      #joystick-zone { display: block; }
+      .partes-grilla { grid-template-columns: repeat(2, 1fr); }
+      .axie-panel { padding: 14px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="game-container">
+  <canvas id="gameCanvas"></canvas>
+
+  <!-- HUD Superior -->
+  <div id="hud">
+    <div class="hud-panel">
+      <!-- Barra de Vida -->
+      <div class="stat-bar-group">
+        <div class="stat-label">
+          <span style="color: #ff6b6b;">Vida (HP)</span>
+          <span id="hp-text" style="color: #ff6b6b;">100 / 100</span>
+        </div>
+        <div class="bar-container">
+          <div id="hp-fill" class="bar-fill" style="width: 100%;"></div>
+        </div>
+      </div>
+
+      <!-- Barra de AXP (Axie Experience Points) -->
+      <div class="stat-bar-group">
+        <div class="stat-label">
+          <span style="color: #00b4db;">AXP Core</span>
+          <span id="axp-text" style="color: #00b4db;">Nivel 1</span>
+        </div>
+        <div class="bar-container">
+          <div id="axp-fill" class="bar-fill" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <!-- Rage → Fury, y los Puntos de Potencial que quedan -->
+      <div class="stat-bar-group" style="min-width: 130px;">
+        <div class="stat-label">
+          <span id="rage-label" style="color: #ff8800;">Rage</span>
+          <span id="rage-text" style="color: #ff8800;">0 / 10</span>
+        </div>
+        <div class="bar-container">
+          <div id="rage-fill" class="bar-fill" style="width: 0%; background: linear-gradient(90deg,#ff8800,#ff4b2b); box-shadow: 0 0 10px rgba(255,75,43,.6);"></div>
+        </div>
+        <div id="pp-text" style="font-size: 10px; font-weight: 700; color: #8ea6b8; margin-top: 2px;"></div>
+      </div>
+    </div>
+
+    <div class="hud-panel">
+      <div id="timer-display" class="hud-timer">00:00</div>
+      <div class="hud-stats">⚔️ <span id="kills-display">0</span> Kills</div>
+      <button id="sound-btn" class="hud-btn" onclick="toggleAudio()">🔊 Sonido</button>
+    </div>
+  </div>
+
+  <!-- Joystick Virtual para Móvil -->
+  <div id="joystick-zone">
+    <div id="joystick-thumb"></div>
+  </div>
+
+  <!-- Pantalla de Inicio -->
+  <div id="start-screen" class="overlay-screen">
+    <h1 class="game-logo">Axie Survivors</h1>
+    <div class="badge-vibeathon">⚡ Axie Vibeathon 2026 · Core Evolution ⚡</div>
+    <p style="max-width: 520px; color: #a9bac7; line-height: 1.5; margin-bottom: 12px; font-size: 14px;">
+      ¡Sobrevive a las hordas de Quimeras en Lunacia! Recolecta gemas de <strong>AXP</strong> para evolucionar las partes corporales de tu Axie (Cuerno, Cola, Espalda, Boca y Ojos) hasta alcanzar la <strong>Ascensión</strong>.
+    </p>
+
+    <!-- ══ Estado A: todavía no adoptaste un Axie ══ -->
+    <div id="adopcion">
+    <h3 style="color: #ffe066; font-size: 16px; margin-top: 10px;">Adoptá tu Axie. Va a ser tuyo para siempre:</h3>
+    <div class="axie-selector">
+      <div class="axie-card selected" onclick="selectAxie('beast')">
+        <div class="axie-preview-icon" style="background: #f7a838;">🦁</div>
+        <strong style="color: #ffd152;">Buba (Bestia)</strong>
+        <span style="font-size: 12px; color: #ccc;">Cuerno de Lanza</span>
+        <span style="font-size: 11px; color: #8be4b1; margin-top: 4px;">Veloz y Ofensivo</span>
+      </div>
+
+      <div class="axie-card" onclick="selectAxie('plant')">
+        <div class="axie-preview-icon" style="background: #5dbb63;">🌱</div>
+        <strong style="color: #8be4b1;">Olek (Planta)</strong>
+        <span style="font-size: 12px; color: #ccc;">Escudo Shiitake + Cola</span>
+        <span style="font-size: 11px; color: #8be4b1; margin-top: 4px;">Tanque y Curación</span>
+      </div>
+
+      <div class="axie-card" onclick="selectAxie('aqua')">
+        <div class="axie-preview-icon" style="background: #00bcd4;">🐬</div>
+        <strong style="color: #12c2e9;">Puffy (Pez)</strong>
+        <span style="font-size: 12px; color: #ccc;">Burbujas Acuáticas</span>
+        <span style="font-size: 11px; color: #8be4b1; margin-top: 4px;">Daño en Área</span>
+      </div>
+    </div>
+
+      <input id="nombre-axie" class="campo-nombre" maxlength="18" placeholder="Ponele un nombre" autocomplete="off">
+      <br>
+      <button class="btn-start" onclick="adoptarAxie()">Adoptar y empezar</button>
+    </div>
+
+    <!-- ══ Estado B: ya tenés tu Axie — se arma en pintarPanelAxie() ══ -->
+    <div id="mi-axie" class="axie-panel" hidden></div>
+    <button id="btn-jugar" class="btn-start" onclick="startGame()" hidden>¡Iniciar Misión!</button>
+
+    <p style="margin-top: 14px; font-size: 12px; color: #697d8c;">
+      Controles: <strong>WASD / Flechas</strong> o arrastrar en pantalla táctil móvil.
+    </p>
+    <p id="nota-core" class="nota-core" hidden>
+      El AXP que juntes no se pierde al morir: sube de nivel a <b id="nota-nombre">tu Axie</b> para siempre.
+      En los niveles 9, 19 y 29 puede <b>Ascender</b>, y cada Ascensión sube el techo de sus partes corporales.
+      <i>La progresión se guarda en este navegador; en la versión conectada iría al AXP on-chain de Sky Mavis.</i>
+    </p>
+    <button id="btn-liberar" class="btn-sec" onclick="liberarAxie()" hidden>Liberar este Axie y adoptar otro</button>
+  </div>
+
+  <!-- Modal de Evolución de Parte Axie Core (Subida de Nivel) -->
+  <div id="upgrade-modal" class="overlay-screen hidden">
+    <h2 style="font-size: 28px; color: #ffe066; margin-bottom: 4px;">¡EVOLUCIÓN AXIE CORE!</h2>
+    <p style="color: #a9bac7; font-size: 14px;">Evolucioná una carta, equipá una runa o pegá un amuleto:</p>
+    <div id="upgrade-options" class="upgrade-container">
+      <!-- Se inyectan dinámicamente -->
+    </div>
+  </div>
+
+  <!-- Pantalla de Fin de Juego -->
+  <div id="gameover-screen" class="overlay-screen hidden">
+    <h2 id="gameover-title" style="font-size: 36px; color: #ff4b2b; margin-bottom: 8px;">¡TU AXIE HA CAÍDO!</h2>
+    <div class="hud-panel" style="flex-direction: column; gap: 8px; margin: 16px 0; min-width: 280px;">
+      <p style="font-size: 15px;">Tiempo Sobrevivido: <strong id="final-time" style="color: #ffd152;">00:00</strong></p>
+      <p style="font-size: 15px;">Quimeras Derrotadas: <strong id="final-kills" style="color: #ff6b6b;">0</strong></p>
+      <p style="font-size: 15px;">Nivel de la corrida: <strong id="final-level" style="color: #00b4db;">1</strong></p>
+    </div>
+
+    <!-- Lo que la corrida le dejó al Axie: esto es lo que NO se pierde -->
+    <p class="ganancia">Tu Axie cosechó <b id="axp-cosechado">0</b> AXP</p>
+    <p id="subio-nivel" style="font-size: 14px; color: #c471ed; font-weight: 800; margin-top: 6px;" hidden></p>
+    <div id="mi-axie-fin" class="axie-panel" style="margin-top: 14px;"></div>
+
+    <button class="btn-start" onclick="volverAlInicio()">Continuar</button>
+  </div>
+
+  <!-- Ascensión: los niveles 9, 19 y 29, igual que en Axie -->
+  <div id="ascension-modal" class="overlay-screen hidden">
+    <div class="badge-vibeathon">⚡ Axie Core ⚡</div>
+    <h2 style="font-size: 34px; color: #ffe066; margin-bottom: 6px;">¡ASCENSIÓN!</h2>
+    <p style="color: #d1dbe5; font-size: 15px; max-width: 460px; line-height: 1.5;">
+      <b id="asc-nombre">Tu Axie</b> llegó al <b id="asc-nivel">nivel 9</b> y sincronizó su progreso.
+    </p>
+    <p style="color: #8be4b1; font-size: 15px; font-weight: 800; margin-top: 10px;">
+      Sus partes corporales ahora pueden llegar al <b id="asc-techo">nivel 2</b>.
+    </p>
+    <button class="btn-start" onclick="cerrarAscension()">Sincronizar</button>
+  </div>
+</div>
+
+<script>
+/* ==========================================================================
+   AXIE SURVIVORS: CORE EVOLUTION - MOTOR DEL JUEGO
+   Construido para el Axie Vibeathon 2026 con IA (Antigravity)
+   ========================================================================== */
+
+// --- Sistema de Audio Sintetizado (Web Audio API - Cero dependencias externas) ---
+let audioCtx = null;
+let audioEnabled = true;
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+}
+
+function toggleAudio() {
+  audioEnabled = !audioEnabled;
+  document.getElementById('sound-btn').innerText = audioEnabled ? '🔊 Sonido' : '🔇 Mudo';
+}
+
+function playSound(type) {
+  if (!audioEnabled || !audioCtx) return;
+  try {
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    const now = audioCtx.currentTime;
+
+    if (type === 'shoot') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(440, now);
+      osc.frequency.exponentialRampToValueAtTime(110, now + 0.12);
+      gain.gain.setValueAtTime(0.2, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+      osc.start(now);
+      osc.stop(now + 0.12);
+    } else if (type === 'gem') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(600, now);
+      osc.frequency.setValueAtTime(900, now + 0.05);
+      gain.gain.setValueAtTime(0.15, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+      osc.start(now);
+      osc.stop(now + 0.12);
+    } else if (type === 'hit') {
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(150, now);
+      osc.frequency.exponentialRampToValueAtTime(40, now + 0.08);
+      gain.gain.setValueAtTime(0.18, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+      osc.start(now);
+      osc.stop(now + 0.08);
+    } else if (type === 'levelup') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(330, now);
+      osc.frequency.setValueAtTime(440, now + 0.08);
+      osc.frequency.setValueAtTime(554, now + 0.16);
+      osc.frequency.setValueAtTime(659, now + 0.24);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+      osc.start(now);
+      osc.stop(now + 0.35);
+    } else if (type === 'shockwave') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(180, now);
+      osc.frequency.exponentialRampToValueAtTime(50, now + 0.25);
+      gain.gain.setValueAtTime(0.25, now);
+      gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+      osc.start(now);
+      osc.stop(now + 0.25);
+    }
+  } catch (e) {}
+}
+
+// --- Configuración de Canvas y Renderizado ---
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let viewWidth = window.innerWidth;
+let viewHeight = window.innerHeight;
+
+function resize() {
+  viewWidth = window.innerWidth;
+  viewHeight = window.innerHeight;
+  canvas.width = viewWidth;
+  canvas.height = viewHeight;
+}
+window.addEventListener('resize', resize);
+resize();
+
+// --- Estado Global del Juego ---
+let gameState = 'START'; // START, PLAYING, UPGRADE, GAMEOVER
+let gameTime = 0; // segundos
+let kills = 0;
+let lastTimestamp = 0;
+let selectedClass = 'beast';
+
+// Cámara
+const camera = { x: 0, y: 0 };
+
+// Límites del mundo de Lunacia
+const WORLD_SIZE = 2600;
+
+// --- Partes Corporales de Axie Core y sus Niveles ---
+const bodyParts = {
+  horn: { name: 'Cuerno (Pocky)', level: 0, maxLevel: 5, icon: '🗡️', part: 'Cuerno', desc: 'Dispara lanzas perforantes a la quimera más cercana.' },
+  tail: { name: 'Cola (Carrot)', level: 0, maxLevel: 5, icon: '⚡', part: 'Cola', desc: 'Onda expansiva radial que empuja y daña enemigos.' },
+  back: { name: 'Espalda (Shiitake)', level: 0, maxLevel: 5, icon: '🛡️', part: 'Espalda', desc: 'Otorga escudo protector y regeneración periódica.' },
+  mouth: { name: 'Boca (Nut Cracker)', level: 0, maxLevel: 5, icon: '🦷', part: 'Boca', desc: 'Ráfaga de mordiscos con probabilidad de robo de vida.' },
+  eyes: { name: 'Ojos (Chubby)', level: 0, maxLevel: 5, icon: '👁️', part: 'Ojos', desc: 'Aumenta el radio magnético de AXP y golpe crítico.' },
+  ears: { name: 'Orejas (Nimo)', level: 0, maxLevel: 5, icon: '🪽', part: 'Orejas', desc: 'Aumenta la velocidad de movimiento y recarga de ataques.' }
+};
+
+/* ══════════════════════════════════════════════════════════════════════════
+   AXIE CORE — el Axie es TUYO y sobrevive a la partida
+   ──────────────────────────────────────────────────────────────────────────
+   El documento oficial de Axie Core pide que un juego de terceros no sea una
+   experiencia aislada, sino que alimente la progresión del Axie del jugador.
+   Acá se refleja el sistema real:
+     · AXP  — se acumula de por vida y NO se pierde al morir.
+     · Nivel — sale del AXP acumulado. Máximo 30, como en Axie.
+     · Ascensión — en los niveles 9, 19 y 29. En Axie sincroniza el nivel
+       on-chain y es lo que habilita subir las partes de nivel; acá cada
+       Ascensión sube el TECHO de las partes permanentes.
+     · Partes — las 6 reales, se mejoran gastando AXP hasta ese techo.
+   El guardado es localStorage: es el reemplazo local del AXP on-chain de Sky
+   Mavis, que es lo que iría en la versión conectada a Ronin.
+   ══════════════════════════════════════════════════════════════════════════ */
+const CLAVE_AXIE = 'axie_core_v1';
+const NIVEL_MAX = 30;
+const ASCENSIONES = [9, 19, 29];
+
+const CLASES = {
+  beast: { nombre: 'Bestia', icono: '🦁', color: '#f7a838', sugerido: 'Buba' },
+  plant: { nombre: 'Planta', icono: '🌱', color: '#5dbb63', sugerido: 'Olek' },
+  aqua:  { nombre: 'Pez',    icono: '🐬', color: '#00bcd4', sugerido: 'Puffy' }
+};
+
+let miAxie = null;
+let axpDeLaCorrida = 0;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LAS PARTES SON CARTAS  —  el corazón de Axie Origins
+   ──────────────────────────────────────────────────────────────────────────
+   En Origins cada una de las 6 partes del cuerpo ES una carta, con su clase
+   propia. Un Axie Bestia puede tener orejas de Planta, y esa carta cuenta como
+   Planta para todo: para el triángulo y para los Puntos de Potencial.
+   Buba usa las partes REALES del Axie #5147 (wings-pro), un Axie que existe.
+   ⚠️ Las de Olek y Puffy son plausibles pero SIN VERIFICAR contra el juego:
+   hay que cambiarlas por las de dos Axies reales de la colección.
+   ══════════════════════════════════════════════════════════════════════════ */
+const PARTES_POR_CLASE = {
+  beast: {   // Axie #5147 "wings-pro" — partes reales
+    eyes:  { carta: 'Neo',          clase: 'bird'  },
+    ears:  { carta: 'Clover',       clase: 'plant' },
+    mouth: { carta: 'Goda',         clase: 'beast' },
+    horn:  { carta: 'Little Branch',clase: 'beast' },
+    back:  { carta: 'Ronin',        clase: 'beast' },
+    tail:  { carta: 'Shiba',        clase: 'beast' }
+  },
+  plant: {   // ⚠️ sin verificar
+    eyes:  { carta: 'Papi',         clase: 'plant' },
+    ears:  { carta: 'Leafy',        clase: 'plant' },
+    mouth: { carta: 'Serious',      clase: 'plant' },
+    horn:  { carta: 'Cactus',       clase: 'plant' },
+    back:  { carta: 'Shiitake',     clase: 'plant' },
+    tail:  { carta: 'Carrot',       clase: 'plant' }
+  },
+  aqua: {    // ⚠️ sin verificar
+    eyes:  { carta: 'Gero',         clase: 'aqua'  },
+    ears:  { carta: 'Nimo',         clase: 'aqua'  },
+    mouth: { carta: 'Risky Fish',   clase: 'aqua'  },
+    horn:  { carta: 'Shoal Star',   clase: 'aqua'  },
+    back:  { carta: 'Anemone',      clase: 'aqua'  },
+    tail:  { carta: 'Nimo Tail',    clase: 'aqua'  }
+  }
+};
+
+/* Colores de clase, para pintar las cartas y los amuletos */
+const COLOR_CLASE = { beast:'#f7a838', plant:'#5dbb63', aqua:'#00bcd4', bird:'#ff6b9d', neutral:'#c9d4de' };
+const NOMBRE_CLASE = { beast:'Bestia', plant:'Planta', aqua:'Aqua', bird:'Ave', neutral:'Neutral' };
+
+/* ══ PUNTOS DE POTENCIAL ══
+   15 por Axie: 2 por cada parte (de la clase de esa parte) + 3 del cuerpo
+   (de la clase del Axie). Es la cuenta exacta del juego: el #5147 da
+   11 Bestia / 2 Planta / 2 Ave, que es 4 partes Bestia ×2 + 3 del cuerpo. */
+let puntosPotencial = {};
+
+function calcularPuntosPotencial(cls){
+  const pp = { beast:0, plant:0, aqua:0, bird:0 };
+  const set = PARTES_POR_CLASE[cls];
+  for (const k in set) pp[set[k].clase] = (pp[set[k].clase] || 0) + 2;
+  pp[cls] += 3;                       // el cuerpo
+  return pp;
+}
+
+/* ══ RUNAS ══  Una por Axie, pasiva, atada a la clase. Se elige en la corrida.
+   "Way of Beast/Plant/Aquatic", "Counter Stance" y "Heart of the Ocean" son
+   nombres reales de Origins; los efectos están adaptados al formato survivors. */
+const RUNAS = {
+  beast: [
+    { id:'way-beast', nombre:'Way of Beast', rareza:'Épica',
+      desc:'Cada quimera derrotada te da +1 Rage.' },
+    { id:'counter-stance', nombre:'Counter Stance', rareza:'Mística',
+      desc:'Cuando te golpean, devolvés una onda de daño alrededor.' }
+  ],
+  plant: [
+    { id:'way-plant', nombre:'Way of Plant', rareza:'Épica',
+      desc:'Leaf: regenerás 5 HP cada 4 segundos.' },
+    { id:'thorn-armor', nombre:'Armadura de Espinas', rareza:'Rara',
+      desc:'+40 HP máximo, y los que te tocan reciben daño.' }
+  ],
+  aqua: [
+    { id:'heart-ocean', nombre:'Heart of the Ocean', rareza:'Épica',
+      desc:'+75 HP máximo.' },
+    { id:'way-aqua', nombre:'Way of Aquatic', rareza:'Mística',
+      desc:'Cada 6 gemas de AXP disparás una burbuja que estalla.' }
+  ]
+};
+
+/* ══ AMULETOS ══  Uno por carta. Se pagan con Puntos de Potencial: los de
+   clase exigen puntos de ESA clase, los neutrales usan cualquiera. */
+const AMULETOS = [
+  { id:'furia',   nombre:'Amuleto de Furia',  clase:'neutral', costo:2, rareza:'Común',
+    desc:'+30% de daño de esta carta.' },
+  { id:'veloz',   nombre:'Amuleto Veloz',     clase:'neutral', costo:3, rareza:'Raro',
+    desc:'−25% de recarga de esta carta.' },
+  { id:'preciso', nombre:'Amuleto Preciso',   clase:'neutral', costo:2, rareza:'Común',
+    desc:'+20% de probabilidad de golpe crítico (×2).' },
+  { id:'rage',    nombre:'Amuleto de Rage',   clase:'beast',   costo:3, rareza:'Épico',
+    desc:'Esta carta suma +1 Rage cada vez que golpea.' },
+  { id:'hoja',    nombre:'Amuleto de Hoja',   clase:'plant',   costo:3, rareza:'Raro',
+    desc:'Esta carta te cura 3 HP por golpe.' },
+  { id:'pluma',   nombre:'Amuleto de Pluma',  clase:'bird',    costo:3, rareza:'Raro',
+    desc:'Feather: esta carta alcanza más lejos y pega +15%.' },
+  { id:'burbuja', nombre:'Amuleto de Burbuja',clase:'aqua',    costo:3, rareza:'Épico',
+    desc:'Aplica Vulnerable: la quimera recibe +20% de daño.' }
+];
+
+/* Lo equipado en la corrida actual */
+let runaEquipada = null;
+let amuletos = {};        // parte → amuleto
+let ppGastados = {};      // clase → puntos usados
+
+/* ══ RAGE Y FURY ══  +2 de daño por stack; a los 10 se transforma.
+   Es literalmente el sistema de Origins, y es el pico que le faltaba a la corrida. */
+let rage = 0;
+let furyRestante = 0;
+let cansancio = 0;
+
+/* ⚠️ Fury tiene que ser un PICO, no el estado normal. Medido: con Way of Beast
+   (+1 Rage por muerte) más el Amuleto de Rage (+1 por golpe), el jugador pasaba
+   40 de 70 segundos transformado — al doble de daño el 57% del tiempo, que
+   deja de ser un premio y pasa a ser el piso. Después de cada Fury hay 6
+   segundos en los que el Rage no sube, y así la cadencia es subir, estallar,
+   recuperar. */
+function sumarRage(n){
+  if (furyRestante > 0 || cansancio > 0) return;
+  rage = Math.min(10, rage + n);
+  if (rage >= 10){
+    rage = 0;
+    furyRestante = 6;
+    playSound('levelup');
+    createFloatingText(player.x, player.y - 44, '¡FURY FORM!', '#ff4b2b');
+  }
+}
+
+/* El multiplicador de daño que sale de Rage/Fury, igual que en el juego real */
+function multiplicadorDeRage(){ return furyRestante > 0 ? 2 : 1; }
+function bonoPlanoDeRage(){ return furyRestante > 0 ? 0 : rage * 2; }
+
+/* ══ TRIÁNGULO DE CLASES ══
+   Reptil/Planta/Dusk → Aqua/Ave/Dawn → Bestia/Bug/Mech → Reptil/Planta/Dusk.
+   ±15%, y +10% más si el Axie usa una carta de su propia clase. Se apilan. */
+const LE_GANA_A = { plant:['aqua','bird'], aqua:['beast'], bird:['beast'], beast:['plant'] };
+
+function factorDeClase(claseCarta, claseEnemigo){
+  let f = 1;
+  if ((LE_GANA_A[claseCarta] || []).includes(claseEnemigo)) f += 0.15;
+  else if ((LE_GANA_A[claseEnemigo] || []).includes(claseCarta)) f -= 0.15;
+  if (miAxie && claseCarta === miAxie.clase) f += 0.10;   // carta de su propia clase
+  return f;
+}
+
+/* Todo lo que una carta necesita saber para pegar: daño, recarga y extras. */
+function statsDeCarta(parte, danioBase, recargaBase){
+  const a = amuletos[parte];
+  let danio = danioBase, recarga = recargaBase, alcance = 1, critico = 0;
+  if (a){
+    if (a.id === 'furia')   danio *= 1.30;
+    if (a.id === 'veloz')   recarga *= 0.75;
+    if (a.id === 'preciso') critico += 0.20;
+    if (a.id === 'pluma'){  danio *= 1.15; alcance = 1.35; }
+  }
+  danio = (danio + bonoPlanoDeRage()) * multiplicadorDeRage();
+  return { danio, recarga, alcance, critico, amuleto: a };
+}
+
+/* Todo lo que entra al HTML pasa por acá: el nombre lo escribe el jugador. */
+function esc(s){
+  return String(s).replace(/[&<>"']/g, c =>
+    ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
+}
+
+const axpDeNivel = (n) => Math.floor(40 * Math.pow(n, 1.7));
+const techoDePartes = (a) => 1 + a.ascensiones;
+const costoDeParte = (nivelActual) => 400 * Math.pow(nivelActual + 1, 2);
+
+function nivelPorAxp(axp){
+  let n = 1;
+  while (n < NIVEL_MAX && axp >= axpDeNivel(n + 1)) n++;
+  return n;
+}
+
+/* ⚠️ Lo que vuelve de localStorage se sanea número por número: alcanza con
+   editarlo a mano para meter un "5" de texto o un 1e999 y romper las cuentas. */
+function cargarAxie(){
+  try {
+    const crudo = localStorage.getItem(CLAVE_AXIE);
+    if (!crudo) return null;
+    const a = JSON.parse(crudo);
+    if (!a || !CLASES[a.clase]) return null;
+    const entero = (v, tope) => Math.min(tope, Math.max(0, Math.floor(Number(v)) || 0));
+    a.nombre = String(a.nombre || 'Axie').slice(0, 18);
+    a.axpTotal = entero(a.axpTotal, 9e12);
+    a.axpDisponible = entero(a.axpDisponible, 9e12);
+    a.ascensiones = entero(a.ascensiones, ASCENSIONES.length);
+    const partes = {};
+    for (const k in bodyParts) partes[k] = entero(a.partes && a.partes[k], bodyParts[k].maxLevel);
+    a.partes = partes;
+    return a;
+  } catch (e) { return null; }
+}
+
+function guardarAxie(){
+  try { localStorage.setItem(CLAVE_AXIE, JSON.stringify(miAxie)); } catch (e) {}
+}
+
+function adoptarAxie(){
+  const campo = document.getElementById('nombre-axie');
+  const escrito = (campo.value || '').trim().slice(0, 18);
+  miAxie = {
+    nombre: escrito || CLASES[selectedClass].sugerido,
+    clase: selectedClass,
+    axpTotal: 0,
+    axpDisponible: 0,
+    ascensiones: 0,
+    partes: Object.fromEntries(Object.keys(bodyParts).map(k => [k, 0]))
+  };
+  guardarAxie();
+  mostrarInicio();
+  startGame();
+}
+
+function liberarAxie(){
+  if (!miAxie) return;
+  if (!confirm('¿Liberar a ' + miAxie.nombre + '? Se pierde todo su progreso.')) return;
+  try { localStorage.removeItem(CLAVE_AXIE); } catch (e) {}
+  miAxie = null;
+  mostrarInicio();
+}
+
+function mejorarParte(k){
+  if (!miAxie) return;
+  const lv = miAxie.partes[k];
+  const costo = costoDeParte(lv);
+  if (lv >= techoDePartes(miAxie) || miAxie.axpDisponible < costo) return;
+  miAxie.axpDisponible -= costo;
+  miAxie.partes[k]++;
+  guardarAxie();
+  playSound('levelup');
+  pintarPanelAxie(gameState === 'GAMEOVER' ? 'mi-axie-fin' : 'mi-axie');
+}
+
+function pintarPanelAxie(destinoId){
+  const cont = document.getElementById(destinoId);
+  if (!cont || !miAxie) return;
+
+  const cls = CLASES[miAxie.clase];
+  const nivel = nivelPorAxp(miAxie.axpTotal);
+  const tope = nivel >= NIVEL_MAX;
+  const base = axpDeNivel(nivel);
+  const sig = axpDeNivel(Math.min(NIVEL_MAX, nivel + 1));
+  const pct = tope ? 100 : Math.round(((miAxie.axpTotal - base) / (sig - base)) * 100);
+  const techo = techoDePartes(miAxie);
+  const num = (n) => n.toLocaleString('es');
+
+  const sellos = ASCENSIONES.map((n, i) =>
+    `<span class="sello ${miAxie.ascensiones > i ? 'logrado' : ''}">ASC ${n}</span>`).join('');
+
+  const partes = Object.keys(bodyParts).map(k => {
+    const p = bodyParts[k];
+    const lv = miAxie.partes[k];
+    const costo = costoDeParte(lv);
+    const enTope = lv >= techo;
+    const puede = !enTope && miAxie.axpDisponible >= costo;
+    return `<div class="parte-chip">
+      <span class="ico">${p.icon}</span>
+      <span class="txt"><span class="nom">${p.part}</span><span class="niv">Nv ${lv} / ${techo}</span></span>
+      <button class="parte-comprar" ${puede ? '' : 'disabled'} onclick="mejorarParte('${k}')"
+        >${enTope ? 'TOPE' : num(costo) + ' AXP'}</button>
+    </div>`;
+  }).join('');
+
+  cont.innerHTML = `
+    <div class="axie-cabecera">
+      <div class="axie-preview-icon" style="background:${cls.color}; width:52px; height:52px; font-size:26px; margin:0;">${cls.icono}</div>
+      <div>
+        <div class="axie-nombre">${esc(miAxie.nombre)}</div>
+        <div class="axie-clase">${cls.nombre} · Axie Core</div>
+      </div>
+      <div class="axie-nivel">
+        <b>${nivel}</b><span>Nivel del Axie</span>
+        <div class="sellos">${sellos}</div>
+      </div>
+    </div>
+    <div class="axie-barra"><div style="width:${pct}%"></div></div>
+    <div class="axie-cifras">
+      <span>AXP de por vida: <b>${num(miAxie.axpTotal)}</b></span>
+      <span>${tope ? 'Nivel máximo' : 'Faltan <b>' + num(sig - miAxie.axpTotal) + '</b> para el nivel ' + (nivel + 1)}</span>
+    </div>
+    <div class="axie-cifras" style="margin-bottom:8px;">
+      <span>Para gastar en partes: <b>${num(miAxie.axpDisponible)} AXP</b></span>
+      <span>Techo de partes: <b>Nv ${techo}</b></span>
+    </div>
+    <div class="partes-grilla">${partes}</div>`;
+}
+
+function mostrarInicio(){
+  const hay = !!miAxie;
+  document.getElementById('adopcion').hidden = hay;
+  document.getElementById('mi-axie').hidden = !hay;
+  document.getElementById('btn-jugar').hidden = !hay;
+  document.getElementById('nota-core').hidden = !hay;
+  document.getElementById('btn-liberar').hidden = !hay;
+
+  if (hay){
+    selectedClass = miAxie.clase;
+    document.getElementById('nota-nombre').innerText = miAxie.nombre;
+    pintarPanelAxie('mi-axie');
+  }
+
+  document.getElementById('gameover-screen').classList.add('hidden');
+  document.getElementById('ascension-modal').classList.add('hidden');
+  document.getElementById('start-screen').classList.remove('hidden');
+  gameState = 'START';
+}
+
+function volverAlInicio(){ mostrarInicio(); }
+
+function ofrecerAscension(nuevas){
+  miAxie.ascensiones = nuevas;
+  guardarAxie();
+  document.getElementById('asc-nombre').innerText = miAxie.nombre;
+  document.getElementById('asc-nivel').innerText = 'nivel ' + ASCENSIONES[nuevas - 1];
+  document.getElementById('asc-techo').innerText = 'nivel ' + techoDePartes(miAxie);
+  document.getElementById('ascension-modal').classList.remove('hidden');
+  playSound('levelup');
+}
+
+function cerrarAscension(){
+  document.getElementById('ascension-modal').classList.add('hidden');
+  pintarPanelAxie('mi-axie-fin');
+}
+
+// --- Jugador (Axie) ---
+const player = {
+  x: 0,
+  y: 0,
+  radius: 22,
+  speed: 190,
+  hp: 100,
+  maxHp: 100,
+  shield: 0,
+  maxShield: 40,
+  level: 1,
+  axp: 0,
+  nextLevelAxp: 100,
+  color: '#f7a838',
+  facingLeft: false,
+  walkCycle: 0,
+  // Tiempos de recarga de ataques
+  hornCooldown: 0,
+  tailCooldown: 0,
+  mouthCooldown: 0,
+  backHealCooldown: 0
+};
+
+// Entidades del mundo
+let projectiles = [];
+let shockwaves = [];
+let enemies = [];
+let gems = [];
+let particles = [];
+let floatingTexts = [];
+
+// --- Configuración de Clases ---
+function selectAxie(cls) {
+  selectedClass = cls;
+  document.querySelectorAll('.axie-card').forEach(c => c.classList.remove('selected'));
+  event.currentTarget.classList.add('selected');
+}
+
+function applyAxieClass(cls) {
+  // Reiniciar partes
+  for (let key in bodyParts) {
+    bodyParts[key].level = 0;
+  }
+
+  /* Las 6 cartas del Axie: nombre y clase reales de cada parte. Una parte de
+     otra clase (las orejas Clover de Buba son Planta) cuenta como esa clase
+     para el triángulo y para los Puntos de Potencial. */
+  const cartas = PARTES_POR_CLASE[cls];
+  for (const k in bodyParts){
+    bodyParts[k].carta = cartas[k].carta;
+    bodyParts[k].clase = cartas[k].clase;
+    bodyParts[k].name = cartas[k].carta;
+  }
+
+  // Runa, amuletos, potencial y Rage: todo empieza de cero en cada corrida
+  runaEquipada = null;
+  amuletos = {};
+  ppGastados = { beast:0, plant:0, aqua:0, bird:0 };
+  puntosPotencial = calcularPuntosPotencial(cls);
+  rage = 0;
+  furyRestante = 0;
+  cansancio = 0;
+
+  if (cls === 'beast') {
+    player.color = '#f7a838'; // Dorado Bestia
+    player.maxHp = 100;
+    player.speed = 210;
+    bodyParts.horn.level = 1; // Comienza con lanza
+  } else if (cls === 'plant') {
+    player.color = '#5dbb63'; // Verde Planta
+    player.maxHp = 150;
+    player.speed = 175;
+    bodyParts.back.level = 1; // Comienza con escudo
+    // ⚠️ Y con la cola, o la Planta no puede hacer daño. El escudo cura pero no
+    // mata; sin un arma no hay muertos, sin muertos no hay gemas, sin gemas no
+    // hay AXP y sin AXP nunca llega al menú donde le darían un arma. Era un
+    // punto muerto: medido, 0 kills en 90 segundos. Cada clase tiene que
+    // arrancar con al menos UNA parte que haga daño.
+    bodyParts.tail.level = 1;
+  } else if (cls === 'aqua') {
+    player.color = '#00bcd4'; // Azul Pez
+    player.maxHp = 110;
+    player.speed = 195;
+    bodyParts.mouth.level = 1; // Comienza con ráfaga
+  }
+
+  /* Las partes permanentes del Axie son el PISO de la corrida. Esto es lo que
+     hace que jugar sirva para algo más que la corrida: lo que mejoraste con el
+     AXP de las partidas anteriores ya viene puesto. */
+  if (miAxie && miAxie.clase === cls){
+    for (const k in bodyParts){
+      bodyParts[k].level = Math.max(bodyParts[k].level, miAxie.partes[k] || 0);
+    }
+  }
+
+  player.hp = player.maxHp;
+}
+
+// --- Controles (Teclado y Joystick Móvil) ---
+const keys = {};
+window.addEventListener('keydown', e => {
+  keys[e.key.toLowerCase()] = true;
+  if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase())) {
+    e.preventDefault();
+  }
+});
+window.addEventListener('keyup', e => {
+  keys[e.key.toLowerCase()] = false;
+});
+
+// Joystick táctil
+const joystickZone = document.getElementById('joystick-zone');
+const joystickThumb = document.getElementById('joystick-thumb');
+let joystickActive = false;
+let joystickVector = { x: 0, y: 0 };
+let joystickCenter = { x: 0, y: 0 };
+
+function handleTouchStart(e) {
+  const touch = e.touches[0];
+  const rect = joystickZone.getBoundingClientRect();
+  joystickCenter = { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
+  joystickActive = true;
+  updateJoystick(touch.clientX, touch.clientY);
+}
+
+function handleTouchMove(e) {
+  if (!joystickActive) return;
+  const touch = e.touches[0];
+  updateJoystick(touch.clientX, touch.clientY);
+}
+
+function handleTouchEnd() {
+  joystickActive = false;
+  joystickVector = { x: 0, y: 0 };
+  joystickThumb.style.transform = `translate(0px, 0px)`;
+}
+
+function updateJoystick(clientX, clientY) {
+  const dx = clientX - joystickCenter.x;
+  const dy = clientY - joystickCenter.y;
+  const dist = Math.sqrt(dx * dx + dy * dy);
+  const maxRadius = 40;
+
+  if (dist > 0) {
+    const angle = Math.atan2(dy, dx);
+    const clampedDist = Math.min(dist, maxRadius);
+    joystickVector = { x: Math.cos(angle) * (clampedDist / maxRadius), y: Math.sin(angle) * (clampedDist / maxRadius) };
+    joystickThumb.style.transform = `translate(${Math.cos(angle) * clampedDist}px, ${Math.sin(angle) * clampedDist}px)`;
+  }
+}
+
+joystickZone.addEventListener('touchstart', handleTouchStart, { passive: false });
+window.addEventListener('touchmove', handleTouchMove, { passive: false });
+window.addEventListener('touchend', handleTouchEnd);
+
+// --- Generador de Quimeras (Enemigos) ---
+let spawnTimer = 0;
+
+function spawnEnemy() {
+  // Aparición en círculo alrededor del jugador fuera de la pantalla
+  const angle = Math.random() * Math.PI * 2;
+  const dist = Math.max(viewWidth, viewHeight) * 0.65 + Math.random() * 100;
+  const x = player.x + Math.cos(angle) * dist;
+  const y = player.y + Math.sin(angle) * dist;
+
+  // Tipos de Quimera según el tiempo
+  let type = 'slime';
+  let hp = 20 + gameTime * 0.7;
+  let speed = 75 + Math.random() * 25;
+  let radius = 16;
+  let color = '#78c257';
+
+  const roll = Math.random();
+  if (gameTime > 40 && roll > 0.6) {
+    type = 'bat';
+    hp = 14 + gameTime * 0.4;
+    speed = 135;
+    radius = 14;
+    color = '#9c59b6';
+  } else if (gameTime > 90 && roll > 0.85) {
+    type = 'brute';
+    hp = 70 + gameTime * 1.5;
+    speed = 55;
+    radius = 26;
+    color = '#e74c3c';
+  }
+
+  /* ⚠️ Cada quimera tiene CLASE, y con eso entra el triángulo de Axie:
+     Planta le gana a Aqua y Ave, Aqua y Ave le ganan a Bestia, Bestia le gana
+     a Planta. ±15%, más 10% si el Axie usa una carta de su propia clase.
+     Es lo que hace que elegir a Buba o a Olek signifique algo de verdad. */
+  const clases = ['plant', 'aqua', 'bird', 'beast'];
+  const clase = clases[Math.floor(Math.random() * clases.length)];
+
+  enemies.push({ x, y, hp, maxHp: hp, speed, radius, color, type, clase, vulnerable: 0 });
+}
+
+// --- Lógica de Ataques de Partes Axie Core ---
+function updateAttacks(dt) {
+  // 1. Cuerno (Pocky) - Lanza perforante al enemigo más cercano
+  if (bodyParts.horn.level > 0) {
+    player.hornCooldown -= dt;
+    const c = statsDeCarta('horn', 24 + bodyParts.horn.level * 10,
+                           1.3 - (bodyParts.horn.level * 0.15) - (bodyParts.ears.level * 0.05));
+    const cooldownRate = c.recarga;
+    if (player.hornCooldown <= 0 && enemies.length > 0) {
+      player.hornCooldown = Math.max(0.4, cooldownRate);
+
+      // Buscar enemigo más cercano
+      let closest = null;
+      let minDist = 450 * c.alcance;
+      for (let e of enemies) {
+        const d = Math.hypot(e.x - player.x, e.y - player.y);
+        if (d < minDist) {
+          minDist = d;
+          closest = e;
+        }
+      }
+
+      if (closest) {
+        const angle = Math.atan2(closest.y - player.y, closest.x - player.x);
+        const count = bodyParts.horn.level >= 4 ? 3 : (bodyParts.horn.level >= 2 ? 2 : 1);
+        const spread = 0.2;
+
+        for (let i = 0; i < count; i++) {
+          const finalAngle = angle + (i - (count - 1) / 2) * spread;
+          projectiles.push({
+            x: player.x,
+            y: player.y,
+            vx: Math.cos(finalAngle) * 480,
+            vy: Math.sin(finalAngle) * 480,
+            damage: c.danio,
+            parte: 'horn',
+            clase: bodyParts.horn.clase,
+            critico: c.critico,
+            pierce: bodyParts.horn.level >= 3 ? 3 : 1,
+            radius: 8,
+            color: COLOR_CLASE[bodyParts.horn.clase],
+            life: 1.5
+          });
+        }
+        playSound('shoot');
+      }
+    }
+  }
+
+  // 2. Cola (Carrot) - Onda expansiva eléctrica
+  if (bodyParts.tail.level > 0) {
+    player.tailCooldown -= dt;
+    const c = statsDeCarta('tail', 35 + bodyParts.tail.level * 15,
+                           3.5 - (bodyParts.tail.level * 0.4) - (bodyParts.ears.level * 0.1));
+    if (player.tailCooldown <= 0) {
+      player.tailCooldown = Math.max(1.2, c.recarga);
+      const radius = (90 + bodyParts.tail.level * 22) * c.alcance;
+      shockwaves.push({
+        x: player.x,
+        y: player.y,
+        currentRadius: 10,
+        maxRadius: radius,
+        damage: c.danio,
+        parte: 'tail',
+        clase: bodyParts.tail.clase,
+        growth: 320,
+        color: COLOR_CLASE[bodyParts.tail.clase],
+        // A quién ya alcanzó esta onda: se golpea una sola vez por onda.
+        golpeados: new Set()
+      });
+      playSound('shockwave');
+    }
+  }
+
+  // 3. Boca (Nut Cracker) - Ráfaga hacia el frente
+  if (bodyParts.mouth.level > 0) {
+    player.mouthCooldown -= dt;
+    const c = statsDeCarta('mouth', 18 + bodyParts.mouth.level * 8, 1.0 - (bodyParts.mouth.level * 0.1));
+    if (player.mouthCooldown <= 0) {
+      player.mouthCooldown = Math.max(0.5, c.recarga);
+      const angle = player.facingLeft ? Math.PI : 0;
+      projectiles.push({
+        x: player.x,
+        y: player.y,
+        vx: Math.cos(angle) * 380 * c.alcance,
+        vy: (Math.random() - 0.5) * 80,
+        damage: c.danio,
+        parte: 'mouth',
+        clase: bodyParts.mouth.clase,
+        critico: c.critico,
+        pierce: 1,
+        radius: 11,
+        color: COLOR_CLASE[bodyParts.mouth.clase],
+        life: 0.8,
+        lifesteal: bodyParts.mouth.level >= 3
+      });
+      playSound('shoot');
+    }
+  }
+
+  // 4. Espalda (Shiitake) - Escudo y Curación
+  if (bodyParts.back.level > 0) {
+    player.backHealCooldown -= dt;
+    if (player.backHealCooldown <= 0) {
+      player.backHealCooldown = 8.0 - (bodyParts.back.level * 0.8);
+      const healAmount = 5 + bodyParts.back.level * 4;
+      player.hp = Math.min(player.maxHp, player.hp + healAmount);
+      createFloatingText(player.x, player.y - 30, `+${healAmount} HP`, '#4cd137');
+    }
+  }
+
+  /* ══ Runas pasivas que corren con el reloj ══ */
+  if (runaEquipada){
+    if (runaEquipada.id === 'way-plant'){                 // Leaf: 5 HP cada 4s
+      player.leafCooldown = (player.leafCooldown || 0) - dt;
+      if (player.leafCooldown <= 0){
+        player.leafCooldown = 4;
+        if (player.hp < player.maxHp){
+          player.hp = Math.min(player.maxHp, player.hp + 5);
+          createFloatingText(player.x, player.y - 30, '+5 Leaf', '#8be4b1');
+        }
+      }
+    }
+  }
+
+  // Fury se gasta, y al terminar deja el cansancio
+  if (furyRestante > 0){
+    furyRestante = Math.max(0, furyRestante - dt);
+    if (furyRestante === 0) cansancio = 6;
+  } else if (cansancio > 0){
+    cansancio = Math.max(0, cansancio - dt);
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   UN SOLO LUGAR donde una carta le pega a una quimera.
+   Acá entran el triángulo de clases, el crítico, Vulnerable y los efectos de
+   los amuletos. Tenerlo en una sola función es lo que evita que el proyectil
+   y la onda expansiva se vayan separando con cada cambio de balance.
+   ══════════════════════════════════════════════════════════════════════════ */
+function aplicarGolpe(e, danioBase, claseCarta, parte, probCritico, px, py, color){
+  let danio = danioBase * factorDeClase(claseCarta, e.clase);
+
+  const critico = probCritico > 0 && Math.random() < probCritico;
+  if (critico) danio *= 2;
+
+  if (e.vulnerable > 0) danio *= 1.20;          // Vulnerable: +20% recibido
+
+  e.hp -= danio;
+
+  const ventaja = factorDeClase(claseCarta, e.clase) > 1.05;
+  createFloatingText(e.x, e.y - 15, Math.round(danio) + (critico ? '!' : ''),
+                     critico ? '#ff4b2b' : (ventaja ? '#8be4b1' : '#ffe066'));
+  spawnParticles(px, py, color, critico ? 8 : 4);
+  playSound('hit');
+
+  // Efectos del amuleto pegado a ESA carta
+  const a = amuletos[parte];
+  if (a){
+    if (a.id === 'rage') sumarRage(1);
+    if (a.id === 'hoja' && player.hp < player.maxHp){
+      player.hp = Math.min(player.maxHp, player.hp + 3);
+    }
+    if (a.id === 'burbuja') e.vulnerable = 3;   // 3 segundos
+  }
+}
+
+// --- Textos Flotantes y Partículas ---
+function createFloatingText(x, y, text, color) {
+  floatingTexts.push({ x, y, text, color, life: 0.8, vy: -45 });
+}
+
+function spawnParticles(x, y, color, count = 6) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 40 + Math.random() * 90;
+    particles.push({
+      x, y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      color,
+      radius: 2 + Math.random() * 3,
+      life: 0.4 + Math.random() * 0.3
+    });
+  }
+}
+
+// --- Sistema de AXP y Subida de Nivel (Axie Core) ---
+function addAxp(amount) {
+  player.axp += amount;
+  axpDeLaCorrida += amount;   // el total de la corrida, que al final va al Axie
+  if (player.axp >= player.nextLevelAxp) {
+    player.axp -= player.nextLevelAxp;
+    player.level++;
+    player.nextLevelAxp = Math.floor(player.nextLevelAxp * 1.35 + 40);
+    playSound('levelup');
+    triggerUpgradeModal();
+  }
+  updateHud();
+}
+
+/* Puntos de Potencial que quedan de una clase. Un amuleto neutral puede pagarse
+   con cualquier mezcla, así que para esos mira el total. */
+function ppLibres(clase){
+  if (clase === 'neutral'){
+    return Object.keys(puntosPotencial).reduce((t, c) => t + (puntosPotencial[c] - ppGastados[c]), 0);
+  }
+  return (puntosPotencial[clase] || 0) - (ppGastados[clase] || 0);
+}
+
+function gastarPP(clase, costo){
+  if (clase !== 'neutral'){ ppGastados[clase] += costo; return; }
+  /* El neutral se cobra de donde haya, empezando por la clase con más sobrante:
+     así no deja sin puntos a la clase que el jugador podría querer usar después. */
+  let falta = costo;
+  const orden = Object.keys(puntosPotencial).sort((a, b) => ppLibres(b) - ppLibres(a));
+  for (const c of orden){
+    if (falta <= 0) break;
+    const toma = Math.min(falta, ppLibres(c));
+    ppGastados[c] += toma;
+    falta -= toma;
+  }
+}
+
+/* Arma la baraja de 3 opciones: evolución de parte, runa o amuleto. */
+function armarOpciones(){
+  const pool = [];
+
+  // a) Evolucionar una parte que no esté al tope
+  for (const k of Object.keys(bodyParts)){
+    if (bodyParts[k].level < bodyParts[k].maxLevel) pool.push({ tipo:'parte', parte:k });
+  }
+
+  // b) La runa: una sola por corrida, y solo de la clase del Axie
+  if (!runaEquipada){
+    for (const r of (RUNAS[miAxie ? miAxie.clase : selectedClass] || [])) pool.push({ tipo:'runa', runa:r });
+  }
+
+  // c) Amuletos: para cartas que ya tenés, que no tengan amuleto, y que puedas pagar
+  for (const k of Object.keys(bodyParts)){
+    if (bodyParts[k].level < 1 || amuletos[k]) continue;
+    for (const a of AMULETOS){
+      if (a.clase !== 'neutral' && a.clase !== bodyParts[k].clase) continue;  // los de clase van a cartas de esa clase
+      if (ppLibres(a.clase) < a.costo) continue;
+      pool.push({ tipo:'amuleto', parte:k, amuleto:a });
+    }
+  }
+
+  // Barajar y quedarse con 3, sin repetir el mismo tipo+parte
+  const mezcla = pool.sort(() => 0.5 - Math.random());
+  const elegidas = [];
+  const vistos = new Set();
+  for (const o of mezcla){
+    const firma = o.tipo + ':' + (o.parte || '') + ':' + (o.amuleto ? o.amuleto.id : '') + (o.runa ? o.runa.id : '');
+    if (vistos.has(firma)) continue;
+    vistos.add(firma);
+    elegidas.push(o);
+    if (elegidas.length === 3) break;
+  }
+  return elegidas;
+}
+
+function triggerUpgradeModal() {
+  const opciones = armarOpciones();
+  if (!opciones.length) return;          // nada que ofrecer: se sigue jugando
+
+  gameState = 'UPGRADE';
+  const modal = document.getElementById('upgrade-modal');
+  const container = document.getElementById('upgrade-options');
+  container.innerHTML = '';
+
+  opciones.forEach((o, i) => {
+    const card = document.createElement('div');
+    card.className = 'upgrade-card';
+    card.onclick = () => selectUpgrade(i);
+
+    if (o.tipo === 'parte'){
+      const p = bodyParts[o.parte];
+      card.innerHTML = `
+        <div class="upgrade-icon">${p.icon}</div>
+        <div class="upgrade-part" style="color:${COLOR_CLASE[p.clase]}">${p.part} · ${NOMBRE_CLASE[p.clase]}</div>
+        <div class="upgrade-title">${p.carta}</div>
+        <div class="upgrade-desc">${p.desc}</div>
+        <div class="upgrade-level">Carta nivel ${p.level} ➔ <strong>nivel ${p.level + 1}</strong></div>`;
+    } else if (o.tipo === 'runa'){
+      card.style.borderColor = '#c471ed';
+      card.innerHTML = `
+        <div class="upgrade-icon">🔮</div>
+        <div class="upgrade-part" style="color:#c471ed">Runa ${o.runa.rareza} · ${NOMBRE_CLASE[miAxie ? miAxie.clase : selectedClass]}</div>
+        <div class="upgrade-title">${o.runa.nombre}</div>
+        <div class="upgrade-desc">${o.runa.desc}</div>
+        <div class="upgrade-level">Una sola runa por corrida</div>`;
+    } else {
+      const p = bodyParts[o.parte];
+      const a = o.amuleto;
+      card.style.borderColor = COLOR_CLASE[a.clase];
+      card.innerHTML = `
+        <div class="upgrade-icon">💠</div>
+        <div class="upgrade-part" style="color:${COLOR_CLASE[a.clase]}">Amuleto ${a.rareza} · ${NOMBRE_CLASE[a.clase]}</div>
+        <div class="upgrade-title">${a.nombre}</div>
+        <div class="upgrade-desc">${a.desc}</div>
+        <div class="upgrade-level">Se pega a <strong>${p.carta}</strong> · cuesta <strong>${a.costo} PP</strong></div>`;
+    }
+    container.appendChild(card);
+  });
+
+  opcionesEnPantalla = opciones;
+  modal.classList.remove('hidden');
+}
+
+let opcionesEnPantalla = [];
+
+function selectUpgrade(indice) {
+  const o = opcionesEnPantalla[indice];
+  if (!o) return;
+
+  if (o.tipo === 'parte'){
+    bodyParts[o.parte].level++;
+    if (o.parte === 'ears') player.speed += 14;      // las orejas siguen dando velocidad
+  } else if (o.tipo === 'runa'){
+    equiparRuna(o.runa);
+  } else {
+    amuletos[o.parte] = o.amuleto;
+    gastarPP(o.amuleto.clase, o.amuleto.costo);
+    createFloatingText(player.x, player.y - 40, o.amuleto.nombre, COLOR_CLASE[o.amuleto.clase]);
+  }
+
+  document.getElementById('upgrade-modal').classList.add('hidden');
+  gameState = 'PLAYING';
+  lastTimestamp = performance.now();
+}
+
+/* Las runas son pasivas: las que tocan estadísticas se aplican al equiparlas,
+   las que reaccionan a algo se leen desde el bucle. */
+function equiparRuna(r){
+  runaEquipada = r;
+  if (r.id === 'heart-ocean'){ player.maxHp += 75; player.hp += 75; }
+  if (r.id === 'thorn-armor'){ player.maxHp += 40; player.hp += 40; }
+  createFloatingText(player.x, player.y - 40, r.nombre, '#c471ed');
+}
+
+// --- Bucle Principal del Juego (Update & Render) ---
+function gameLoop(timestamp) {
+  if (!lastTimestamp) lastTimestamp = timestamp;
+  const dt = Math.min((timestamp - lastTimestamp) / 1000, 0.1);
+  lastTimestamp = timestamp;
+
+  if (gameState === 'PLAYING') {
+    update(dt);
+  }
+  render();
+
+  requestAnimationFrame(gameLoop);
+}
+
+function update(dt) {
+  gameTime += dt;
+
+  // Movimiento del Jugador
+  let moveX = 0;
+  let moveY = 0;
+
+  if (keys['w'] || keys['arrowup']) moveY -= 1;
+  if (keys['s'] || keys['arrowdown']) moveY += 1;
+  if (keys['a'] || keys['arrowleft']) moveX -= 1;
+  if (keys['d'] || keys['arrowright']) moveX += 1;
+
+  if (joystickActive) {
+    moveX = joystickVector.x;
+    moveY = joystickVector.y;
+  }
+
+  const len = Math.hypot(moveX, moveY);
+  if (len > 0) {
+    moveX /= len;
+    moveY /= len;
+    player.x += moveX * player.speed * dt;
+    player.y += moveY * player.speed * dt;
+    player.walkCycle += dt * 10;
+    if (moveX !== 0) player.facingLeft = moveX < 0;
+  }
+
+  // Límites del mapa
+  player.x = Math.max(-WORLD_SIZE / 2, Math.min(WORLD_SIZE / 2, player.x));
+  player.y = Math.max(-WORLD_SIZE / 2, Math.min(WORLD_SIZE / 2, player.y));
+
+  // Cámara centrada en el jugador
+  camera.x = player.x - viewWidth / 2;
+  camera.y = player.y - viewHeight / 2;
+
+  // Actualizar Ataques
+  updateAttacks(dt);
+
+  // Spawner de Enemigos
+  spawnTimer += dt;
+  const spawnRate = Math.max(0.25, 1.4 - (gameTime * 0.007));
+  if (spawnTimer >= spawnRate) {
+    spawnTimer = 0;
+    spawnEnemy();
+  }
+
+  // Actualizar Proyectiles
+  for (let i = projectiles.length - 1; i >= 0; i--) {
+    const p = projectiles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= dt;
+
+    // Colisión con Quimeras
+    for (let j = enemies.length - 1; j >= 0; j--) {
+      const e = enemies[j];
+      if (Math.hypot(p.x - e.x, p.y - e.y) < p.radius + e.radius) {
+        aplicarGolpe(e, p.damage, p.clase, p.parte, p.critico, p.x, p.y, p.color);
+
+        if (p.lifesteal && Math.random() < 0.25) {
+          player.hp = Math.min(player.maxHp, player.hp + 4);
+        }
+
+        p.pierce--;
+        if (p.pierce <= 0) {
+          projectiles.splice(i, 1);
+          break;
+        }
+      }
+    }
+
+    /* ⚠️ Si arriba ya se sacó el proyectil del array, NO hay que volver a
+       hacer splice(i): el índice i ahora apunta a OTRO proyectil y se borraría
+       el equivocado. Por eso se comprueba que en esa posición siga estando p. */
+    if (p && p.life <= 0 && projectiles[i] === p) {
+      projectiles.splice(i, 1);
+    }
+  }
+
+  // Actualizar Ondas Expansivas (Cola)
+  for (let i = shockwaves.length - 1; i >= 0; i--) {
+    const s = shockwaves[i];
+    s.currentRadius += s.growth * dt;
+
+    // ⚠️ La onda golpea a cada quimera UNA vez, cuando el anillo la alcanza.
+    // Antes el daño era `s.damage * dt * 3` mientras el enemigo estuviera dentro
+    // de una banda de 18px: como el anillo crece a 320px/s, le pasaba por encima
+    // en 0,11 s y le dejaba 17 de daño en vez de los 50 que dice la mejora.
+    // La Cola era una mejora trampa —y para Olek, que arranca con ella, la
+    // diferencia entre matar y no matar nada.
+    for (let e of enemies) {
+      const d = Math.hypot(e.x - s.x, e.y - s.y);
+      if (d <= s.currentRadius && !s.golpeados.has(e)) {
+        s.golpeados.add(e);
+        aplicarGolpe(e, s.damage, s.clase, s.parte, 0, e.x, e.y, s.color);
+        // Empuje
+        const angle = Math.atan2(e.y - s.y, e.x - s.x);
+        e.x += Math.cos(angle) * 26;
+        e.y += Math.sin(angle) * 26;
+      }
+    }
+
+    if (s.currentRadius >= s.maxRadius) {
+      shockwaves.splice(i, 1);
+    }
+  }
+
+  // Actualizar Quimeras
+  for (let i = enemies.length - 1; i >= 0; i--) {
+    const e = enemies[i];
+    const angle = Math.atan2(player.y - e.y, player.x - e.x);
+    e.x += Math.cos(angle) * e.speed * dt;
+    e.y += Math.sin(angle) * e.speed * dt;
+
+    if (e.vulnerable > 0) e.vulnerable -= dt;
+
+    // Daño al Axie al tocarlo
+    if (Math.hypot(player.x - e.x, player.y - e.y) < player.radius + e.radius) {
+      player.hp -= 16 * dt;
+
+      /* Runas que reaccionan a que te peguen. Van con su propio freno: sin él
+         dispararían 60 veces por segundo, porque el contacto es continuo. */
+      if (runaEquipada && (runaEquipada.id === 'counter-stance' || runaEquipada.id === 'thorn-armor')){
+        player.contraCooldown = (player.contraCooldown || 0) - dt;
+        if (player.contraCooldown <= 0){
+          player.contraCooldown = runaEquipada.id === 'counter-stance' ? 1.2 : 0.6;
+          if (runaEquipada.id === 'counter-stance'){
+            shockwaves.push({ x: player.x, y: player.y, currentRadius: 10, maxRadius: 130,
+              damage: 45, parte: 'runa', clase: miAxie ? miAxie.clase : 'beast',
+              growth: 340, color: '#ff8800', golpeados: new Set() });
+            playSound('shockwave');
+          } else {
+            e.hp -= 18;                       // espinas: solo al que te está tocando
+            createFloatingText(e.x, e.y - 15, '18', '#8be4b1');
+          }
+        }
+      }
+
+      if (player.hp <= 0) {
+        gameOver();
+      }
+    }
+
+    // Muerte del enemigo
+    if (e.hp <= 0) {
+      kills++;
+      spawnParticles(e.x, e.y, e.color, 12);
+      if (runaEquipada && runaEquipada.id === 'way-beast') sumarRage(1);
+      // Soltar gema AXP
+      gems.push({
+        x: e.x,
+        y: e.y,
+        value: e.type === 'brute' ? 45 : 15,
+        radius: 6,
+        color: e.type === 'brute' ? '#ffe066' : '#00e5ff'
+      });
+      enemies.splice(i, 1);
+    }
+  }
+
+  // Actualizar Gemas AXP
+  const magnetRadius = 80 + (bodyParts.eyes.level * 35);
+  for (let i = gems.length - 1; i >= 0; i--) {
+    const g = gems[i];
+    const d = Math.hypot(player.x - g.x, player.y - g.y);
+
+    if (d < magnetRadius) {
+      const angle = Math.atan2(player.y - g.y, player.x - g.x);
+      const pullSpeed = 380;
+      g.x += Math.cos(angle) * pullSpeed * dt;
+      g.y += Math.sin(angle) * pullSpeed * dt;
+    }
+
+    if (d < player.radius + g.radius) {
+      addAxp(g.value);
+      playSound('gem');
+
+      // Way of Aquatic: cada 6 gemas, una burbuja que estalla alrededor
+      if (runaEquipada && runaEquipada.id === 'way-aqua'){
+        player.gemasParaBurbuja = (player.gemasParaBurbuja || 0) + 1;
+        if (player.gemasParaBurbuja >= 6){
+          player.gemasParaBurbuja = 0;
+          shockwaves.push({ x: player.x, y: player.y, currentRadius: 10, maxRadius: 160,
+            damage: 70, parte: 'runa', clase: 'aqua', growth: 300,
+            color: COLOR_CLASE.aqua, golpeados: new Set() });
+          playSound('shockwave');
+        }
+      }
+
+      gems.splice(i, 1);
+    }
+  }
+
+  // Partículas y Textos Flotantes
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= dt;
+    if (p.life <= 0) particles.splice(i, 1);
+  }
+
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    const t = floatingTexts[i];
+    t.y += t.vy * dt;
+    t.life -= dt;
+    if (t.life <= 0) floatingTexts.splice(i, 1);
+  }
+
+  updateHud();
+}
+
+// --- Renderizado Gráfico ---
+function render() {
+  ctx.clearRect(0, 0, viewWidth, viewHeight);
+
+  ctx.save();
+  ctx.translate(-camera.x, -camera.y);
+
+  // 1. Suelo de Lunacia (Cuadrícula con flores)
+  renderGround();
+
+  // 2. Gemas de AXP
+  for (let g of gems) {
+    ctx.save();
+    ctx.translate(g.x, g.y);
+    ctx.fillStyle = g.color;
+    ctx.shadowColor = g.color;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.moveTo(0, -g.radius);
+    ctx.lineTo(g.radius * 0.7, 0);
+    ctx.lineTo(0, g.radius);
+    ctx.lineTo(-g.radius * 0.7, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 3. Ondas Expansivas (Cola)
+  for (let s of shockwaves) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.currentRadius, 0, Math.PI * 2);
+    ctx.strokeStyle = s.color;
+    ctx.lineWidth = 4;
+    ctx.shadowColor = s.color;
+    ctx.shadowBlur = 16;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 4. Proyectiles
+  for (let p of projectiles) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+    ctx.fillStyle = p.color;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 12;
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 5. Quimeras (Enemigos)
+  for (let e of enemies) {
+    drawChimera(e);
+  }
+
+  // 6. El Axie del Jugador
+  drawAxie(player);
+
+  // 7. Partículas
+  for (let p of particles) {
+    ctx.save();
+    ctx.fillStyle = p.color;
+    ctx.globalAlpha = Math.max(0, p.life * 2);
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 8. Textos Flotantes
+  for (let t of floatingTexts) {
+    ctx.save();
+    ctx.font = 'bold 14px "Segoe UI", sans-serif';
+    ctx.fillStyle = t.color;
+    ctx.shadowColor = '#000';
+    ctx.shadowBlur = 4;
+    ctx.textAlign = 'center';
+    ctx.fillText(t.text, t.x, t.y);
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+// Dibujo del suelo con cuadrícula y límites de Lunacia
+function renderGround() {
+  const gridSize = 80;
+  const startX = Math.floor(camera.x / gridSize) * gridSize;
+  const startY = Math.floor(camera.y / gridSize) * gridSize;
+
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
+  ctx.lineWidth = 1;
+
+  for (let x = startX; x < startX + viewWidth + gridSize; x += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(x, camera.y);
+    ctx.lineTo(x, camera.y + viewHeight);
+    ctx.stroke();
+  }
+  for (let y = startY; y < startY + viewHeight + gridSize; y += gridSize) {
+    ctx.beginPath();
+    ctx.moveTo(camera.x, y);
+    ctx.lineTo(camera.x + viewWidth, y);
+    ctx.stroke();
+  }
+
+  // Borde del Mundo
+  ctx.strokeStyle = '#ff4b2b';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(-WORLD_SIZE / 2, -WORLD_SIZE / 2, WORLD_SIZE, WORLD_SIZE);
+}
+
+// Dibujo estilizado de Axie
+function drawAxie(p) {
+  ctx.save();
+  ctx.translate(p.x, p.y);
+  if (p.facingLeft) ctx.scale(-1, 1);
+
+  const bob = Math.sin(p.walkCycle) * 3;
+
+  // Sombra suave
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+  ctx.beginPath();
+  ctx.ellipse(0, p.radius + 2, p.radius * 1.1, p.radius * 0.45, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Fury Form: el aura que avisa que estás en el pico de daño
+  if (furyRestante > 0){
+    ctx.save();
+    ctx.globalAlpha = 0.35 + Math.sin(gameTime * 14) * 0.15;
+    ctx.fillStyle = '#ff4b2b';
+    ctx.beginPath();
+    ctx.arc(0, bob, p.radius * 1.75, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Cuerpo principal ovalado (Estilo Axie)
+  ctx.fillStyle = p.color;
+  ctx.beginPath();
+  ctx.ellipse(0, bob, p.radius * 1.15, p.radius * 0.95, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.lineWidth = 2.5;
+  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+  ctx.stroke();
+
+  // Ojos tiernos
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(p.radius * 0.4, -2 + bob, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#111111';
+  ctx.beginPath();
+  ctx.arc(p.radius * 0.45, -2 + bob, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Cuerno (si tiene nivel > 0)
+  if (bodyParts.horn.level > 0) {
+    ctx.fillStyle = '#ffe066';
+    ctx.beginPath();
+    ctx.moveTo(p.radius * 0.2, -p.radius * 0.8 + bob);
+    ctx.lineTo(p.radius * 0.6, -p.radius * 1.4 + bob);
+    ctx.lineTo(p.radius * 0.7, -p.radius * 0.7 + bob);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+
+  // Cola (si tiene nivel > 0)
+  if (bodyParts.tail.level > 0) {
+    ctx.fillStyle = '#ff8800';
+    ctx.beginPath();
+    ctx.arc(-p.radius * 1.05, 4 + bob, 6 + bodyParts.tail.level, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Aura de Escudo (Espalda Shiitake)
+  if (bodyParts.back.level > 0) {
+    ctx.strokeStyle = 'rgba(100, 225, 255, 0.4)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, bob, p.radius * 1.4, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+// Dibujo de Quimeras
+function drawChimera(e) {
+  ctx.save();
+  ctx.translate(e.x, e.y);
+
+  // Sombra
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+  ctx.beginPath();
+  ctx.ellipse(0, e.radius + 1, e.radius, e.radius * 0.4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Cuerpo Quimera
+  ctx.fillStyle = e.color;
+  ctx.beginPath();
+  ctx.arc(0, 0, e.radius, 0, Math.PI * 2);
+  ctx.fill();
+
+  /* El borde dice la CLASE. Sin esto el triángulo es invisible y el jugador no
+     puede decidir nada: tiene que poder ver contra qué está pegando. */
+  ctx.strokeStyle = COLOR_CLASE[e.clase] || '#222';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Vulnerable: halo que avisa que está recibiendo +20%
+  if (e.vulnerable > 0){
+    ctx.strokeStyle = 'rgba(0, 229, 255, 0.75)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, e.radius + 5, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // Ojos rojos intimidantes
+  ctx.fillStyle = '#ff1111';
+  ctx.beginPath();
+  ctx.arc(e.radius * 0.3, -2, 3, 0, Math.PI * 2);
+  ctx.arc(-e.radius * 0.3, -2, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+// --- Actualización de la Interfaz (HUD) ---
+function updateHud() {
+  const hpPercent = Math.max(0, (player.hp / player.maxHp) * 100);
+  document.getElementById('hp-fill').style.width = `${hpPercent}%`;
+  document.getElementById('hp-text').innerText = `${Math.ceil(player.hp)} / ${player.maxHp}`;
+
+  const axpPercent = Math.min(100, (player.axp / player.nextLevelAxp) * 100);
+  document.getElementById('axp-fill').style.width = `${axpPercent}%`;
+  document.getElementById('axp-text').innerText = `Nivel ${player.level}`;
+
+  const minutes = Math.floor(gameTime / 60).toString().padStart(2, '0');
+  const seconds = Math.floor(gameTime % 60).toString().padStart(2, '0');
+  document.getElementById('timer-display').innerText = `${minutes}:${seconds}`;
+
+  document.getElementById('kills-display').innerText = kills;
+
+  /* Rage, Fury y los Puntos de Potencial que sobran */
+  const enFury = furyRestante > 0;
+  const lbl = document.getElementById('rage-label');
+  lbl.innerText = enFury ? '¡FURY FORM!' : (cansancio > 0 ? 'Recuperando' : 'Rage');
+  lbl.style.color = enFury ? '#ff4b2b' : (cansancio > 0 ? '#697d8c' : '#ff8800');
+  document.getElementById('rage-text').innerText =
+    enFury ? furyRestante.toFixed(1) + 's' : (cansancio > 0 ? cansancio.toFixed(1) + 's' : rage + ' / 10');
+  document.getElementById('rage-fill').style.width =
+    (enFury ? (furyRestante / 6) * 100 : (cansancio > 0 ? (cansancio / 6) * 100 : rage * 10)) + '%';
+
+  const pp = Object.keys(puntosPotencial)
+    .filter(c => puntosPotencial[c] > 0)
+    .map(c => `<span style="color:${COLOR_CLASE[c]}">${ppLibres(c)}</span>`)
+    .join(' · ');
+  document.getElementById('pp-text').innerHTML =
+    'PP ' + pp + (runaEquipada ? ' · 🔮 ' + runaEquipada.nombre : '');
+}
+
+// --- Control de Flujo del Juego ---
+function startGame() {
+  initAudio();
+  applyAxieClass(selectedClass);
+
+  player.x = 0;
+  player.y = 0;
+  enemies = [];
+  projectiles = [];
+  gems = [];
+  particles = [];
+  floatingTexts = [];
+  gameTime = 0;
+  kills = 0;
+  axpDeLaCorrida = 0;
+
+  // ⚠️ La progresión también se reinicia. Sin esto, "Jugar de Nuevo" arrancaba
+  // con el nivel y el umbral de AXP de la partida anterior: nextLevelAxp crece
+  // 35% por nivel, así que cada revancha costaba más subir que la anterior.
+  player.level = 1;
+  player.axp = 0;
+  player.nextLevelAxp = 100;
+  player.shield = 0;
+
+  // Y el estado momentáneo del combate, o la partida nueva nace con una onda
+  // expansiva viva y los ataques a medio recargar.
+  shockwaves = [];
+  player.hornCooldown = 0;
+  player.tailCooldown = 0;
+  player.mouthCooldown = 0;
+  player.backHealCooldown = 0;
+  player.contraCooldown = 0;
+  player.leafCooldown = 0;
+  player.gemasParaBurbuja = 0;
+  opcionesEnPantalla = [];
+
+  document.getElementById('start-screen').classList.add('hidden');
+  document.getElementById('gameover-screen').classList.add('hidden');
+  gameState = 'PLAYING';
+  lastTimestamp = performance.now();
+}
+
+function gameOver() {
+  gameState = 'GAMEOVER';
+  const minutes = Math.floor(gameTime / 60).toString().padStart(2, '0');
+  const seconds = Math.floor(gameTime % 60).toString().padStart(2, '0');
+
+  document.getElementById('final-time').innerText = `${minutes}:${seconds}`;
+  document.getElementById('final-kills').innerText = kills;
+  document.getElementById('final-level').innerText = player.level;
+
+  /* ══ Lo que la corrida le deja al Axie: esto es lo que NO se pierde ══ */
+  if (miAxie){
+    const nivelAntes = nivelPorAxp(miAxie.axpTotal);
+    miAxie.axpTotal += axpDeLaCorrida;
+    miAxie.axpDisponible += axpDeLaCorrida;
+    const nivelAhora = nivelPorAxp(miAxie.axpTotal);
+    guardarAxie();
+
+    document.getElementById('axp-cosechado').innerText = axpDeLaCorrida.toLocaleString('es');
+    const aviso = document.getElementById('subio-nivel');
+    if (nivelAhora > nivelAntes){
+      aviso.hidden = false;
+      aviso.innerText = `¡${miAxie.nombre} subió al nivel ${nivelAhora}!`;
+    } else {
+      aviso.hidden = true;
+    }
+    pintarPanelAxie('mi-axie-fin');
+
+    /* ¿Cruzó un nivel de Ascensión? Va con un respiro para que se vea primero
+       el resultado de la corrida y después el premio grande. */
+    const merecidas = ASCENSIONES.filter(n => nivelAhora >= n).length;
+    if (merecidas > miAxie.ascensiones){
+      setTimeout(() => ofrecerAscension(merecidas), 800);
+    }
+  }
+
+  document.getElementById('gameover-screen').classList.remove('hidden');
+}
+
+function restartGame() {
+  startGame();
+}
+
+// Iniciar: se recupera el Axie guardado y se arma la pantalla que corresponda
+miAxie = cargarAxie();
+mostrarInicio();
+requestAnimationFrame(gameLoop);
+</script>
+</body>
+</html>

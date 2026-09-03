@@ -48,6 +48,12 @@ function esPublico(rel){
   if (PUBLICO_EXACTO.has(rel)) return true;
   /* las fotos de los productos, y nada más que imágenes */
   if (/^\/img\/[^/]+\.(jpg|jpeg|png|webp|avif|svg)$/i.test(rel)) return true;
+  /* El juego del Vibeathon: todo lo que cuelga de /axie/, pero solo nombres
+     normales — ningún segmento puede empezar con punto, así no entran ni ".."
+     ni archivos ocultos. ⚠️ NO volver al `(\/.*)?` de antes: dejaba pasar
+     cualquier cosa y con eso se salía de la carpeta (ver el corte de arriba
+     de todo en el manejador de peticiones). */
+  if (/^\/axie(\/[a-z0-9_-][a-z0-9._-]*)+$/i.test(rel)) return true;
   return false;
 }
 
@@ -417,6 +423,20 @@ const servidor = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://localhost');
   const ruta = decodeURIComponent(url.pathname);
 
+  /* ⚠️ Ninguna dirección legítima lleva ".." ni barra invertida. El parser de
+     URL normaliza los ".." escritos tal cual, pero NO los que vienen pegados a
+     una barra invertida codificada: `/axie/..%5c.env` llegaba hasta acá como
+     `/axie/..\.env`, pasaba la lista blanca (no dice ".."), pasaba la lista
+     NUNCA (no empieza con `/.env`) y `path.resolve` en Windows lo terminaba de
+     armar en la raíz del proyecto. El `.env` quedó descargable desde internet,
+     con SESION_SECRETO adentro — probado el 03/09/2026, devolvía 200.
+     Se corta ACÁ, antes de cualquier otra decisión, para que no dependa de que
+     cada regla nueva de la lista blanca se acuerde del problema. */
+  if (ruta.includes('\\') || ruta.includes('\0') || ruta.split('/').includes('..')){
+    res.writeHead(400, { 'Content-Type': TIPOS['.html'] });
+    return res.end('<h1>400</h1><p>Dirección inválida.</p><p><a href="/">Ir a la tienda</a></p>');
+  }
+
   /* ---- API ---- */
   if (ruta.startsWith('/api/')){
     try {
@@ -524,7 +544,8 @@ const servidor = http.createServer(async (req, res) => {
   const ATAJOS = {
     '/panel': '/admin.html',  '/panel/': '/admin.html',
     '/admin': '/admin.html',  '/admin/': '/admin.html',
-    '/entrar': '/entrar.html','/entrar/': '/entrar.html'
+    '/entrar': '/entrar.html','/entrar/': '/entrar.html',
+    '/axie': '/axie/index.html', '/axie/': '/axie/index.html'
   };
   if (ATAJOS[rel]) rel = ATAJOS[rel];
 
