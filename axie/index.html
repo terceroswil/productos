@@ -646,7 +646,7 @@
     </p>
     <p id="nota-core" class="nota-core" hidden>
       El AXP que juntes no se pierde al morir: sube de nivel a <b id="nota-nombre">tu Axie</b> para siempre.
-      En los niveles 9, 19 y 29 puede <b>Ascender</b>, y cada Ascensión sube el techo de sus partes corporales.
+      Cada 10 niveles puede <b>Ascender</b>, y cada Ascensión sube el techo de sus partes corporales.
       <i>La progresión se guarda en este navegador; en la versión conectada iría al AXP on-chain de Sky Mavis.</i>
     </p>
     <button id="btn-liberar" class="btn-sec" onclick="liberarAxie()" hidden>Liberar este Axie y adoptar otro</button>
@@ -678,12 +678,12 @@
     <button class="btn-start" onclick="volverAlInicio()">Continuar</button>
   </div>
 
-  <!-- Ascensión: los niveles 9, 19 y 29, igual que en Axie -->
+  <!-- Ascensión: cada 10 niveles, como en Axie -->
   <div id="ascension-modal" class="overlay-screen hidden">
     <div class="badge-vibeathon">⚡ Axie Core ⚡</div>
     <h2 style="font-size: 34px; color: #ffe066; margin-bottom: 6px;">¡ASCENSIÓN!</h2>
     <p style="color: #d1dbe5; font-size: 15px; max-width: 460px; line-height: 1.5;">
-      <b id="asc-nombre">Tu Axie</b> llegó al <b id="asc-nivel">nivel 9</b> y sincronizó su progreso.
+      <b id="asc-nombre">Tu Axie</b> llegó al <b id="asc-nivel">nivel 10</b> y sincronizó su progreso.
     </p>
     <p style="color: #8be4b1; font-size: 15px; font-weight: 800; margin-top: 10px;">
       Sus partes corporales ahora pueden llegar al <b id="asc-techo">nivel 2</b>.
@@ -816,18 +816,32 @@ const bodyParts = {
    El documento oficial de Axie Core pide que un juego de terceros no sea una
    experiencia aislada, sino que alimente la progresión del Axie del jugador.
    Acá se refleja el sistema real:
-     · AXP  — se acumula de por vida y NO se pierde al morir.
-     · Nivel — sale del AXP acumulado. Máximo 30, como en Axie.
-     · Ascensión — en los niveles 9, 19 y 29. En Axie sincroniza el nivel
-       on-chain y es lo que habilita subir las partes de nivel; acá cada
+     · AXP  — se acumula de por vida y NO se pierde al morir. En Axie el AXP
+       es off-chain y vive pegado al Axie: no es una moneda que se cambie.
+     · Nivel — sale del AXP acumulado. Máximo 60, como en Axie. Los niveles
+       sí son números on-chain.
+     · Ascensión — cada 10 niveles. En Axie es una transacción que el dueño
+       firma, cuesta AXS, y es lo que habilita evolucionar una parte; acá cada
        Ascensión sube el TECHO de las partes permanentes.
      · Partes — las 6 reales, se mejoran gastando AXP hasta ese techo.
-   El guardado es localStorage: es el reemplazo local del AXP on-chain de Sky
-   Mavis, que es lo que iría en la versión conectada a Ronin.
+   Lo que el jugador se lleva no es una moneda: es que SU Axie sube de nivel, y
+   un Axie de nivel alto con partes evolucionadas vale más en el mercado. Ese
+   es el negocio real de Axie, y es el que este juego alimenta.
+   El guardado es localStorage: es el reemplazo local del AXP de Sky Mavis, que
+   es lo que iría en la versión conectada a Ronin.
    ══════════════════════════════════════════════════════════════════════════ */
 const CLAVE_AXIE = 'axie_core_v1';
-const NIVEL_MAX = 30;
-const ASCENSIONES = [9, 19, 29];
+
+/* Los números reales de Axie, verificados contra la documentación de Sky Mavis
+   y contra el Axie #5147, que está en nivel 35:
+     · El máximo es 60, no 30. (La fuente que decía 30 era de 2023.)
+     · La Ascensión va cada 10 niveles: 10, 20, 30, 40, 50 y 60. Es una
+       transacción ON-CHAIN que el dueño firma y que cuesta AXS, y es lo que
+       habilita evolucionar una parte del cuerpo.
+     · El AXP en cambio es OFF-CHAIN y vive pegado al Axie: no es una moneda
+       que se cambie por AXS. Lo que sube de precio es el Axie. */
+const NIVEL_MAX = 60;
+const ASCENSIONES = [10, 20, 30, 40, 50, 60];
 
 const CLASES = {
   beast: { nombre: 'Bestia', icono: '🦁', color: '#f7a838', sugerido: 'Buba' },
@@ -1002,7 +1016,9 @@ function esc(s){
 }
 
 const axpDeNivel = (n) => Math.floor(40 * Math.pow(n, 1.7));
-const techoDePartes = (a) => 1 + a.ascensiones;
+/* ⚠️ El techo lo fija la Ascensión, pero nunca puede pasar el máximo de la
+   parte: con 6 Ascensiones daría 7 y las cartas llegan hasta 5. */
+const techoDePartes = (a) => Math.min(5, 1 + a.ascensiones);
 const costoDeParte = (nivelActual) => 400 * Math.pow(nivelActual + 1, 2);
 
 function nivelPorAxp(axp){
@@ -1355,6 +1371,14 @@ function spawnEnemy() {
      Es lo que hace que elegir a Buba o a Olek signifique algo de verdad. */
   const clases = ['plant', 'aqua', 'bird', 'beast'];
   const clase = clases[Math.floor(Math.random() * clases.length)];
+
+  /* ⚠️ El COLOR es la clase, no el tipo. Antes el color decía el tipo y un
+     borde decía la clase, y las dos señales se peleaban: un slime verde de
+     clase Planta llevaba borde verde sobre cuerpo verde, o sea que la clase
+     era invisible justo cuando más importaba. Ahora el color dice contra qué
+     estás pegando —que es lo que el jugador necesita decidir— y el tipo se
+     distingue por tamaño y silueta. */
+  color = tono(COLOR_CLASE[clase], -0.22);
 
   enemies.push({ x, y, hp, maxHp: hp, speed, radius, color, type, clase, vulnerable: 0 });
 }
@@ -2040,120 +2064,276 @@ function renderGround() {
   ctx.strokeRect(-WORLD_SIZE / 2, -WORLD_SIZE / 2, WORLD_SIZE, WORLD_SIZE);
 }
 
-// Dibujo estilizado de Axie
+/* ══════════════════════════════════════════════════════════════════════════
+   DIBUJO DE UN AXIE
+   ──────────────────────────────────────────────────────────────────────────
+   Lo que hace que un blob dibujado se lea como un Axie y no como una pelota
+   (cada punto costó una vuelta, igual que con el león del logo):
+     · El cuerpo ES la cabeza. Un Axie no tiene cuello ni cabeza aparte: es un
+       solo bulto rechoncho, más ANCHO que alto y con la panza aplanada abajo.
+     · Los ojos son enormes y van BAJOS y ADELANTE, casi en el ecuador del
+       cuerpo. Puestos arriba se lee como un pájaro.
+     · Cada ojo lleva tres capas: blanco, iris oscuro grande y un brillo
+       blanco arriba a la izquierda. Sin el brillo queda muerto.
+     · El volumen sale de un degradado radial con el foco arriba a la
+       izquierda, más una panza clara abajo. Nada de sombras dibujadas.
+     · Las partes (cuerno, orejas, cola, espalda) tienen que asomar POR FUERA
+       de la silueta o no se ven, y van con el color de SU clase, que es lo
+       que hace visible que un Axie Bestia tenga orejas de Planta.
+     · Las patitas son cuatro y cortas; asoman apenas por debajo de la panza.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Aclara u oscurece un color hex, para armar el degradado del cuerpo */
+function tono(hex, k){
+  const n = parseInt(hex.slice(1), 16);
+  const mez = (c) => Math.max(0, Math.min(255, Math.round(k > 0 ? c + (255 - c) * k : c * (1 + k))));
+  return 'rgb(' + mez((n >> 16) & 255) + ',' + mez((n >> 8) & 255) + ',' + mez(n & 255) + ')';
+}
+
+/* El contorno de un Axie: un óvalo ancho con la base achatada. */
+function siluetaAxie(rx, ry, y){
+  ctx.beginPath();
+  ctx.moveTo(-rx, y);
+  ctx.bezierCurveTo(-rx, y - ry * 1.35, rx, y - ry * 1.35, rx, y);          // lomo
+  ctx.bezierCurveTo(rx, y + ry * 0.95, -rx, y + ry * 0.95, -rx, y);         // panza
+  ctx.closePath();
+}
+
 function drawAxie(p) {
   ctx.save();
   ctx.translate(p.x, p.y);
   if (p.facingLeft) ctx.scale(-1, 1);
 
   const bob = Math.sin(p.walkCycle) * 3;
+  const R = p.radius;
+  const rx = R * 1.12, ry = R * 0.92;
+  const paso = Math.sin(p.walkCycle) * 2;
+  const claseDe = (k) => COLOR_CLASE[bodyParts[k].clase] || p.color;
 
-  // Sombra suave
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+  // Sombra en el piso
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
   ctx.beginPath();
-  ctx.ellipse(0, p.radius + 2, p.radius * 1.1, p.radius * 0.45, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, R + 4, rx * 0.9, R * 0.32, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Fury Form: el aura que avisa que estás en el pico de daño
+  // Fury Form: aura que late
   if (furyRestante > 0){
     ctx.save();
-    ctx.globalAlpha = 0.35 + Math.sin(gameTime * 14) * 0.15;
+    ctx.globalAlpha = 0.3 + Math.sin(gameTime * 14) * 0.14;
     ctx.fillStyle = '#ff4b2b';
     ctx.beginPath();
-    ctx.arc(0, bob, p.radius * 1.75, 0, Math.PI * 2);
+    ctx.arc(0, bob, R * 1.8, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
 
-  // Cuerpo principal ovalado (Estilo Axie)
-  ctx.fillStyle = p.color;
-  ctx.beginPath();
-  ctx.ellipse(0, bob, p.radius * 1.15, p.radius * 0.95, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.lineWidth = 2.5;
-  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
-  ctx.stroke();
+  // ── Partes de ATRÁS: van antes del cuerpo para que asomen por detrás ──
 
-  // Ojos tiernos
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath();
-  ctx.arc(p.radius * 0.4, -2 + bob, 5, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#111111';
-  ctx.beginPath();
-  ctx.arc(p.radius * 0.45, -2 + bob, 3, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Cuerno (si tiene nivel > 0)
-  if (bodyParts.horn.level > 0) {
-    ctx.fillStyle = '#ffe066';
+  // Cola
+  if (bodyParts.tail.level > 0) {
+    const c = claseDe('tail');
+    const largo = 9 + bodyParts.tail.level * 2.5;
+    ctx.save();
+    ctx.translate(-rx * 0.86, bob + ry * 0.22);
+    ctx.rotate(Math.sin(p.walkCycle * 0.7) * 0.22);
+    /* Compacta y curvada hacia arriba: extendida como abanico se leía como un
+       ala y le cambiaba la especie al bicho. */
+    ctx.fillStyle = c;
     ctx.beginPath();
-    ctx.moveTo(p.radius * 0.2, -p.radius * 0.8 + bob);
-    ctx.lineTo(p.radius * 0.6, -p.radius * 1.4 + bob);
-    ctx.lineTo(p.radius * 0.7, -p.radius * 0.7 + bob);
+    ctx.moveTo(0, -5);
+    ctx.quadraticCurveTo(-largo * 0.9, -largo * 0.75, -largo * 0.72, -largo * 0.1);
+    ctx.quadraticCurveTo(-largo * 0.5, largo * 0.35, 0, 6);
     ctx.closePath();
     ctx.fill();
-    ctx.stroke();
+    ctx.strokeStyle = 'rgba(0,0,0,0.22)'; ctx.lineWidth = 1.6; ctx.stroke();
+    ctx.restore();
   }
 
-  // Cola (si tiene nivel > 0)
-  if (bodyParts.tail.level > 0) {
-    ctx.fillStyle = '#ff8800';
+  // Espalda: la caparazón/hoja montada sobre el lomo
+  if (bodyParts.back.level > 0) {
+    const c = claseDe('back');
+    ctx.save();
+    ctx.translate(-rx * 0.18, bob - ry * 0.72);
+    ctx.fillStyle = c;
     ctx.beginPath();
-    ctx.arc(-p.radius * 1.05, 4 + bob, 6 + bodyParts.tail.level, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, R * 0.52, R * 0.4, -0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.22)'; ctx.lineWidth = 1.6; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.28)';
+    ctx.beginPath();
+    ctx.ellipse(-R * 0.12, -R * 0.1, R * 0.22, R * 0.13, -0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Orejas: asoman por arriba, una a cada lado
+  if (bodyParts.ears.level > 0) {
+    const c = claseDe('ears');
+    for (const lado of [-1, 1]){
+      ctx.save();
+      ctx.translate(lado * rx * 0.5, bob - ry * 0.92);
+      ctx.rotate(lado * 0.42);
+      ctx.fillStyle = c;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, R * 0.24, R * 0.42, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(0,0,0,0.22)'; ctx.lineWidth = 1.5; ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  // ── Patitas: cuatro, cortas, asomando bajo la panza ──
+  ctx.fillStyle = tono(p.color, -0.22);
+  for (const [i, dx] of [-0.55, -0.2, 0.2, 0.55].entries()){
+    const alt = (i % 2 === 0 ? paso : -paso) * 0.6;
+    ctx.beginPath();
+    ctx.ellipse(dx * rx, bob + ry * 0.82 + alt, R * 0.15, R * 0.2, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  // Aura de Escudo (Espalda Shiitake)
-  if (bodyParts.back.level > 0) {
-    ctx.strokeStyle = 'rgba(100, 225, 255, 0.4)';
-    ctx.lineWidth = 3;
+  // ── El cuerpo, que también es la cabeza ──
+  const g = ctx.createRadialGradient(-rx * 0.35, bob - ry * 0.5, R * 0.15,
+                                     0, bob, rx * 1.15);
+  g.addColorStop(0, tono(p.color, 0.34));
+  g.addColorStop(0.55, p.color);
+  g.addColorStop(1, tono(p.color, -0.2));
+  ctx.fillStyle = g;
+  siluetaAxie(rx, ry, bob);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(0,0,0,0.26)'; ctx.lineWidth = 2.4; ctx.stroke();
+
+  // Panza más clara, abajo y adelante
+  ctx.fillStyle = 'rgba(255,255,255,0.22)';
+  ctx.beginPath();
+  ctx.ellipse(rx * 0.12, bob + ry * 0.36, rx * 0.55, ry * 0.34, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // ── Cuerno: adelante y arriba, asomando por fuera ──
+  if (bodyParts.horn.level > 0) {
+    const c = claseDe('horn');
+    ctx.save();
+    ctx.translate(rx * 0.42, bob - ry * 0.68);
+    ctx.rotate(-0.35);
+    ctx.fillStyle = c;
     ctx.beginPath();
-    ctx.arc(0, bob, p.radius * 1.4, 0, Math.PI * 2);
+    ctx.moveTo(-R * 0.14, R * 0.16);
+    ctx.quadraticCurveTo(R * 0.06, -R * (0.5 + bodyParts.horn.level * 0.07), R * 0.2, -R * (0.62 + bodyParts.horn.level * 0.08));
+    ctx.quadraticCurveTo(R * 0.16, -R * 0.1, R * 0.16, R * 0.16);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.24)'; ctx.lineWidth = 1.6; ctx.stroke();
+    ctx.restore();
+  }
+
+  /* ── Los ojos: grandes, bajos y SEPARADOS. La firma del Axie ──
+     ⚠️ Pegados al borde de adelante la cara se ve descolgada, como si se le
+     cayera. Van más al centro del cuerpo y bien separados entre sí. */
+  const ojoR = R * 0.3;
+  for (const [i, dx] of [-0.06, 0.46].entries()){
+    const ex = rx * dx, ey = bob + ry * 0.04;
+    const r = ojoR * (i === 0 ? 0.86 : 1);      // el de atrás, un poco menor
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath(); ctx.ellipse(ex, ey, r, r * 1.08, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.2)'; ctx.lineWidth = 1.4; ctx.stroke();
+    ctx.fillStyle = '#16202a';
+    ctx.beginPath(); ctx.arc(ex + r * 0.16, ey + r * 0.1, r * 0.62, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.95)';   // el brillo, sin esto queda muerto
+    ctx.beginPath(); ctx.arc(ex - r * 0.14, ey - r * 0.3, r * 0.26, 0, Math.PI * 2); ctx.fill();
+  }
+
+  // ── Boca: chiquita, bajo los ojos ──
+  if (bodyParts.mouth.level > 0) {
+    ctx.strokeStyle = tono(p.color, -0.45);
+    ctx.lineWidth = 2.2;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(rx * 0.36, bob + ry * 0.52, R * 0.16, 0.15 * Math.PI, 0.85 * Math.PI);
     ctx.stroke();
+    ctx.lineCap = 'butt';
   }
 
   ctx.restore();
 }
 
-// Dibujo de Quimeras
+/* Las Quimeras son Axies corrompidos: el mismo cuerpo rechoncho, pero con
+   púas, ojos partidos y sin brillo. Comparten la silueta a propósito — así el
+   mundo se lee como uno solo y la diferencia se nota en la actitud, no en la
+   forma. El bruto va encorvado y el murciélago aletea. */
 function drawChimera(e) {
   ctx.save();
   ctx.translate(e.x, e.y);
 
+  const R = e.radius;
+  const t = gameTime * (e.type === 'bat' ? 12 : 5) + e.x * 0.05;
+  const flota = e.type === 'bat' ? Math.sin(t) * 3 : 0;
+  const rx = R * (e.type === 'brute' ? 1.2 : 1.05);
+  const ry = R * (e.type === 'brute' ? 0.9 : 0.95);
+  const cc = COLOR_CLASE[e.clase] || '#8899a6';
+
   // Sombra
   ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
   ctx.beginPath();
-  ctx.ellipse(0, e.radius + 1, e.radius, e.radius * 0.4, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, R + 2, rx * 0.85, R * 0.3, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Cuerpo Quimera
-  ctx.fillStyle = e.color;
-  ctx.beginPath();
-  ctx.arc(0, 0, e.radius, 0, Math.PI * 2);
+  /* Púas de la corrupción, asomando por detrás del lomo. Van en un tono
+     cercano al del cuerpo: casi negras se leían como antenas pegadas encima,
+     no como parte del bicho. Es el mismo error que las almohadillas del león. */
+  ctx.fillStyle = tono(e.color, -0.22);
+  const alto = e.type === 'brute' ? 1.34 : 1.16;
+  for (const dx of [-0.46, 0, 0.46]){
+    ctx.beginPath();
+    ctx.moveTo(dx * rx - R * 0.2, flota - ry * 0.66);
+    ctx.lineTo(dx * rx, flota - ry * alto);
+    ctx.lineTo(dx * rx + R * 0.2, flota - ry * 0.66);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  // Cuerpo, con el mismo volumen que un Axie pero apagado
+  const g = ctx.createRadialGradient(-rx * 0.3, flota - ry * 0.45, R * 0.12, 0, flota, rx * 1.1);
+  g.addColorStop(0, tono(e.color, 0.22));
+  g.addColorStop(0.6, e.color);
+  g.addColorStop(1, tono(e.color, -0.32));
+  ctx.fillStyle = g;
+  siluetaAxie(rx, ry, flota);
   ctx.fill();
 
-  /* El borde dice la CLASE. Sin esto el triángulo es invisible y el jugador no
-     puede decidir nada: tiene que poder ver contra qué está pegando. */
-  ctx.strokeStyle = COLOR_CLASE[e.clase] || '#222';
-  ctx.lineWidth = 3;
+  /* Contorno oscuro, para que el cuerpo se despegue del fondo. La clase ya la
+     dice el color del cuerpo, así que el borde no tiene que gritarla. */
+  ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+  ctx.lineWidth = 2;
   ctx.stroke();
 
   // Vulnerable: halo que avisa que está recibiendo +20%
   if (e.vulnerable > 0){
-    ctx.strokeStyle = 'rgba(0, 229, 255, 0.75)';
+    ctx.strokeStyle = 'rgba(0, 229, 255, 0.8)';
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(0, 0, e.radius + 5, 0, Math.PI * 2);
+    ctx.ellipse(0, flota, rx + 5, ry + 5, 0, 0, Math.PI * 2);
     ctx.stroke();
   }
 
-  // Ojos rojos intimidantes
-  ctx.fillStyle = '#ff1111';
-  ctx.beginPath();
-  ctx.arc(e.radius * 0.3, -2, 3, 0, Math.PI * 2);
-  ctx.arc(-e.radius * 0.3, -2, 3, 0, Math.PI * 2);
-  ctx.fill();
+  // Ojos partidos: dos tajos rojos, nada de brillo
+  ctx.strokeStyle = '#ff2b2b';
+  ctx.lineWidth = Math.max(2.5, R * 0.14);
+  ctx.lineCap = 'round';
+  for (const lado of [-1, 1]){
+    ctx.beginPath();
+    ctx.moveTo(lado * rx * 0.42 - R * 0.14, flota - R * 0.16);
+    ctx.lineTo(lado * rx * 0.42 + R * 0.14, flota + R * 0.06);
+    ctx.stroke();
+  }
+  ctx.lineCap = 'butt';
+
+  // Barra de vida, solo cuando ya está lastimada
+  if (e.hp < e.maxHp){
+    const a = rx * 1.3, h = 3;
+    ctx.fillStyle = 'rgba(0,0,0,0.45)';
+    ctx.fillRect(-a / 2, flota - ry * 1.55, a, h);
+    ctx.fillStyle = cc;
+    ctx.fillRect(-a / 2, flota - ry * 1.55, a * Math.max(0, e.hp / e.maxHp), h);
+  }
 
   ctx.restore();
 }
