@@ -18,6 +18,23 @@ You adopt one Axie and name it. Each run you hold off waves of corrupted Chimera
 across Lunacia and harvest AXP gems. When you die the run resets — your Axie does
 not.
 
+## The shape of a run
+
+Ten minutes, with a named boss every two — one of each class, so each of the four
+asks something different of your build. The clock counts down rather than up,
+because a player should know how far they are from winning and not just how long
+they have lasted. Reaching zero is an extraction, and it pays a bonus on
+everything you harvested. A game you can only lose is a game you play once.
+
+Every Chimera wears its class as its colour, and the colour is a read on
+behaviour rather than only a damage multiplier:
+
+- **Bird** — fast, weaves, hard to hit
+- **Beast** — closes in, stops, telegraphs, then charges in a straight line
+- **Plant** — slow and tough; a wall that cuts off your escape
+- **Aquatic** — holds its distance and spits, so it is the one class you have to
+  go and hunt
+
 ## Controls
 
 Move with **WASD** or the **arrow keys**. On a phone or tablet, drag the joystick
