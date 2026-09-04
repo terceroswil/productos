@@ -293,6 +293,25 @@ uno solo, no los tres para siempre.
   403**, que confirma que el archivo existe.
   Ojo con los `.js` sueltos: `sw.js` es público, así que van nombrados uno por uno
   y no por extensión.
+- ⚠️ **Y aun así se salía de la carpeta, por una barra invertida codificada**
+  (03/09/2026). Al publicar el juego se agregó a `esPublico()` una regla
+  `/^\/axie(\/.*)?$/`, y ese `.*` acepta cualquier cosa. El parser de URL de Node
+  normaliza los `..` escritos tal cual, pero **no** los que vienen pegados a un
+  `%5c`: `/axie/..%5c.env` llegaba a `rel` como `/axie/..\.env`, pasaba la lista
+  blanca (no dice ".."), pasaba `NUNCA` (no empieza con `/.env`), y
+  `path.resolve` en Windows lo terminaba de armar en la raíz del proyecto.
+  Resultado: **el `.env` quedó descargable desde internet**, con `SESION_SECRETO`
+  adentro. Probado: devolvía 200 con el archivo entero.
+  Se corta **antes de todo**, apenas se decodifica la ruta: si trae `..`, `\` o
+  un NUL, va 400 y no se mira nada más. Ahí no depende de que cada regla nueva
+  de la lista blanca se acuerde del problema, que es lo que falló.
+  Y las reglas de la lista blanca no llevan `.*`: los segmentos van
+  `[a-z0-9_-][a-z0-9._-]*`, que no puede ser `..` ni un archivo oculto.
+- ⚠️ **El historial del juego se espeja a GitHub con `git subtree split`**, así
+  que un mensaje de commit de `axie/` termina en un repo que puede volverse
+  público. Por eso lo de arriba se cuenta acá y no en el mensaje del commit: un
+  `split` rehace el historial entero y reintroduce cualquier mensaje, así que
+  limpiarlo a mano en el espejo no sirve — vuelve en la próxima sincronización.
 - Con `DATOS_DIR`, el catálogo y las fotos viven ahí (`cfg.CATALOGO`, `cfg.FOTOS`) y se
   copian del proyecto la primera vez. Así actualizar el código no borra lo que cargó
   el comerciante. Los estáticos de `/productos.json` y `/img/` se sirven desde ahí.
