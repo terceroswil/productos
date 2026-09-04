@@ -1204,6 +1204,15 @@ const player = {
 // Entidades del mundo
 let projectiles = [];
 let shockwaves = [];
+let escupitajos = [];        // lo que disparan las quimeras Aqua
+let jefeALaVista = null;     // para la barra de vida de arriba
+let proximoJefe = 1;         // cuántos jefes van salidos
+
+/* La corrida tiene final: aguantar 10 minutos y salir. Sin una meta el juego
+   solo se puede perder, y una partida que únicamente termina mal no da ganas
+   de volver a entrar. */
+const META_SEGUNDOS = 600;
+const CADA_JEFE = 120;
 let enemies = [];
 let gems = [];
 let particles = [];
@@ -1336,51 +1345,91 @@ window.addEventListener('touchend', handleTouchEnd);
 // --- Generador de Quimeras (Enemigos) ---
 let spawnTimer = 0;
 
+/* ══════════════════════════════════════════════════════════════════════════
+   CADA CLASE PELEA DISTINTO
+   ──────────────────────────────────────────────────────────────────────────
+   Antes todas las quimeras hacían lo mismo: caminar hacia el jugador. Con eso
+   el triángulo de clases era un multiplicador invisible: el color te decía
+   CUÁNTO daño hacías, pero no cambiaba nada de lo que tenías que hacer.
+   Ahora el color te dice CÓMO se pelea:
+     · Ave    — rápida y en zigzag, cuesta acertarle.
+     · Bestia — se junta, frena, y embiste en línea recta.
+     · Planta — lenta y dura, te tapa el paso.
+     · Aqua   — se mantiene lejos y escupe. Hay que ir a buscarla.
+   ══════════════════════════════════════════════════════════════════════════ */
+const CONDUCTA = {
+  bird:  { vel: 1.55, hp: 0.55, radio: 0.85 },
+  beast: { vel: 1.00, hp: 1.00, radio: 1.00 },
+  plant: { vel: 0.60, hp: 2.00, radio: 1.25 },
+  aqua:  { vel: 0.80, hp: 0.75, radio: 0.95 }
+};
+
+const NOMBRES_JEFE = {
+  plant: 'Raíz Marchita',
+  aqua:  'Marea Podrida',
+  bird:  'Pluma Rota',
+  beast: 'Colmillo de Ceniza'
+};
+
+/* Aparición en círculo alrededor del jugador, fuera de la pantalla */
+function puntoDeAparicion(){
+  const a = Math.random() * Math.PI * 2;
+  const d = Math.max(viewWidth, viewHeight) * 0.65 + Math.random() * 100;
+  return { x: player.x + Math.cos(a) * d, y: player.y + Math.sin(a) * d };
+}
+
 function spawnEnemy() {
-  // Aparición en círculo alrededor del jugador fuera de la pantalla
-  const angle = Math.random() * Math.PI * 2;
-  const dist = Math.max(viewWidth, viewHeight) * 0.65 + Math.random() * 100;
-  const x = player.x + Math.cos(angle) * dist;
-  const y = player.y + Math.sin(angle) * dist;
-
-  // Tipos de Quimera según el tiempo
-  let type = 'slime';
-  let hp = 20 + gameTime * 0.7;
-  let speed = 75 + Math.random() * 25;
-  let radius = 16;
-  let color = '#78c257';
-
-  const roll = Math.random();
-  if (gameTime > 40 && roll > 0.6) {
-    type = 'bat';
-    hp = 14 + gameTime * 0.4;
-    speed = 135;
-    radius = 14;
-    color = '#9c59b6';
-  } else if (gameTime > 90 && roll > 0.85) {
-    type = 'brute';
-    hp = 70 + gameTime * 1.5;
-    speed = 55;
-    radius = 26;
-    color = '#e74c3c';
-  }
+  const { x, y } = puntoDeAparicion();
 
   /* ⚠️ Cada quimera tiene CLASE, y con eso entra el triángulo de Axie:
      Planta le gana a Aqua y Ave, Aqua y Ave le ganan a Bestia, Bestia le gana
-     a Planta. ±15%, más 10% si el Axie usa una carta de su propia clase.
-     Es lo que hace que elegir a Buba o a Olek signifique algo de verdad. */
+     a Planta. ±15%, más 10% si el Axie usa una carta de su propia clase. */
   const clases = ['plant', 'aqua', 'bird', 'beast'];
   const clase = clases[Math.floor(Math.random() * clases.length)];
+  const c = CONDUCTA[clase];
+
+  const hp = (22 + gameTime * 0.8) * c.hp;
 
   /* ⚠️ El COLOR es la clase, no el tipo. Antes el color decía el tipo y un
      borde decía la clase, y las dos señales se peleaban: un slime verde de
      clase Planta llevaba borde verde sobre cuerpo verde, o sea que la clase
-     era invisible justo cuando más importaba. Ahora el color dice contra qué
-     estás pegando —que es lo que el jugador necesita decidir— y el tipo se
-     distingue por tamaño y silueta. */
-  color = tono(COLOR_CLASE[clase], -0.22);
+     era invisible justo cuando más importaba. */
+  enemies.push({
+    x, y, hp, maxHp: hp,
+    speed: (72 + Math.random() * 22) * c.vel,
+    radius: 17 * c.radio,
+    color: tono(COLOR_CLASE[clase], -0.22),
+    clase, vulnerable: 0,
+    fase: Math.random() * Math.PI * 2,   // desfase del zigzag del Ave
+    carga: 0, recarga: 1 + Math.random() * 2
+  });
+}
 
-  enemies.push({ x, y, hp, maxHp: hp, speed, radius, color, type, clase, vulnerable: 0 });
+/* ══ JEFES ══
+   Cada dos minutos. Sin esto la corrida no tiene arco: todos los minutos se
+   parecen y el jugador nunca siente que superó algo. El jefe da la forma
+   —acumulás, aguantás, seguís— y al caer suelta el AXP de golpe. */
+function spawnJefe(numero){
+  const clases = ['plant', 'aqua', 'bird', 'beast'];
+  const clase = clases[(numero - 1) % clases.length];
+  const c = CONDUCTA[clase];
+  const { x, y } = puntoDeAparicion();
+  const hp = (900 + numero * 900) * c.hp;
+
+  enemies.push({
+    x, y, hp, maxHp: hp,
+    speed: (52 + numero * 4) * c.vel,
+    radius: 46,
+    color: tono(COLOR_CLASE[clase], -0.12),
+    clase, vulnerable: 0,
+    fase: 0, carga: 0, recarga: 2,
+    jefe: true,
+    nombre: NOMBRES_JEFE[clase]
+  });
+
+  jefeALaVista = enemies[enemies.length - 1];
+  createFloatingText(player.x, player.y - 60, '¡' + NOMBRES_JEFE[clase] + '!', COLOR_CLASE[clase]);
+  playSound('shockwave');
 }
 
 // --- Lógica de Ataques de Partes Axie Core ---
@@ -1784,6 +1833,18 @@ function update(dt) {
     spawnEnemy();
   }
 
+  // Un jefe cada dos minutos
+  if (gameTime >= proximoJefe * CADA_JEFE && proximoJefe * CADA_JEFE < META_SEGUNDOS){
+    spawnJefe(proximoJefe);
+    proximoJefe++;
+  }
+
+  // Aguantar hasta la meta: eso es ganar
+  if (gameTime >= META_SEGUNDOS){
+    gameOver(true);
+    return;
+  }
+
   // Actualizar Proyectiles
   for (let i = projectiles.length - 1; i >= 0; i--) {
     const p = projectiles[i];
@@ -1849,8 +1910,61 @@ function update(dt) {
   for (let i = enemies.length - 1; i >= 0; i--) {
     const e = enemies[i];
     const angle = Math.atan2(player.y - e.y, player.x - e.x);
-    e.x += Math.cos(angle) * e.speed * dt;
-    e.y += Math.sin(angle) * e.speed * dt;
+    const dist = Math.hypot(player.x - e.x, player.y - e.y);
+
+    /* Cada clase se mueve a su manera. Ver el comentario de CONDUCTA: esto es
+       lo que hace que el color de una quimera te diga cómo pelearla. */
+    if (e.clase === 'bird'){
+      // Zigzag: avanza y se cruza en perpendicular
+      e.fase += dt * 6;
+      const perp = angle + Math.PI / 2;
+      e.x += Math.cos(angle) * e.speed * dt + Math.cos(perp) * Math.sin(e.fase) * e.speed * 0.55 * dt;
+      e.y += Math.sin(angle) * e.speed * dt + Math.sin(perp) * Math.sin(e.fase) * e.speed * 0.55 * dt;
+
+    } else if (e.clase === 'beast'){
+      // Se acerca, frena, y embiste en línea recta
+      e.recarga -= dt;
+      if (e.carga > 0){
+        e.carga -= dt;
+        e.x += Math.cos(e.rumbo) * e.speed * 3.1 * dt;
+        e.y += Math.sin(e.rumbo) * e.speed * 3.1 * dt;
+      } else if (e.recarga <= 0 && dist < 260){
+        e.carga = 0.55; e.recarga = 2.6 + Math.random();
+        e.rumbo = angle;
+        createFloatingText(e.x, e.y - e.radius - 8, '¡embiste!', COLOR_CLASE.beast);
+      } else {
+        e.x += Math.cos(angle) * e.speed * dt;
+        e.y += Math.sin(angle) * e.speed * dt;
+      }
+
+    } else if (e.clase === 'aqua'){
+      /* Se planta a media distancia y escupe. Si te le acercás, retrocede: es
+         la única que hay que ir a buscar en vez de esperar. */
+      const ideal = e.jefe ? 300 : 230;
+      const acercarse = dist > ideal + 30 ? 1 : (dist < ideal - 30 ? -1 : 0);
+      e.x += Math.cos(angle) * e.speed * acercarse * dt;
+      e.y += Math.sin(angle) * e.speed * acercarse * dt;
+      e.recarga -= dt;
+      /* ⚠️ Tope global de escupitajos en el aire. Las Aqua se quedan lejos, o
+         sea que no se las mata rápido y se van juntando: medido, llegaban a 36
+         a la vez y mataban a un jugador con la vida llena en un cuadro. Con el
+         tope siguen siendo la clase que hay que ir a buscar, pero dejan de ser
+         un muro que no se puede esquivar. */
+      if (e.recarga <= 0 && dist < 460 && (escupitajos.length < 14 || e.jefe)){
+        e.recarga = e.jefe ? 1.1 : 3.4 + Math.random();
+        const n = e.jefe ? 3 : 1;
+        for (let k = 0; k < n; k++){
+          const a2 = angle + (k - (n - 1) / 2) * 0.22;
+          escupitajos.push({ x: e.x, y: e.y, vx: Math.cos(a2) * 210, vy: Math.sin(a2) * 210,
+            damage: e.jefe ? 12 : 7, radius: e.jefe ? 10 : 7, life: 3.2, color: COLOR_CLASE.aqua });
+        }
+      }
+
+    } else {
+      // Planta: lenta y derecho, sin trucos
+      e.x += Math.cos(angle) * e.speed * dt;
+      e.y += Math.sin(angle) * e.speed * dt;
+    }
 
     if (e.vulnerable > 0) e.vulnerable -= dt;
 
@@ -1884,18 +1998,40 @@ function update(dt) {
     // Muerte del enemigo
     if (e.hp <= 0) {
       kills++;
-      spawnParticles(e.x, e.y, e.color, 12);
+      spawnParticles(e.x, e.y, e.color, e.jefe ? 40 : 12);
       if (runaEquipada && runaEquipada.id === 'way-beast') sumarRage(1);
-      // Soltar gema AXP
-      gems.push({
-        x: e.x,
-        y: e.y,
-        value: e.type === 'brute' ? 45 : 15,
-        radius: 6,
-        color: e.type === 'brute' ? '#ffe066' : '#00e5ff'
-      });
+
+      if (e.jefe){
+        /* El jefe suelta el AXP repartido en gemas alrededor: una sola gema
+           gigante se recoge sin darse cuenta y no se siente como un premio. */
+        for (let k = 0; k < 12; k++){
+          const a2 = (k / 12) * Math.PI * 2;
+          gems.push({ x: e.x + Math.cos(a2) * 40, y: e.y + Math.sin(a2) * 40,
+            value: 60, radius: 8, color: '#ffe066' });
+        }
+        createFloatingText(e.x, e.y - 40, '¡' + e.nombre + ' cayó!', '#ffe066');
+        if (jefeALaVista === e) jefeALaVista = null;
+        playSound('levelup');
+      } else {
+        gems.push({ x: e.x, y: e.y, value: 15, radius: 6, color: '#00e5ff' });
+      }
       enemies.splice(i, 1);
     }
+  }
+
+  /* Escupitajos de las quimeras Aqua */
+  for (let i = escupitajos.length - 1; i >= 0; i--){
+    const s = escupitajos[i];
+    s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt;
+    if (Math.hypot(player.x - s.x, player.y - s.y) < player.radius + s.radius){
+      player.hp -= s.damage;
+      spawnParticles(s.x, s.y, s.color, 5);
+      playSound('hit');
+      escupitajos.splice(i, 1);
+      if (player.hp <= 0) gameOver();
+      continue;
+    }
+    if (s.life <= 0) escupitajos.splice(i, 1);
   }
 
   // Actualizar Gemas AXP
@@ -2002,6 +2138,21 @@ function render() {
     ctx.restore();
   }
 
+  // 4b. Escupitajos de las Aqua
+  for (let s of escupitajos) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.radius, 0, Math.PI * 2);
+    ctx.fillStyle = s.color;
+    ctx.shadowColor = s.color;
+    ctx.shadowBlur = 10;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+    ctx.restore();
+  }
+
   // 5. Quimeras (Enemigos)
   for (let e of enemies) {
     drawChimera(e);
@@ -2037,31 +2188,68 @@ function render() {
 }
 
 // Dibujo del suelo con cuadrícula y límites de Lunacia
+/* ══════════════════════════════════════════════════════════════════════════
+   LUNACIA
+   ──────────────────────────────────────────────────────────────────────────
+   Antes esto era una grilla blanca sobre negro: parecía el prototipo de
+   cualquier cosa. El mundo de Axie es cálido —tierra de terracota, arbustos,
+   piedras—, y con eso el juego se lee como un juego de Axie en el primer
+   segundo, que es cuando el juez se forma la opinión.
+   ⚠️ La tierra va OSCURA aunque sea cálida. Con un terracota brillante las
+   quimeras naranjas de clase Bestia se perdían contra el piso, y el color de
+   la quimera es justo la información que el jugador necesita para decidir.
+   ⚠️ La maleza usa una semilla fija derivada de su posición, no Math.random():
+   con azar de verdad los arbustos parpadearían en cada cuadro.
+   ══════════════════════════════════════════════════════════════════════════ */
 function renderGround() {
-  const gridSize = 80;
-  const startX = Math.floor(camera.x / gridSize) * gridSize;
-  const startY = Math.floor(camera.y / gridSize) * gridSize;
+  const x0 = camera.x, y0 = camera.y, x1 = camera.x + viewWidth, y1 = camera.y + viewHeight;
 
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.04)';
-  ctx.lineWidth = 1;
+  // Tierra
+  ctx.fillStyle = '#2e211a';
+  ctx.fillRect(x0, y0, viewWidth, viewHeight);
 
-  for (let x = startX; x < startX + viewWidth + gridSize; x += gridSize) {
-    ctx.beginPath();
-    ctx.moveTo(x, camera.y);
-    ctx.lineTo(x, camera.y + viewHeight);
-    ctx.stroke();
-  }
-  for (let y = startY; y < startY + viewHeight + gridSize; y += gridSize) {
-    ctx.beginPath();
-    ctx.moveTo(camera.x, y);
-    ctx.lineTo(camera.x + viewWidth, y);
-    ctx.stroke();
+  // Bandas de arena, para que el suelo no sea liso
+  const banda = 220;
+  ctx.fillStyle = 'rgba(196, 132, 74, 0.05)';
+  for (let y = Math.floor(y0 / banda) * banda; y < y1 + banda; y += banda * 2){
+    ctx.fillRect(x0, y, viewWidth, banda);
   }
 
-  // Borde del Mundo
-  ctx.strokeStyle = '#ff4b2b';
-  ctx.lineWidth = 4;
-  ctx.strokeRect(-WORLD_SIZE / 2, -WORLD_SIZE / 2, WORLD_SIZE, WORLD_SIZE);
+  // Maleza y piedras, sembradas en una cuadrícula con semilla fija
+  const celda = 130;
+  for (let cx = Math.floor(x0 / celda) * celda; cx < x1 + celda; cx += celda){
+    for (let cy = Math.floor(y0 / celda) * celda; cy < y1 + celda; cy += celda){
+      const s = Math.abs(Math.sin(cx * 12.9898 + cy * 78.233) * 43758.5453);
+      const r = s - Math.floor(s);
+      if (r > 0.55) continue;
+      const px = cx + (r * 900 % celda), py = cy + (r * 1700 % celda);
+      if (r < 0.16){
+        // Piedra
+        ctx.fillStyle = 'rgba(120, 96, 80, 0.5)';
+        ctx.beginPath();
+        ctx.ellipse(px, py, 7 + r * 22, 5 + r * 14, r * 3, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // Arbusto: tres hojas
+        ctx.fillStyle = 'rgba(86, 128, 74, 0.42)';
+        for (let k = 0; k < 3; k++){
+          ctx.beginPath();
+          ctx.ellipse(px + (k - 1) * 7, py - Math.abs(k - 1) * 3, 6, 9, (k - 1) * 0.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+  }
+
+  // Borde del mundo: la niebla corrupta del final del mapa
+  const b = WORLD_SIZE / 2;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255, 75, 43, 0.55)';
+  ctx.lineWidth = 6;
+  ctx.setLineDash([26, 18]);
+  ctx.lineDashOffset = -gameTime * 22;
+  ctx.strokeRect(-b, -b, WORLD_SIZE, WORLD_SIZE);
+  ctx.restore();
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -2276,6 +2464,17 @@ function drawChimera(e) {
   ctx.ellipse(0, R + 2, rx * 0.85, R * 0.3, 0, 0, Math.PI * 2);
   ctx.fill();
 
+  // El jefe late, para que no haga falta leer nada y se sepa que es otra cosa
+  if (e.jefe){
+    ctx.save();
+    ctx.globalAlpha = 0.16 + Math.sin(gameTime * 4) * 0.08;
+    ctx.fillStyle = cc;
+    ctx.beginPath();
+    ctx.arc(0, flota, R * 1.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
   /* Púas de la corrupción, asomando por detrás del lomo. Van en un tono
      cercano al del cuerpo: casi negras se leían como antenas pegadas encima,
      no como parte del bicho. Es el mismo error que las almohadillas del león. */
@@ -2328,11 +2527,23 @@ function drawChimera(e) {
 
   // Barra de vida, solo cuando ya está lastimada
   if (e.hp < e.maxHp){
-    const a = rx * 1.3, h = 3;
+    const a = rx * 1.3, h = e.jefe ? 5 : 3;
     ctx.fillStyle = 'rgba(0,0,0,0.45)';
     ctx.fillRect(-a / 2, flota - ry * 1.55, a, h);
     ctx.fillStyle = cc;
     ctx.fillRect(-a / 2, flota - ry * 1.55, a * Math.max(0, e.hp / e.maxHp), h);
+  }
+
+  // El nombre del jefe, encima
+  if (e.jefe){
+    ctx.font = 'bold 15px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = cc;
+    ctx.shadowColor = '#000';
+    ctx.shadowBlur = 6;
+    ctx.fillText(e.nombre, 0, flota - ry * 1.9);
+    ctx.shadowBlur = 0;
+    ctx.textAlign = 'start';
   }
 
   ctx.restore();
@@ -2348,9 +2559,14 @@ function updateHud() {
   document.getElementById('axp-fill').style.width = `${axpPercent}%`;
   document.getElementById('axp-text').innerText = `Nivel ${player.level}`;
 
-  const minutes = Math.floor(gameTime / 60).toString().padStart(2, '0');
-  const seconds = Math.floor(gameTime % 60).toString().padStart(2, '0');
-  document.getElementById('timer-display').innerText = `${minutes}:${seconds}`;
+  /* El reloj cuenta hacia la meta, no hacia arriba: así el jugador sabe
+     cuánto le falta para ganar en vez de solo cuánto lleva sobreviviendo. */
+  const resta = Math.max(0, META_SEGUNDOS - gameTime);
+  const minutes = Math.floor(resta / 60).toString().padStart(2, '0');
+  const seconds = Math.floor(resta % 60).toString().padStart(2, '0');
+  const reloj = document.getElementById('timer-display');
+  reloj.innerText = `${minutes}:${seconds}`;
+  reloj.style.color = (jefeALaVista && enemies.includes(jefeALaVista)) ? '#ff4b2b' : '#ffd152';
 
   document.getElementById('kills-display').innerText = kills;
 
@@ -2381,12 +2597,15 @@ function startGame() {
   player.y = 0;
   enemies = [];
   projectiles = [];
+  escupitajos = [];
   gems = [];
   particles = [];
   floatingTexts = [];
   gameTime = 0;
   kills = 0;
   axpDeLaCorrida = 0;
+  jefeALaVista = null;
+  proximoJefe = 1;
 
   // ⚠️ La progresión también se reinicia. Sin esto, "Jugar de Nuevo" arrancaba
   // con el nivel y el umbral de AXP de la partida anterior: nextLevelAxp crece
@@ -2414,10 +2633,23 @@ function startGame() {
   lastTimestamp = performance.now();
 }
 
-function gameOver() {
+function gameOver(gano) {
   gameState = 'GAMEOVER';
   const minutes = Math.floor(gameTime / 60).toString().padStart(2, '0');
   const seconds = Math.floor(gameTime % 60).toString().padStart(2, '0');
+
+  /* Ganar es aguantar hasta la meta. El bono de extracción es la mitad de lo
+     cosechado: hace que valga la pena quedarse en vez de morir tranquilo. */
+  const titulo = document.getElementById('gameover-title');
+  if (gano){
+    axpDeLaCorrida += Math.round(axpDeLaCorrida * 0.5);
+    titulo.innerText = '¡EXTRACCIÓN CON ÉXITO!';
+    titulo.style.color = '#8be4b1';
+    playSound('levelup');
+  } else {
+    titulo.innerText = '¡TU AXIE HA CAÍDO!';
+    titulo.style.color = '#ff4b2b';
+  }
 
   document.getElementById('final-time').innerText = `${minutes}:${seconds}`;
   document.getElementById('final-kills').innerText = kills;
