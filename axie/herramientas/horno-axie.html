@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Horno de Axies</title>
+<style>
+  body { background:#12161c; color:#dfe6ee; font:14px system-ui; margin:0; padding:18px; }
+  h1 { font-size:16px; margin:0 0 10px; }
+  #log { white-space:pre-wrap; font:12px ui-monospace,monospace; background:#0b0e12;
+         padding:12px; border-radius:8px; max-height:52vh; overflow:auto; }
+  .ok { color:#4cd137 } .mal { color:#ff4b4b } .tit { color:#f7a838 }
+  #muestras { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+  #muestras canvas { background:#1b2430; border:1px solid #2a3340; border-radius:8px; max-width:100%; }
+</style>
+</head>
+<body>
+<h1>Horno de Axies — cocina los sprites del mixer oficial</h1>
+<div id="log">encendiendo…</div>
+<div id="muestras"></div>
+
+<script type="module">
+const log = document.getElementById('log');
+const di = (t, c) => { log.innerHTML += '\n' + (c ? `<span class="${c}">${t}</span>` : t); log.scrollTop = 1e9; };
+window.HORNO = { hechos: [], error: null, listo: false };
+
+/* ── Qué se cocina ──────────────────────────────────────────────────────────
+   Los genes de ejemplo vienen del propio Battle Kit. La CLASE del Axie vive en
+   los bits 3-6 del primer byte de los genes: (byte >> 3) & 0xF, con el orden
+   Beast 0, Bug 1, Bird 2, Plant 3, Aquatic 4, Reptile 5. Verificado uno por
+   uno contra la variante que devuelve el mixer. Cambiando ese byte se obtiene
+   el mismo Axie en cualquier clase, que es exactamente lo que hace falta acá:
+   las tres clases jugables sin tener que conseguir tres genes distintos. */
+const GENES_BASE = '0x180000000000010001c1a050821000000001000c086043040001000c086044080001000c106083040001000c286143040001000c0861830c0003000c08604306';
+const CLASE_BITS = { beast: 0, bug: 1, bird: 2, plant: 3, aqua: 4, reptile: 5 };
+const A_COCINAR = ['beast', 'plant', 'aqua'];   // las tres que el juego ofrece
+
+/* Cuadros por animación. `action/run` es el ciclo de caminata y es lo que se ve
+   el 95% del tiempo; `action/idle/normal` es para cuando está quieto.
+
+   ⚠️ Las tres de ataque NO son decoración: son las animaciones con las que el
+   propio kit sincroniza sus efectos. Cada `clip.json` de VFX trae los campos
+   `attackAnimation` y `hitAnimation`, y `beast_gore` dice exactamente
+   `attack/melee/horn-gore`. Sin ellas el Axie se queda corriendo mientras le
+   estalla el efecto en la cara del enemigo, que es lo que pasaba antes.
+
+   ⚠️ Los nombres de las partes calzan con las cartas del juego: el cuerno
+   embiste (gore), la boca muerde (bite) y la cola golpea (smash). Es la misma
+   correspondencia que ya usa `VFX.idDeGolpe()`; si se cambia una, se cambian
+   las dos. */
+const TIRAS = [
+  { anim: 'action/run', cuadros: 8 },
+  { anim: 'action/idle/normal', cuadros: 6 },
+  { anim: 'attack/melee/horn-gore', cuadros: 6 },
+  { anim: 'attack/melee/mouth-bite', cuadros: 6 },
+  { anim: 'attack/melee/tail-smash', cuadros: 6 },
+  { anim: 'defense/hit-by-normal', cuadros: 5 },
+  { anim: 'activity/evolve', cuadros: 8 }
+];
+const LADO = 160;         // cada cuadro, en pixeles. El Axie se dibuja a ~64: sobra.
+
+function genesDeClase(clase) {
+  const b = (CLASE_BITS[clase] << 3) & 0xFF;
+  return '0x' + b.toString(16).padStart(2, '0') + GENES_BASE.slice(4);
+}
+
+try {
+  di('cargando pixi, pixi-spine y el mixer…');
+  const PIXI = await import('https://esm.sh/pixi.js@7.2.4');
+  const spineMod = await import('https://esm.sh/pixi-spine@4.0.3?deps=pixi.js@7.2.4');
+  const rt38 = await import('https://esm.sh/@pixi-spine/runtime-3.8@4.0.3?deps=pixi.js@7.2.4');
+  const bufMod = await import('https://esm.sh/buffer@6.0.3');
+  globalThis.Buffer = bufMod.Buffer;
+  const mixer = await import('https://esm.sh/@axieinfinity/mixer@1.4.9');
+  di('  librerías OK', 'ok');
+
+  const base = 'https://esm.sh/@axieinfinity/mixer@1.4.9/dist/data/';
+  const datos = [];
+  for (const n of ['axie-2d-v3-stuff-genes.json', 'axie-2d-v3-stuff-samples.json',
+                   'axie-2d-v3-stuff-variant.json', 'axie-2d-v3-stuff-animations.json']) {
+    datos.push(await (await fetch(base + n)).json());
+  }
+  mixer.initAxieMixer(datos[0], datos[1], datos[2], datos[3]);
+  di('  datos del mixer OK', 'ok');
+
+  const URL_IMGS = 'https://axiecdn.axieinfinity.com/mixer-stuffs/v6/';
+  const cacheTex = new Map();
+  const bajarTextura = url => {
+    if (cacheTex.has(url)) return cacheTex.get(url);
+    const p = new Promise((ok, mal) => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => ok(PIXI.Texture.from(img));
+      img.onerror = () => mal(new Error(url));
+      img.src = url;
+    });
+    cacheTex.set(url, p);
+    return p;
+  };
+
+  async function armarAxie(clase) {
+    const r = mixer.getAxieSpineFromGenes(genesDeClase(clase), new Map(), false);
+    if (r.error || !r.skeletonDataAsset) throw new Error(r.error || 'el mixer no devolvió esqueleto');
+    const shift = mixer.getAxieColorPartShift(r.variant);
+    const texturas = {};
+    const pedidos = [];
+    for (const skin of (r.skeletonDataAsset.skins || [])) {
+      for (const slot of Object.keys(skin.attachments || {})) {
+        for (const att of Object.keys(skin.attachments[slot] || {})) {
+          const a = skin.attachments[slot][att];
+          const p = a?.path || a?.name || att;
+          if (typeof p !== 'string') continue;
+          pedidos.push({ key: p, url: URL_IMGS + mixer.getVariantAttachmentPath(slot, p, r.variant, shift) });
+        }
+      }
+    }
+    await Promise.all(pedidos.map(async ({ key, url }) => {
+      try {
+        const t = await bajarTextura(url);
+        texturas[key] = t;
+        texturas[key.replace(/\./g, '/')] = t;
+        const f = url.split('/mixer-stuffs/v6/')[1] || url;
+        texturas[f] = t; texturas[f.replace(/\.png$/, '')] = t; texturas[url] = t;
+      } catch { /* una parte que falta no rompe el Axie entero */ }
+    }));
+    const atlas = new spineMod.TextureAtlas();
+    atlas.addTextureHash(texturas, false);
+    const parser = new rt38.SkeletonJson(new rt38.AtlasAttachmentLoader(atlas));
+    parser.scale = 1;
+    const spineData = parser.readSkeletonData(r.skeletonDataAsset);
+    return { spine: new spineMod.Spine(spineData), variante: r.variant, spineData };
+  }
+
+  for (const clase of A_COCINAR) {
+    di('\ncocinando ' + clase + '…', 'tit');
+    const { spine, variante, spineData } = await armarAxie(clase);
+    di('  variante ' + variante + ', ' + (spineData.animations || []).length + ' animaciones');
+
+    const cuadrosTotales = TIRAS.reduce((a, t) => a + t.cuadros, 0);
+    const cols = 8, filas = Math.ceil(cuadrosTotales / cols);
+
+    /* ⚠️ `preserveDrawingBuffer` es obligatorio: sin eso el lienzo de WebGL se
+       vacía en cuanto termina el cuadro y lo que se copia sale transparente. */
+    const app = new PIXI.Application({
+      width: LADO, height: LADO, backgroundAlpha: 0,
+      antialias: true, preserveDrawingBuffer: true
+    });
+    app.ticker.stop();
+    app.stage.addChild(spine);
+
+    /* Encuadre: se mide el Axie una vez y se lo escala para que ocupe el 80%
+       del cuadro, parado sobre el piso del recuadro. Hacerlo por medición y no
+       con un número a ojo es lo que hace que las tres clases salgan del mismo
+       tamaño aunque sus cuerpos no midan igual. */
+    spine.state.setAnimation(0, 'action/idle/normal', true);
+    spine.update(0); app.renderer.render(app.stage);
+    const b = spine.getLocalBounds();
+    const esc = (LADO * 0.80) / Math.max(b.width, b.height);
+    spine.scale.set(esc);
+    spine.x = LADO / 2 - (b.x + b.width / 2) * esc;
+    spine.y = LADO * 0.94 - (b.y + b.height) * esc;
+
+    const hoja = document.createElement('canvas');
+    hoja.width = cols * LADO; hoja.height = filas * LADO;
+    const hctx = hoja.getContext('2d');
+
+    const indice = [];
+    let i = 0;
+    for (const tira of TIRAS) {
+      const anim = (spineData.animations || []).find(a => a.name === tira.anim);
+      if (!anim) { di('  falta la animación ' + tira.anim + ', se saltea', 'mal'); continue; }
+      const dt = anim.duration / tira.cuadros;
+      indice.push({ anim: tira.anim, desde: i, cuadros: tira.cuadros, duracion: anim.duration });
+      spine.state.setAnimation(0, tira.anim, true);
+      spine.update(0);
+      for (let k = 0; k < tira.cuadros; k++) {
+        app.renderer.render(app.stage);
+        hctx.drawImage(app.view, (i % cols) * LADO, Math.floor(i / cols) * LADO);
+        spine.update(dt);
+        i++;
+      }
+      di('  ' + tira.anim + ': ' + tira.cuadros + ' cuadros');
+    }
+
+    const muestra = document.createElement('canvas');
+    muestra.width = cols * 60; muestra.height = filas * 60;
+    muestra.getContext('2d').drawImage(hoja, 0, 0, muestra.width, muestra.height);
+    document.getElementById('muestras').appendChild(muestra);
+
+    const meta = { clase, variante, cols, filas, ancho: LADO, alto: LADO, tiras: indice,
+                   origen: '@axieinfinity/mixer 1.4.9 + axiecdn mixer-stuffs/v6' };
+    const rsp = await fetch('/guardar', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ clase, png: hoja.toDataURL('image/png'), meta })
+    });
+    const j = await rsp.json();
+    di(j.ok ? '  guardado: ' + j.kb + ' KB' : '  no se guardó: ' + j.error, j.ok ? 'ok' : 'mal');
+    window.HORNO.hechos.push({ clase, variante, ok: !!j.ok, kb: j.kb });
+
+    /* ⚠️ Destruir la aplicación SIN tocar las texturas. Con `destroy(true, true)`
+       Pixi se lleva puestas las texturas base, que están en la caché compartida
+       entre clases: la primera lámina salía bien y la segunda moría con
+       "Cannot read properties of null (reading 'realWidth')". */
+    app.destroy(true, { children: true, texture: false, baseTexture: false });
+  }
+
+  window.HORNO.listo = true;
+  di('\nLISTO', 'ok');
+} catch (e) {
+  window.HORNO.error = String(e && e.message || e);
+  di('\nSE CORTÓ: ' + window.HORNO.error, 'mal');
+}
+</script>
+</body>
+</html>

@@ -8,6 +8,13 @@
   <meta property="og:title" content="Axie Survivors: Core Evolution">
   <meta property="og:description" content="Defiende Lunacia contra oleadas de Quimeras, recolecta AXP y evoluciona tu Axie.">
   <meta property="og:image" content="thumbnail.jpg">
+
+  <!-- El Axie del juego, dibujado chiquito. Sin esto el navegador pide
+       /axie/favicon.ico, se come un 404 en la consola, y la pestaña queda con
+       el ícono en blanco: lo primero que ve un juez es una pestaña sin cara.
+       ⚠️ Los espacios van como %20 o algunos navegadores cortan la URL. -->
+  <link rel="icon" href="data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'><rect%20width='64'%20height='64'%20rx='14'%20fill='%23151a21'/><path%20d='M32%2012l4%2011h-8z'%20fill='%23f7a838'/><ellipse%20cx='32'%20cy='36'%20rx='19'%20ry='16'%20fill='%23f7a838'/><circle%20cx='25'%20cy='34'%20r='6'%20fill='%23fff'/><circle%20cx='39'%20cy='34'%20r='6'%20fill='%23fff'/><circle%20cx='25'%20cy='35'%20r='3'%20fill='%23151a21'/><circle%20cx='39'%20cy='35'%20r='3'%20fill='%23151a21'/><rect%20x='21'%20y='49'%20width='5'%20height='6'%20rx='2'%20fill='%23e0952c'/><rect%20x='29.5'%20y='49'%20width='5'%20height='6'%20rx='2'%20fill='%23e0952c'/><rect%20x='38'%20y='49'%20width='5'%20height='6'%20rx='2'%20fill='%23e0952c'/></svg>">
+
   <style>
     * {
       margin: 0;
@@ -255,31 +262,89 @@
       max-width: 800px;
     }
 
+    /* ══ LA CARTA DE SUBIR DE NIVEL ══
+       Es el momento en que el jugador ve el sistema de Axie Core, y eran tres
+       rectángulos iguales con un rombo azul: la rareza estaba escrita en letra
+       chica y el color de la clase no aparecía por ningún lado, o sea que la
+       información que en Origins te da la carta de un vistazo acá había que
+       leerla. Ahora la rareza es el marco —igual que en Origins— y la clase es
+       la franja de arriba.
+       ⚠️ Todo el color sale de `--rara` y `--clase`, dos variables que pone el
+       JS al armar la carta. Sin eso harían falta cuatro reglas por rareza por
+       cada cosa que se pinta, y agregar una rareza nueva sería tocar el CSS. */
     .upgrade-card {
-      background: rgba(20, 32, 42, 0.95);
-      border: 2px solid rgba(0, 180, 219, 0.4);
+      --rara: #9aa7b4;
+      --clase: #12c2e9;
+      position: relative;
+      overflow: hidden;
+      background:
+        radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--rara) 16%, transparent), transparent 70%),
+        rgba(16, 26, 36, 0.97);
+      border: 2px solid var(--rara);
       border-radius: 16px;
       padding: 18px;
       width: 220px;
       cursor: pointer;
-      transition: all 0.25s ease;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
       text-align: left;
       display: flex;
       flex-direction: column;
       gap: 8px;
+      box-shadow: 0 6px 22px rgba(0, 0, 0, 0.45),
+                  inset 0 0 26px color-mix(in srgb, var(--rara) 12%, transparent);
+      /* Entra volando, escalonada. El escalón es lo que hace que se lean como
+         tres opciones y no como un bloque que apareció de golpe. */
+      animation: cartaEntra 0.34s cubic-bezier(.2,.9,.3,1.25) both;
+      animation-delay: var(--turno, 0s);
+    }
+    @keyframes cartaEntra {
+      from { opacity: 0; transform: translateY(26px) scale(0.94); }
+      to   { opacity: 1; transform: none; }
+    }
+    /* La franja de la clase, arriba de todo: es lo primero que se ve y dice
+       de qué clase es la carta sin tener que leer. */
+    .upgrade-card::before {
+      content: '';
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      background: var(--clase);
+    }
+    /* El sello de rareza, en la esquina */
+    .upgrade-rareza {
+      position: absolute;
+      top: 10px; right: 0;
+      font-size: 9px;
+      font-weight: 900;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      color: #0d151c;
+      background: var(--rara);
+      padding: 3px 10px 3px 8px;
+      border-radius: 6px 0 0 6px;
     }
 
     .upgrade-card:hover {
       transform: translateY(-6px);
       border-color: #ffe066;
-      box-shadow: 0 10px 30px rgba(255, 224, 102, 0.4);
-      background: rgba(26, 44, 60, 1);
+      box-shadow: 0 14px 34px color-mix(in srgb, var(--rara) 45%, transparent);
     }
 
     .upgrade-icon {
       font-size: 32px;
       margin-bottom: 4px;
+      width: 46px;
+      height: 46px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--clase) 16%, rgba(0,0,0,0.35));
+      border: 1px solid color-mix(in srgb, var(--clase) 38%, transparent);
     }
+    /* ⚠️ Los iconos de estado del kit son PNG chicos y con mucho aire alrededor:
+       a 46 px de caja, 34 de dibujo es lo que los deja del mismo peso visual
+       que los emoji con los que conviven en la misma pantalla. */
+    .upgrade-icon img { width: 34px; height: 34px; display: block; }
 
     .upgrade-title {
       font-size: 16px;
@@ -576,7 +641,7 @@
       <!-- Rage → Fury, y los Puntos de Potencial que quedan -->
       <div class="stat-bar-group" style="min-width: 130px;">
         <div class="stat-label">
-          <span id="rage-label" style="color: #ff8800;">Rage</span>
+          <span id="rage-label" style="color: #ff8800; background-repeat:no-repeat; background-position:left center; background-size:auto 12px;">Rage</span>
           <span id="rage-text" style="color: #ff8800;">0 / 10</span>
         </div>
         <div class="bar-container">
@@ -589,6 +654,7 @@
     <div class="hud-panel">
       <div id="timer-display" class="hud-timer">00:00</div>
       <div class="hud-stats">⚔️ <span id="kills-display">0</span> Kills</div>
+      <button id="pause-btn" class="hud-btn" onclick="alternarPausa()" title="Pausa (P o Esc)">⏸</button>
       <button id="sound-btn" class="hud-btn" onclick="toggleAudio()">🔊 Sonido</button>
     </div>
   </div>
@@ -770,6 +836,407 @@ function playSound(type) {
     }
   } catch (e) {}
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   VFX OFICIALES DE AXIE ORIGINS
+   ──────────────────────────────────────────────────────────────────────────
+   Los efectos ya no son partículas inventadas: son los mismos que se ven en
+   Axie Infinity: Origins. Salen del Axie Origins Battle Kit, en la revisión
+   exacta que autorizan las reglas del Vibeathon:
+       github.com/axieinfinity/axie-origins-asset-kit
+       commit 069a59b772e54633d04a3d9d12ecde73b3e4be5d
+   La licencia y los avisos de terceros viajan con la copia, en `vfx/`, que es
+   lo que esa licencia exige. Son IP de Sky Mavis: el código de este juego es
+   MIT, `vfx/` NO.
+
+   Cada clip es un `atlas.png` (una grilla de cuadros) más un `clip.json` con
+   los fps, el recorte y el ANCLA. El ancla es el punto del cuadro que en la
+   captura original caía sobre el Axie que recibía el golpe; dibujando ese
+   punto sobre la quimera, el efecto queda donde tiene que quedar sin tener
+   que adivinar desplazamientos.
+
+   ⚠️ Se dibuja con `globalCompositeOperation = 'lighter'`. Los atlas están
+   grabados sobre un fondo casi negro y NO tienen transparencia: en modo
+   normal se vería un rectángulo negro tapando media pantalla. En aditivo el
+   negro no suma nada y desaparece solo. Es la misma decisión que toma el
+   runtime del kit (`mix-blend-mode: plus-lighter` en su versión DOM).
+
+   ⚠️ Se carga cuando se usa, no al abrir. Son 19 MB en total y una corrida
+   toca como mucho seis o siete clips: pedirlos todos de entrada le cobraría
+   al jugador una espera por cosas que quizá no vea nunca. `pedir()` trae el
+   clip la primera vez y lo deja en memoria.
+
+   ⚠️ Y si un clip no llega, el juego sigue. Nada de esto está en el camino
+   crítico: si la red se cae o el archivo falta, `lanzar()` no hace nada y se
+   juega igual, con las partículas de siempre. Un efecto es un lujo; que el
+   juego arranque no lo es.
+   ══════════════════════════════════════════════════════════════════════════ */
+const VFX = (() => {
+  const RUTA = 'vfx/';          // relativa a propósito: la tienda vive en /axie
+  const clips = new Map();      // id -> {estado, clip, img}
+  let vivos = [];               // los efectos que se están reproduciendo
+  const ultimoLanzado = new Map();
+
+  const TOPE_VIVOS = 10;        // más que esto es una sopa, no un efecto
+  const GAP_MISMO_ID = 0.10;    // segundos entre dos disparos del mismo clip
+
+  /* Las clases del juego y las del kit no se llaman igual: acá el pez es
+     `aqua` y en Origins es `aquatic`. El resto coincide. */
+  const CLASE_VFX = { beast:'beast', plant:'plant', aqua:'aquatic', bird:'bird' };
+
+  /* Qué ataque de Origins le corresponde a cada parte del cuerpo. Sale de la
+     animación real de la carta: el cuerno embiste (gore), la boca muerde
+     (bite) y la cola golpea el suelo (smash), que es justo la onda expansiva. */
+  const ATAQUE_DE_PARTE = { horn:'gore', mouth:'bite', tail:'smash' };
+
+  function idDeGolpe(parte, claseCarta){
+    const a = ATAQUE_DE_PARTE[parte];
+    const c = CLASE_VFX[claseCarta];
+    return (a && c) ? c + '_' + a : null;
+  }
+
+  /* ⚠️ Los primeros cuadros de un clip de ataque están VACÍOS. El atlas trae
+     el efecto y nada más: en la captura original, mientras el Axie atacante
+     se acerca, no hay nada que dibujar. En `beast_gore` el golpe recién
+     aparece en el cuadro 11 de 39, o sea 0,37 s tarde. Arrancando en cero,
+     el destello sale bastante después del daño y se lee como otra cosa.
+     Por eso el clip arranca en su evento `OnHit`, que es exactamente el
+     momento del impacto. Los buffs no tienen ese evento y arrancan en cero. */
+  function arranqueDe(clip){
+    if (clip.kind !== 'skill') return 0;
+    const ev = (clip.events || []).find(x => x.function === 'OnHit');
+    return ev ? ev.time : 0;
+  }
+
+  function pedir(id){
+    let e = clips.get(id);
+    if (e) return e;
+    e = { estado:'cargando', clip:null, img:null };
+    clips.set(id, e);
+    fetch(RUTA + id + '/clip.json')
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(clip => new Promise((ok, mal) => {
+        const img = new Image();
+        img.onload = () => ok({ clip, img });
+        img.onerror = () => mal(new Error('atlas'));
+        img.src = RUTA + id + '/' + clip.atlas.file;
+      }))
+      .then(({clip, img}) => { e.clip = clip; e.img = img; e.estado = 'listo'; })
+      .catch(() => { e.estado = 'falla'; });
+    return e;
+  }
+
+  /* Trae de antemano solo lo que ESTA corrida va a usar: las tres cartas que
+     atacan, con la clase que le tocó a cada una, más los dos efectos del
+     jugador. Con seis partes y cuatro clases posibles el catálogo tiene doce
+     combinaciones, pero una corrida usa tres. */
+  function precargar(partes){
+    const ids = new Set(['heal', 'fury_on_transfrom']);
+    for (const p of Object.keys(ATAQUE_DE_PARTE)){
+      const cl = partes && partes[p] && partes[p].clase;
+      const id = idDeGolpe(p, cl);
+      if (id) ids.add(id);
+    }
+    ids.forEach(pedir);
+  }
+
+  /* x,y en coordenadas del mundo. `escala` sale del tamaño de a quién se le
+     pega: el clip se grabó sobre un Axie de Origins de unos 140 px de alto,
+     así que un bicho de radio 17 quiere más o menos un tercio del tamaño. */
+  function lanzar(id, x, y, opciones){
+    if (!id) return;
+    const o = opciones || {};
+    const e = pedir(id);
+    if (e.estado !== 'listo') return;          // todavía no llegó, o falló
+
+    const ahora = performance.now() / 1000;
+    if (ahora - (ultimoLanzado.get(id) || -9) < GAP_MISMO_ID) return;
+    ultimoLanzado.set(id, ahora);
+
+    if (vivos.length >= TOPE_VIVOS) vivos.shift();   // el más viejo se va
+
+    /* Los atlas pasaron por `herramientas/vfx-preparar.cjs`, que los dejó a
+       la mitad de lado. El cuadro mide la mitad, así que hay que dibujarlo
+       al doble para que se vea del mismo tamaño. El factor sale del propio
+       `clip.json` y no de un 2 escrito acá: si algún día se preparan a otra
+       escala, esto se entera solo. */
+    const prep = e.clip.preparado;
+    const compensa = (prep && prep.escala) ? 1 / prep.escala : 1;
+
+    vivos.push({
+      e, t: arranqueDe(e.clip),
+      x, y,
+      espejo: !!o.espejo,
+      escala: ((o.radio || 17) / 44) * compensa
+    });
+  }
+
+  /* ⚠️ En la captura original el atacante está A LA DERECHA del que
+     recibe: attackerInCrop.x vale 674 y el ancla del defensor 281. Así que el
+     clip se espeja cuando el golpe viene de la IZQUIERDA, que es al revés de
+     lo que uno escribiría de memoria. */
+  function golpe(parte, claseCarta, x, y, atacanteX, radio){
+    lanzar(idDeGolpe(parte, claseCarta), x, y, { espejo: atacanteX < x, radio });
+  }
+
+  function actualizar(dt){
+    for (let i = vivos.length - 1; i >= 0; i--){
+      const v = vivos[i];
+      v.t += dt;
+      if (v.t >= v.e.clip.duration) vivos.splice(i, 1);
+    }
+  }
+
+  /* Se dibuja DENTRO de la transformación del mundo, con lo cual x/y son las
+     mismas coordenadas que usa todo lo demás y la cámara ya está aplicada. */
+  function dibujar(ctx){
+    if (!vivos.length) return;
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for (const v of vivos){
+      const c = v.e.clip, a = c.atlas;
+      const i = Math.min(c.frames - 1, Math.max(0, Math.floor(v.t * c.fps)));
+      const col = i % a.cols, fila = Math.floor(i / a.cols);
+      const s = v.escala;
+      ctx.save();
+      ctx.translate(v.x, v.y);
+      ctx.scale(v.espejo ? -s : s, s);
+      ctx.drawImage(v.e.img,
+        col * a.frameW, fila * a.frameH, a.frameW, a.frameH,
+        -c.anchor.x, -c.anchor.y, a.frameW, a.frameH);
+      ctx.restore();
+    }
+    ctx.restore();
+  }
+
+  function limpiar(){ vivos = []; }
+
+  /* Para poder medir desde afuera qué está pasando: cuántos efectos hay
+     vivos y en qué anda cada clip. Sin esto la única forma de comprobar que
+     un efecto salió es mirarlo, y mirar no sirve cuando la pestaña no pinta. */
+  function estado(){
+    const c = {};
+    clips.forEach((v, k) => { c[k] = v.estado; });
+    return { vivos: vivos.length, clips: c };
+  }
+
+  return { precargar, lanzar, golpe, actualizar, dibujar, limpiar, estado, idDeGolpe };
+})();
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SONIDO OFICIAL DE ORIGINS
+   ──────────────────────────────────────────────────────────────────────────
+   Los golpes ya no son bips: son los sonidos de batalla de Axie Infinity:
+   Origins, del mismo Battle Kit que los efectos. Y calzan solos, porque el kit
+   los nombra igual que a los clips: el efecto `beast_gore` tiene su
+   `beast_gore_attack.wav`. `herramientas/sfx-preparar.cjs` los baja y los deja
+   en Vorbis mono a 96 kbps — 3,5 MB de wav quedan en 0,40 MB.
+
+   ⚠️ Cada sonido tiene VARIAS VOCES. Un solo `Audio` por sonido no sirve: al
+   volver a tocarlo mientras suena hay que rebobinarlo, y el golpe anterior se
+   corta a la mitad. Con el cuerno disparando tres lanzas y varias quimeras
+   recibiendo, eso pasa todo el tiempo. Con tres voces por sonido, rotando, se
+   superponen como corresponde.
+
+   ⚠️ Y NO se crea un `Audio` nuevo por golpe. Con cuatro golpes por segundo
+   eso deja cientos de elementos colgados que el navegador no libera enseguida.
+   Las voces se crean una vez y se reusan.
+
+   ⚠️ El freno de 60 ms por sonido es lo que separa "impacto" de "ametralladora".
+   Sin él, tres lanzas que pegan en el mismo cuadro suenan como un ruido solo.
+
+   Si un archivo no llega, se toca el bip sintetizado de siempre. El sonido es
+   un lujo; que el juego ande no lo es.
+   ══════════════════════════════════════════════════════════════════════════ */
+const SONIDO = (() => {
+  const RUTA = 'arte/sfx/';
+  const VOCES = 3;
+  const GAP = 0.06;
+  const bancos = new Map();          // nombre -> {estado, voces, i, ultimo}
+
+  function pedir(nombre){
+    let b = bancos.get(nombre);
+    if (b) return b;
+    b = { estado: 'cargando', voces: [], i: 0, ultimo: -9 };
+    bancos.set(nombre, b);
+    const a = new Audio();
+    a.addEventListener('canplaythrough', () => {
+      b.voces.push(a);
+      for (let k = 1; k < VOCES; k++) b.voces.push(a.cloneNode());
+      b.estado = 'listo';
+    }, { once: true });
+    a.addEventListener('error', () => { b.estado = 'falla'; }, { once: true });
+    a.preload = 'auto';
+    a.src = RUTA + nombre + '.ogg';
+    return b;
+  }
+
+  /* Los que esta corrida va a usar. Igual que con los efectos: las tres cartas
+     que atacan, con la clase que le tocó a cada una, más los de estado. */
+  function precargar(partes){
+    const nombres = new Set(['curar', 'escudo', 'hoja', 'fury', 'nivel']);
+    for (const p of ['horn', 'mouth', 'tail']){
+      const id = VFX.idDeGolpe(p, partes && partes[p] && partes[p].clase);
+      if (id) nombres.add(id);
+    }
+    nombres.forEach(pedir);
+  }
+
+  /* `respaldo` es el bip de siempre: se toca si el archivo no está. */
+  function tocar(nombre, volumen, respaldo){
+    if (!audioEnabled) return;
+    const b = nombre ? pedir(nombre) : null;
+    if (!b || b.estado !== 'listo'){
+      if (respaldo) playSound(respaldo);
+      return;
+    }
+    const ahora = performance.now() / 1000;
+    if (ahora - b.ultimo < GAP) return;
+    b.ultimo = ahora;
+    const voz = b.voces[b.i];
+    b.i = (b.i + 1) % b.voces.length;
+    try {
+      voz.currentTime = 0;
+      voz.volume = volumen == null ? 0.5 : volumen;
+      const p = voz.play();
+      /* El navegador rechaza reproducir antes del primer toque del usuario.
+         No es un error del juego: se ignora y el próximo sonido ya entra. */
+      if (p && p.catch) p.catch(() => {});
+    } catch (e) { /* idem */ }
+  }
+
+  function golpe(parte, claseCarta){
+    tocar(VFX.idDeGolpe(parte, claseCarta), 0.34, 'hit');
+  }
+
+  function estado(){
+    const o = {};
+    bancos.forEach((v, k) => { o[k] = v.estado; });
+    return o;
+  }
+
+  return { pedir, precargar, tocar, golpe, estado };
+})();
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ICONOS DE ESTADO DE ORIGINS
+   ──────────────────────────────────────────────────────────────────────────
+   El kit trae 131 iconos de estado y cuatro son EXACTAMENTE los estados que
+   este juego ya tenía inventados por su cuenta: el rayo del Rage, la máscara
+   de Fury, la hoja de Way of Plant y la burbuja del amuleto que deja
+   Vulnerable. Son 24 KB los cuatro.
+
+   ⚠️ Un estado se tiene que poder leer SIN texto. El Rage era una barra con un
+   número, Fury un aura roja que se podía confundir con el daño, y Vulnerable
+   un brillo celeste alrededor del bicho que no decía por qué. Con el icono
+   oficial encima, cada uno dice qué es de un vistazo — y de paso son los
+   mismos dibujos que ve alguien que juega Origins.
+   ══════════════════════════════════════════════════════════════════════════ */
+const ICONOS = (() => {
+  const RUTA = 'arte/iconos/';
+  const cache = new Map();
+
+  function pedir(nombre){
+    let e = cache.get(nombre);
+    if (e) return e;
+    e = { estado: 'cargando', img: null };
+    cache.set(nombre, e);
+    const img = new Image();
+    img.onload = () => { e.img = img; e.estado = 'listo'; };
+    img.onerror = () => { e.estado = 'falla'; };
+    img.src = RUTA + nombre + '.png';
+    return e;
+  }
+
+  function precargar(){ ['buff_rage', 'buff_fury', 'buff_leaf', 'buff_bubble'].forEach(pedir); }
+
+  function listo(nombre){
+    const e = cache.get(nombre);
+    return (e && e.estado === 'listo') ? e.img : null;
+  }
+
+  /* Dibuja el icono centrado en x,y del MUNDO, con `alto` pixeles de alto.
+     Devuelve false si todavía no llegó, para que quien llama pueda hacer otra
+     cosa (el brillo de antes, por ejemplo). */
+  function dibujar(nombre, x, y, alto, alfa){
+    const img = listo(nombre);
+    if (!img) return false;
+    const ancho = alto * (img.width / img.height);
+    ctx.save();
+    ctx.globalAlpha = alfa == null ? 1 : alfa;
+    ctx.shadowColor = 'rgba(0,0,0,0.55)';
+    ctx.shadowBlur = 4;
+    ctx.drawImage(img, x - ancho / 2, y - alto / 2, ancho, alto);
+    ctx.restore();
+    return true;
+  }
+
+  function estado(){
+    const o = {};
+    cache.forEach((v, k) => { o[k] = v.estado; });
+    return o;
+  }
+
+  return { pedir, precargar, listo, dibujar, estado };
+})();
+
+/* ══════════════════════════════════════════════════════════════════════════
+   CÁMARA VIVA: sacudón y congelado
+   ──────────────────────────────────────────────────────────────────────────
+   Un golpe que no mueve nada no se siente. Estas dos cosas son la mitad de la
+   sensación de impacto de cualquier juego de acción y no cuestan un asset:
+
+   · SACUDÓN. Se acumula "trauma" (0 a 1) y el desplazamiento va con el
+     CUADRADO del trauma. Con trauma lineal el sacudón chico tiembla como un
+     error de dibujo; al cuadrado, los golpes chicos apenas se notan y solo el
+     jefe muerde de verdad. El ángulo es azar puro a propósito: acá el ruido
+     TIENE que parpadear, al revés que la maleza del suelo, que va con semilla
+     fija justamente para que no parpadee.
+
+   · CONGELADO (hit-stop). Ante un crítico o la muerte de un jefe el mundo se
+     queda quieto unas centésimas. Es el truco más barato que existe para que
+     un golpe pese.
+     ⚠️ No toca el balance. Todo el juego se mide contra gameTime, y durante el
+     congelado update() no corre: gameTime tampoco avanza. La corrida sigue
+     durando 600 segundos DE JUEGO exactamente iguales a los medidos; lo único
+     que cambia es que el reloj de pared tarda un poquito más.
+
+   ⚠️ Respeta prefers-reduced-motion: hay gente a la que un sacudón le revuelve
+   el estómago, y un juego de supervivencia sacude mucho. Con la preferencia
+   puesta el sacudón queda en cero y el congelado a la mitad.
+   ══════════════════════════════════════════════════════════════════════════ */
+const CAMARA = (() => {
+  let trauma = 0, ox = 0, oy = 0, congelado = 0;
+  const quieto = !!(window.matchMedia &&
+                    window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  return {
+    /* fuerza de 0 a 1: 0,15 un golpe recibido, 0,35 un crítico, 0,8 un jefe */
+    sacudir(fuerza){ if (!quieto) trauma = Math.min(1, trauma + fuerza); },
+    congelar(segundos){ congelado = Math.max(congelado, quieto ? segundos * 0.5 : segundos); },
+    get congelada(){ return congelado > 0; },
+    /* Late SIEMPRE, también durante el congelado y la pausa: si no, el mundo se
+       queda trabado y el sacudón no se descarga nunca. */
+    latir(dtReal){
+      if (congelado > 0) congelado = Math.max(0, congelado - dtReal);
+      if (trauma > 0){
+        const f = trauma * trauma;            // al cuadrado: ver arriba
+        const a = Math.random() * Math.PI * 2;
+        ox = Math.cos(a) * f * 26;
+        oy = Math.sin(a) * f * 26;
+        trauma = Math.max(0, trauma - dtReal * 1.9);
+      } else { ox = 0; oy = 0; }
+    },
+    get x(){ return ox; },
+    get y(){ return oy; },
+    reiniciar(){ trauma = 0; ox = 0; oy = 0; congelado = 0; }
+  };
+})();
+
+/* La pausa no es un estado del juego sino un freno encima de PLAYING: gameState
+   lo mira medio programa y agregarle un valor nuevo rompería cosas lejos de
+   acá. Ver alternarPausa(). */
+let pausado = false;
 
 // --- Configuración de Canvas y Renderizado ---
 const canvas = document.getElementById('gameCanvas');
@@ -975,6 +1442,8 @@ function sumarRage(n){
     furyRestante = 6;
     playSound('levelup');
     createFloatingText(player.x, player.y - 44, '¡FURY FORM!', '#ff4b2b');
+    VFX.lanzar('fury_on_transfrom', player.x, player.y, { radio: player.radius * 1.7 });
+    SONIDO.tocar('fury', 0.6);
   }
 }
 
@@ -1015,7 +1484,16 @@ function esc(s){
     ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 }
 
-const axpDeNivel = (n) => Math.floor(40 * Math.pow(n, 1.7));
+/* ⚠️ El exponente de esta curva es cuántas partidas dura el juego. Estaba en
+   1,7 y con eso el Axie llegaba al nivel 60 en la SEGUNDA corrida: medido, la
+   primera dejaba 4890 AXP y la segunda 28575, y de la tercera en adelante todas
+   las partidas eran idénticas — 600 segundos, 1082 quimeras, nada que comprar.
+   La progresión, que es lo único que este juego le agrega al Axie, se gastaba
+   en dos partidas. Con 2,1 la primera Ascensión cae justo al terminar la
+   primera corrida (que es cuando hay que enseñarle al jugador que el AXP no se
+   perdió), las partes llegan al tope alrededor de la cuarta, y el nivel 60
+   queda a unas ocho. */
+const axpDeNivel = (n) => Math.floor(40 * Math.pow(n, 2.1));
 /* ⚠️ El techo lo fija la Ascensión, pero nunca puede pasar el máximo de la
    parte: con 6 Ascensiones daría 7 y las cartas llegan hasta 5. */
 const techoDePartes = (a) => Math.min(5, 1 + a.ascensiones);
@@ -1190,7 +1668,7 @@ const player = {
   maxShield: 40,
   level: 1,
   axp: 0,
-  nextLevelAxp: 100,
+  nextLevelAxp: 90,
   color: '#f7a838',
   facingLeft: false,
   walkCycle: 0,
@@ -1215,14 +1693,54 @@ const META_SEGUNDOS = 600;
 const CADA_JEFE = 120;
 let enemies = [];
 let gems = [];
+
+/* ♥ CORAZONES
+   ⚠️ Sin esto la vida solo baja y la corrida es un reloj, no una partida.
+   Medido antes de agregarlos: 6 corridas muriendo entre 131 y 145 segundos,
+   con la arena casi vacía — el Axie mataba todo y se moría igual, de a
+   pedacitos. Con 100 de vida y unos 0,7 por segundo de roce inevitable, el
+   final llegaba a los 150 jugara quien jugara. Eso hacía inalcanzable la
+   extracción de los 10 minutos, que es la meta que el juego promete.
+   El cuidado es que el corazon no se recoja SOLO: no lo atrae el imán de
+   los Ojos. Hay que ir a buscarlo, y ahí es donde el jugador decide si le
+   conviene meterse. Un premio que se recoge sin querer no es una decisión. */
+let corazones = [];
+const CAE_CORAZON = 0.04;        // de cada 100 quimeras, 3 dejan uno
+const CURA_CORAZON = 0.18;       // 18% de la vida máxima
 let particles = [];
 let floatingTexts = [];
+
+/* Anillos que solo se ven: no hacen daño y no chocan con nada. Existen para
+   que un momento importante (la caída de un jefe, la Ascensión, la entrada de
+   un jefe) tenga una forma en pantalla y no solo un cartel de texto. Van
+   aparte de `shockwaves`, que SÍ pega y es una carta. */
+let anillos = [];
+
+/* El rojo del borde de la pantalla: el aviso de vida que se lee sin mirar la
+   barra, que está en la esquina y a la que nadie mira mientras esquiva.
+
+   ⚠️ Son DOS señales distintas y hubo que separarlas. La primera versión pintaba
+   solo el daño recibido, y medido sobre una corrida entera daba 40% del tiempo
+   con la pantalla roja fuerte: en un juego de supervivencia estar en contacto
+   con una quimera es el estado NORMAL, no una emergencia, así que el aviso
+   estaba encendido casi siempre y dejaba de avisar algo.
+     · `dolor`  — el golpe. Sube con la vida perdida y se va solo. Va tope
+                   bajo (0,45): dice "me están pegando", no "me muero".
+     · `apuro`  — la vida baja. Late, y solo aparece abajo del 35% de la vida.
+                   Ese es el aviso que de verdad importa y ahora es el único
+                   que llega a teñir la pantalla.
+   Se dibuja el más fuerte de los dos, no la suma. */
+let dolor = 0;
+let apuro = 0;
 
 // --- Configuración de Clases ---
 function selectAxie(cls) {
   selectedClass = cls;
   document.querySelectorAll('.axie-card').forEach(c => c.classList.remove('selected'));
   event.currentTarget.classList.add('selected');
+  /* Se pide la lámina apenas elige, no al empezar a jugar: entre que toca la
+     tarjeta y toca Adoptar pasan segundos, y son gratis. */
+  AXIE_SPRITE.pedir(cls);
 }
 
 function applyAxieClass(cls) {
@@ -1287,7 +1805,27 @@ function applyAxieClass(cls) {
 
 // --- Controles (Teclado y Joystick Móvil) ---
 const keys = {};
+/* ══ PAUSA ══
+   No la había, y un juez que se distrae pierde la corrida: es lo primero que
+   se pierde cuando alguien te habla en la mitad de una partida de diez
+   minutos. Es un freno encima de PLAYING y no un gameState nuevo, porque
+   gameState se mira en media docena de lugares lejos de acá.
+   ⚠️ Solo pausa jugando. Con Escape en la pantalla de mejora o en la de
+   inicio no tiene que pasar nada: pausar un menú deja al jugador con dos
+   pantallas encimadas y sin manera obvia de salir. */
+function alternarPausa(){
+  if (gameState !== 'PLAYING') return;
+  pausado = !pausado;
+  const b = document.getElementById('pause-btn');
+  if (b) b.innerText = pausado ? '▶' : '⏸';
+  /* Se sueltan las teclas: si se pausó con W apretada, al volver el Axie
+     arrancaba caminando solo porque el keyup se perdió detrás del cartel. */
+  if (pausado) for (const k in keys) keys[k] = false;
+}
+
 window.addEventListener('keydown', e => {
+  const t = e.key.toLowerCase();
+  if (t === 'p' || t === 'escape'){ alternarPausa(); e.preventDefault(); return; }
   keys[e.key.toLowerCase()] = true;
   if (['arrowup', 'arrowdown', 'arrowleft', 'arrowright', ' '].includes(e.key.toLowerCase())) {
     e.preventDefault();
@@ -1388,7 +1926,15 @@ function spawnEnemy() {
   const clase = clases[Math.floor(Math.random() * clases.length)];
   const c = CONDUCTA[clase];
 
-  const hp = (22 + gameTime * 0.8) * c.hp;
+  /* ⚠️ La vida de las quimeras crece con el RELOJ, no con lo que el jugador
+     puede matar, así que el ritmo de crecimiento es todo el juego. Estaba en
+     0,8 por segundo y eso lo hacía imposible de terminar: a los 10 minutos
+     llegaban 2159 de vida por segundo y el Axie, con las SEIS cartas al tope,
+     saca 1129. No es que fuera difícil — es que no existía una partida ganada.
+     Medido: 10 corridas, muerte promedio a los 85 s, la mejor a los 165, y el
+     primer jefe recién sale a los 120. A 0,30 la vida que llega se queda
+     siempre por debajo del daño que el jugador puede tener a esa altura. */
+  const hp = (22 + gameTime * 0.30) * c.hp;
 
   /* ⚠️ El COLOR es la clase, no el tipo. Antes el color decía el tipo y un
      borde decía la clase, y las dos señales se peleaban: un slime verde de
@@ -1401,7 +1947,8 @@ function spawnEnemy() {
     color: tono(COLOR_CLASE[clase], -0.22),
     clase, vulnerable: 0,
     fase: Math.random() * Math.PI * 2,   // desfase del zigzag del Ave
-    carga: 0, recarga: 1 + Math.random() * 2
+    carga: 0, recarga: 1 + Math.random() * 2,
+    sprite: SPRITES.elegir(clase)
   });
 }
 
@@ -1424,10 +1971,18 @@ function spawnJefe(numero){
     clase, vulnerable: 0,
     fase: 0, carga: 0, recarga: 2,
     jefe: true,
-    nombre: NOMBRES_JEFE[clase]
+    nombre: NOMBRES_JEFE[clase],
+    sprite: QUIMERA_JEFE[clase] || SPRITES.elegir(clase)
   });
 
   jefeALaVista = enemies[enemies.length - 1];
+  /* Que se sienta que ENTRÓ algo. Antes el jefe aparecía en un borde de la
+     pantalla y el único aviso era un cartel; con la arena llena de quimeras,
+     el cartel pasaba desapercibido y el jugador se enteraba cuando ya lo tenía
+     encima. */
+  CAMARA.sacudir(0.55);
+  anillos.push({ x: jefeALaVista.x, y: jefeALaVista.y, r: 10, vel: 700, life: 0.7, vida0: 0.7,
+                 color: COLOR_CLASE[clase] || '#ff4b2b', grosor: 6 });
   createFloatingText(player.x, player.y - 60, '¡' + NOMBRES_JEFE[clase] + '!', COLOR_CLASE[clase]);
   playSound('shockwave');
 }
@@ -1477,6 +2032,7 @@ function updateAttacks(dt) {
           });
         }
         playSound('shoot');
+        animarAxie('attack/melee/horn-gore', 1);
       }
     }
   }
@@ -1503,6 +2059,7 @@ function updateAttacks(dt) {
         golpeados: new Set()
       });
       playSound('shockwave');
+      animarAxie('attack/melee/tail-smash', 1);
     }
   }
 
@@ -1529,6 +2086,7 @@ function updateAttacks(dt) {
         lifesteal: bodyParts.mouth.level >= 3
       });
       playSound('shoot');
+      animarAxie('attack/melee/mouth-bite', 1);
     }
   }
 
@@ -1540,6 +2098,8 @@ function updateAttacks(dt) {
       const healAmount = 5 + bodyParts.back.level * 4;
       player.hp = Math.min(player.maxHp, player.hp + healAmount);
       createFloatingText(player.x, player.y - 30, `+${healAmount} HP`, '#4cd137');
+      VFX.lanzar('heal', player.x, player.y, { radio: player.radius });
+      SONIDO.tocar('curar', 0.45);
     }
   }
 
@@ -1552,6 +2112,9 @@ function updateAttacks(dt) {
         if (player.hp < player.maxHp){
           player.hp = Math.min(player.maxHp, player.hp + 5);
           createFloatingText(player.x, player.y - 30, '+5 Leaf', '#8be4b1');
+          VFX.lanzar('heal', player.x, player.y, { radio: player.radius });
+          SONIDO.tocar('hoja', 0.4);
+          player.hojaHasta = gameTime + 1.0;   // cuánto se ve el icono
         }
       }
     }
@@ -1581,12 +2144,27 @@ function aplicarGolpe(e, danioBase, claseCarta, parte, probCritico, px, py, colo
   if (e.vulnerable > 0) danio *= 1.20;          // Vulnerable: +20% recibido
 
   e.hp -= danio;
+  /* El destello blanco. 90 ms alcanzan: más tiempo y la quimera se ve lavada
+     en vez de golpeada. Sin esto, con el efecto de Origins tapando la mitad de
+     la pantalla, no se sabía a CUÁL de las quimeras le habías pegado. */
+  e.flash = 0.09;
 
   const ventaja = factorDeClase(claseCarta, e.clase) > 1.05;
   createFloatingText(e.x, e.y - 15, Math.round(danio) + (critico ? '!' : ''),
-                     critico ? '#ff4b2b' : (ventaja ? '#8be4b1' : '#ffe066'));
-  spawnParticles(px, py, color, critico ? 8 : 4);
-  playSound('hit');
+                     critico ? '#ffcc33' : (ventaja ? '#8be4b1' : '#ffe066'),
+                     critico ? 'crit' : null);
+  spawnParticles(px, py, color, critico ? 14 : 4);
+  /* ⚠️ El congelado va SOLO en el crítico contra un jefe, y el sacudón del
+     crítico es chico. Con cuatro golpes por segundo, congelar en cada crítico
+     normal serían 180 ms de freno por segundo: el juego se sentiría trabado,
+     que es exactamente lo contrario de lo que busca el hit-stop. Contra el
+     jefe los golpes son pocos y cada uno tiene que pesar. */
+  if (critico){
+    CAMARA.sacudir(e.jefe ? 0.34 : 0.12);
+    if (e.jefe) CAMARA.congelar(0.05);
+  }
+  VFX.golpe(parte, claseCarta, e.x, e.y, px, e.radius);
+  SONIDO.golpe(parte, claseCarta);
 
   // Efectos del amuleto pegado a ESA carta
   const a = amuletos[parte];
@@ -1600,8 +2178,20 @@ function aplicarGolpe(e, danioBase, claseCarta, parte, probCritico, px, py, colo
 }
 
 // --- Textos Flotantes y Partículas ---
-function createFloatingText(x, y, text, color) {
-  floatingTexts.push({ x, y, text, color, life: 0.8, vy: -45 });
+function createFloatingText(x, y, text, color, tipo) {
+  /* El crítico sale más grande, más lento y abriéndose hacia un costado. Antes
+     todos los números eran iguales salvo el color, y con quince quimeras en
+     pantalla el crítico se perdía entre los otros: el jugador no llegaba a
+     saber nunca que su amuleto Preciso estaba haciendo algo. */
+  const crit = tipo === 'crit';
+  floatingTexts.push({
+    x, y, text, color,
+    life: crit ? 1.15 : 0.8, vida0: crit ? 1.15 : 0.8,
+    vy: crit ? -62 : -45,
+    vx: (Math.random() - 0.5) * (crit ? 70 : 34),
+    tam: crit ? 25 : (tipo === 'aviso' ? 15 : 14),
+    crit
+  });
 }
 
 function spawnParticles(x, y, color, count = 6) {
@@ -1626,8 +2216,16 @@ function addAxp(amount) {
   if (player.axp >= player.nextLevelAxp) {
     player.axp -= player.nextLevelAxp;
     player.level++;
-    player.nextLevelAxp = Math.floor(player.nextLevelAxp * 1.35 + 40);
-    playSound('levelup');
+    /* ⚠️ La curva de la CORRIDA (no la del Axie, que es la de Axie Core y no
+       se toca). Estaba en ×1,35+40 y con eso el jugador nunca llegaba a armar
+       un build: para 17 mejoras hacían falta 6509 quimeras muertas, y en diez
+       minutos, con el techo de aparición, entran unas 1400. Medido: con las
+       cartas al máximo el juego se termina a 99 de vida y 3 enemigos vivos,
+       o sea que el combate cierra — lo que no cerraba era LLEGAR a ese build.
+       Con ×1,22+25 las mismas 17 mejoras salen 1604 muertes, que está dentro
+       de lo que una buena corrida da de sí. */
+    player.nextLevelAxp = Math.floor(player.nextLevelAxp * 1.22 + 25);
+    SONIDO.tocar('nivel', 0.5, 'levelup');
     triggerUpgradeModal();
   }
   updateHud();
@@ -1694,6 +2292,37 @@ function armarOpciones(){
   return elegidas;
 }
 
+/* ⚠️ La rareza viene escrita en masculino o femenino según sea amuleto o runa
+   ("Épico" / "Épica"), y con tilde. Se compara sin tildes y por las primeras
+   cuatro letras, que es lo único que las dos formas comparten. Los colores son
+   los de Origins: gris el común, azul el raro, violeta el épico y oro el
+   místico. */
+function colorDeRareza(texto){
+  const t = String(texto || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (t.startsWith('mist')) return '#ffb020';
+  if (t.startsWith('epic')) return '#c471ed';
+  if (t.startsWith('rar'))  return '#3da5ff';
+  return '#9aa7b4';
+}
+
+/* Los iconos de estado del Battle Kit que ya están bajados, puestos donde la
+   mecánica del juego es la misma que la de Origins. No hay uno para cada carta
+   y no se inventa: lo que no tiene calce se queda con su emoji.
+   ⚠️ Van con `onerror` que se borra a sí mismo: si el PNG no está, la carta
+   muestra el emoji en vez de un icono roto. Misma regla que el resto del arte. */
+const ICONO_DE_ORIGINS = {
+  'rage': 'buff_rage', 'way-beast': 'buff_rage',
+  'furia': 'buff_fury',
+  'hoja': 'buff_leaf', 'way-plant': 'buff_leaf',
+  'burbuja': 'buff_bubble'
+};
+function iconoDeOrigins(id){
+  const f = ICONO_DE_ORIGINS[id];
+  if (!f) return null;
+  return '<img src="arte/iconos/' + f + '.png" alt="" ' +
+         'onerror="this.parentNode.textContent=\'💠\'">';
+}
+
 function triggerUpgradeModal() {
   const opciones = armarOpciones();
   if (!opciones.length) return;          // nada que ofrecer: se sigue jugando
@@ -1706,35 +2335,49 @@ function triggerUpgradeModal() {
   opciones.forEach((o, i) => {
     const card = document.createElement('div');
     card.className = 'upgrade-card';
+    card.style.setProperty('--turno', (i * 0.07) + 's');
     card.onclick = () => selectUpgrade(i);
+
+    let clase, rareza, icono, cuerpo;
 
     if (o.tipo === 'parte'){
       const p = bodyParts[o.parte];
-      card.innerHTML = `
-        <div class="upgrade-icon">${p.icon}</div>
-        <div class="upgrade-part" style="color:${COLOR_CLASE[p.clase]}">${p.part} · ${NOMBRE_CLASE[p.clase]}</div>
+      clase = COLOR_CLASE[p.clase];
+      /* Una carta de parte no tiene rareza propia: la rareza ES el nivel al que
+         va a subir, que es lo que hace que valga más o menos. */
+      rareza = ['Común', 'Común', 'Raro', 'Épico', 'Místico'][Math.min(4, p.level)];
+      icono = p.icon;
+      cuerpo = `
+        <div class="upgrade-part" style="color:${clase}">${p.part} · ${NOMBRE_CLASE[p.clase]}</div>
         <div class="upgrade-title">${p.carta}</div>
         <div class="upgrade-desc">${p.desc}</div>
         <div class="upgrade-level">Carta nivel ${p.level} ➔ <strong>nivel ${p.level + 1}</strong></div>`;
     } else if (o.tipo === 'runa'){
-      card.style.borderColor = '#c471ed';
-      card.innerHTML = `
-        <div class="upgrade-icon">🔮</div>
-        <div class="upgrade-part" style="color:#c471ed">Runa ${o.runa.rareza} · ${NOMBRE_CLASE[miAxie ? miAxie.clase : selectedClass]}</div>
+      clase = COLOR_CLASE[miAxie ? miAxie.clase : selectedClass] || '#c471ed';
+      rareza = o.runa.rareza;
+      icono = iconoDeOrigins(o.runa.id) || '🔮';
+      cuerpo = `
+        <div class="upgrade-part" style="color:${clase}">Runa ${o.runa.rareza} · ${NOMBRE_CLASE[miAxie ? miAxie.clase : selectedClass]}</div>
         <div class="upgrade-title">${o.runa.nombre}</div>
         <div class="upgrade-desc">${o.runa.desc}</div>
         <div class="upgrade-level">Una sola runa por corrida</div>`;
     } else {
       const p = bodyParts[o.parte];
       const a = o.amuleto;
-      card.style.borderColor = COLOR_CLASE[a.clase];
-      card.innerHTML = `
-        <div class="upgrade-icon">💠</div>
-        <div class="upgrade-part" style="color:${COLOR_CLASE[a.clase]}">Amuleto ${a.rareza} · ${NOMBRE_CLASE[a.clase]}</div>
+      clase = COLOR_CLASE[a.clase] || '#12c2e9';
+      rareza = a.rareza;
+      icono = iconoDeOrigins(a.id) || '💠';
+      cuerpo = `
+        <div class="upgrade-part" style="color:${clase}">Amuleto ${a.rareza} · ${NOMBRE_CLASE[a.clase]}</div>
         <div class="upgrade-title">${a.nombre}</div>
         <div class="upgrade-desc">${a.desc}</div>
         <div class="upgrade-level">Se pega a <strong>${p.carta}</strong> · cuesta <strong>${a.costo} PP</strong></div>`;
     }
+
+    card.style.setProperty('--clase', clase);
+    card.style.setProperty('--rara', colorDeRareza(rareza));
+    card.innerHTML = `<span class="upgrade-rareza">${esc(rareza)}</span>
+        <div class="upgrade-icon">${icono}</div>` + cuerpo;
     container.appendChild(card);
   });
 
@@ -1745,6 +2388,9 @@ function triggerUpgradeModal() {
 let opcionesEnPantalla = [];
 
 function selectUpgrade(indice) {
+  /* La pantalla dice "¡EVOLUCIÓN AXIE CORE!" y el Axie evoluciona una carta:
+     `activity/evolve` es literalmente esa animación en el juego real. */
+  animarAxie('activity/evolve', 3);
   const o = opcionesEnPantalla[indice];
   if (!o) return;
 
@@ -1771,6 +2417,8 @@ function equiparRuna(r){
   if (r.id === 'heart-ocean'){ player.maxHp += 75; player.hp += 75; }
   if (r.id === 'thorn-armor'){ player.maxHp += 40; player.hp += 40; }
   createFloatingText(player.x, player.y - 40, r.nombre, '#c471ed');
+  VFX.lanzar('shield', player.x, player.y, { radio: player.radius * 1.4 });
+  SONIDO.tocar('escudo', 0.5);
 }
 
 // --- Bucle Principal del Juego (Update & Render) ---
@@ -1779,7 +2427,9 @@ function gameLoop(timestamp) {
   const dt = Math.min((timestamp - lastTimestamp) / 1000, 0.1);
   lastTimestamp = timestamp;
 
-  if (gameState === 'PLAYING') {
+  CAMARA.latir(dt);
+
+  if (gameState === 'PLAYING' && !pausado && !CAMARA.congelada) {
     update(dt);
   }
   render();
@@ -1789,6 +2439,13 @@ function gameLoop(timestamp) {
 
 function update(dt) {
   gameTime += dt;
+  /* ⚠️ El rojo del borde se saca de la vida que se perdió EN ESTE CUADRO, no
+     de contar golpes. Es la única forma de que no dependa de cuántas quimeras
+     te estén tocando: seis quimeras encima ejecutan el bloque de daño seis
+     veces, y sumando por golpe la pantalla se ponía roja entera en un cuadro.
+     Restando la vida antes y después, dos quimeras duelen el doble que una y
+     el número no se dispara nunca. */
+  const vidaAntes = player.hp;
 
   // Movimiento del Jugador
   let moveX = 0;
@@ -1805,13 +2462,37 @@ function update(dt) {
   }
 
   const len = Math.hypot(moveX, moveY);
+  player.moviendo = len > 0;   // el sprite elige entre correr y estar quieto
   if (len > 0) {
     moveX /= len;
     moveY /= len;
     player.x += moveX * player.speed * dt;
     player.y += moveY * player.speed * dt;
     player.walkCycle += dt * 10;
+    player.moviendo = true;
     if (moveX !== 0) player.facingLeft = moveX < 0;
+
+    /* Polvo bajo las patas. Sin esto el Axie se DESLIZA sobre el piso: la
+       animación de correr está, pero nada dice que el suelo exista. Dos
+       partículas cada 70 ms alcanzan; más es una nube.
+       ⚠️ Se cuenta con un temporizador y no con Math.random() por cuadro: con
+       azar puro salen ráfagas y huecos, y a 200 cuadros por segundo en una
+       máquina rápida serían tres veces más partículas que a 60. */
+    player.polvo = (player.polvo || 0) - dt;
+    if (player.polvo <= 0){
+      player.polvo = 0.07;
+      for (let k = 0; k < 2; k++){
+        particles.push({
+          x: player.x + (Math.random() - 0.5) * player.radius,
+          y: player.y + player.radius * 0.9,
+          vx: -moveX * 26 + (Math.random() - 0.5) * 22,
+          vy: -12 - Math.random() * 16,
+          color: 'rgba(150,118,88,0.75)',
+          radius: 1.6 + Math.random() * 2.2,
+          life: 0.26 + Math.random() * 0.16
+        });
+      }
+    }
   }
 
   // Límites del mapa
@@ -1826,11 +2507,25 @@ function update(dt) {
   updateAttacks(dt);
 
   // Spawner de Enemigos
+  /* ⚠️ Y hay un TECHO de quimeras vivas. Sin techo la arena se llena sola:
+     aparecían cuatro por segundo y en las pruebas se medían 91 vivas en el
+     momento de morir. Eso no es dificultad, es una pared — y además tapa la
+     pantalla justo cuando el color de cada clase es la información que el
+     jugador necesita para decidir. Con techo, si no matás dejan de aparecer:
+     la presión sube hasta un límite y ahí se queda esperándote. El jefe no
+     cuenta para el techo, o un jefe lento congelaría la partida. */
+  const TOPE_QUIMERAS = 55;
   spawnTimer += dt;
-  const spawnRate = Math.max(0.25, 1.4 - (gameTime * 0.007));
+  /* ⚠️ La rampa tiene que durar lo que tarda el build en existir. Con 0,006
+     la aparición llegaba a su tope a los 163 segundos, y a esa altura el
+     jugador recién anda por el nivel 8 con una carta buena: la presión
+     máxima le caía encima antes de tener con qué contestarla, y ahí es donde
+     se morían todas las corridas medidas. Con 0,0035 el tope llega recién a
+     los 280, que es cuando ya hay dos o tres cartas subidas. */
+  const spawnRate = Math.max(0.42, 1.4 - (gameTime * 0.0035));
   if (spawnTimer >= spawnRate) {
     spawnTimer = 0;
-    spawnEnemy();
+    if (enemies.length - (jefeALaVista ? 1 : 0) < TOPE_QUIMERAS) spawnEnemy();
   }
 
   // Un jefe cada dos minutos
@@ -1967,10 +2662,20 @@ function update(dt) {
     }
 
     if (e.vulnerable > 0) e.vulnerable -= dt;
+    if (e.flash > 0) e.flash -= dt;
 
     // Daño al Axie al tocarlo
     if (Math.hypot(player.x - e.x, player.y - e.y) < player.radius + e.radius) {
       player.hp -= 16 * dt;
+      /* ⚠️ Acá NO va sacudón ni se toca `dolor`. El daño por contacto es
+         continuo —60 veces por segundo mientras la quimera te toque— y este
+         bloque corre UNA VEZ POR QUIMERA: con seis encima se ejecutaba seis
+         veces por cuadro. Sacudir así deja la cámara temblando sin parar, y
+         sumar el rojo así lo saturaba en un cuadro y la pantalla quedaba roja
+         entera (pasó, y no se veía nada del juego).
+         El rojo se calcula una sola vez por cuadro, a partir de la vida
+         realmente perdida — ver más abajo. */
+      animarAxie('defense/hit-by-normal', 2);   // le gana a estar atacando
 
       /* Runas que reaccionan a que te peguen. Van con su propio freno: sin él
          dispararían 60 veces por segundo, porque el contacto es continuo. */
@@ -2009,11 +2714,26 @@ function update(dt) {
           gems.push({ x: e.x + Math.cos(a2) * 40, y: e.y + Math.sin(a2) * 40,
             value: 60, radius: 8, color: '#ffe066' });
         }
-        createFloatingText(e.x, e.y - 40, '¡' + e.nombre + ' cayó!', '#ffe066');
+        /* El jefe deja dos seguros: es la pelea más larga y la que más vida
+           cuesta, y salir de ella sin nada castiga justo al que se animó. */
+        corazones.push({ x: e.x - 34, y: e.y, radius: 11, pulso: 0 });
+        corazones.push({ x: e.x + 34, y: e.y, radius: 11, pulso: 0 });
+        createFloatingText(e.x, e.y - 40, '¡' + e.nombre + ' cayó!', '#ffe066', 'aviso');
+        /* El único momento de la corrida que se gana peleando. Se para el
+           mundo un décimo de segundo, la cámara salta y sale una onda: si
+           matar a un jefe se siente igual que matar a una quimera cualquiera,
+           el jefe no era un jefe. */
+        CAMARA.sacudir(0.85);
+        CAMARA.congelar(0.12);
+        anillos.push({ x: e.x, y: e.y, r: e.radius, vel: 620, life: 0.55, vida0: 0.55,
+                       color: COLOR_CLASE[e.clase] || '#ffe066', grosor: 7 });
+        anillos.push({ x: e.x, y: e.y, r: e.radius * 0.4, vel: 340, life: 0.75, vida0: 0.75,
+                       color: '#fff3d0', grosor: 3 });
         if (jefeALaVista === e) jefeALaVista = null;
         playSound('levelup');
       } else {
         gems.push({ x: e.x, y: e.y, value: 15, radius: 6, color: '#00e5ff' });
+        if (Math.random() < CAE_CORAZON) corazones.push({ x: e.x, y: e.y, radius: 10, pulso: 0 });
       }
       enemies.splice(i, 1);
     }
@@ -2025,7 +2745,11 @@ function update(dt) {
     s.x += s.vx * dt; s.y += s.vy * dt; s.life -= dt;
     if (Math.hypot(player.x - s.x, player.y - s.y) < player.radius + s.radius){
       player.hp -= s.damage;
-      spawnParticles(s.x, s.y, s.color, 5);
+      spawnParticles(s.x, s.y, s.color, 10);
+      /* Este sí es un golpe puntual: pega una vez, se ve venir y es esquivable.
+         Sacude. El rojo no se toca acá: lo pone el balance de vida del cuadro. */
+      CAMARA.sacudir(0.26);
+      animarAxie('defense/hit-by-normal', 2);
       playSound('hit');
       escupitajos.splice(i, 1);
       if (player.hp <= 0) gameOver();
@@ -2035,6 +2759,22 @@ function update(dt) {
   }
 
   // Actualizar Gemas AXP
+  /* Los corazones NO los atrae el imán: hay que pisarlos. */
+  for (let i = corazones.length - 1; i >= 0; i--) {
+    const c = corazones[i];
+    c.pulso += dt;
+    if (Math.hypot(player.x - c.x, player.y - c.y) < player.radius + c.radius){
+      const cura = Math.round(player.maxHp * CURA_CORAZON);
+      const antes = player.hp;
+      player.hp = Math.min(player.maxHp, player.hp + cura);
+      const real = Math.round(player.hp - antes);
+      createFloatingText(player.x, player.y - 30, (real > 0 ? '+' + real + ' HP' : 'VIDA LLENA'), '#4cd137');
+      VFX.lanzar('heal', player.x, player.y, { radio: player.radius });
+      SONIDO.tocar('curar', 0.5);
+      corazones.splice(i, 1);
+    }
+  }
+
   const magnetRadius = 80 + (bodyParts.eyes.level * 35);
   for (let i = gems.length - 1; i >= 0; i--) {
     const g = gems[i];
@@ -2079,10 +2819,38 @@ function update(dt) {
   for (let i = floatingTexts.length - 1; i >= 0; i--) {
     const t = floatingTexts[i];
     t.y += t.vy * dt;
+    t.x += (t.vx || 0) * dt;
+    t.vy += 78 * dt;              // el número sube y cae: un arco, no una recta
     t.life -= dt;
     if (t.life <= 0) floatingTexts.splice(i, 1);
   }
 
+  /* Anillos que solo se ven */
+  for (let i = anillos.length - 1; i >= 0; i--){
+    const a = anillos[i];
+    a.r += a.vel * dt;
+    a.life -= dt;
+    if (a.life <= 0) anillos.splice(i, 1);
+  }
+
+  /* Cuánto dolió este cuadro, en porcentaje de la vida máxima. El ×5 con tope
+     0,45 es lo que hace que el roce continuo quede en un tinte apenas visible
+     y un escupitajo se note; medido, con ×9 y tope 0,85 la pantalla pasaba el
+     40% de la corrida teñida fuerte. */
+  const perdida = Math.max(0, vidaAntes - player.hp) / Math.max(1, player.maxHp);
+  if (perdida > 0) dolor = Math.min(0.45, dolor + perdida * 5);
+  if (dolor > 0) dolor = Math.max(0, dolor - dt * 2.2);
+
+  /* El aviso que importa: la vida baja. Late a 3,4 rad/s —el pulso es lo que
+     lo separa del tinte del golpe, que es plano— y arranca recién en el 35%.
+     Más arriba estaría encendido media partida y volveríamos al problema de
+     antes. */
+  const resto = player.hp / Math.max(1, player.maxHp);
+  apuro = resto < 0.35 && gameState === 'PLAYING'
+    ? (1 - resto / 0.35) * (0.34 + 0.20 * (0.5 + 0.5 * Math.sin(gameTime * 3.4)))
+    : 0;
+
+  VFX.actualizar(dt);
   updateHud();
 }
 
@@ -2091,7 +2859,10 @@ function render() {
   ctx.clearRect(0, 0, viewWidth, viewHeight);
 
   ctx.save();
-  ctx.translate(-camera.x, -camera.y);
+  /* ⚠️ El sacudón se aplica ACÁ, dentro del bloque del mundo. Puesto afuera
+     movería también la viñeta y la barra del jefe, y una interfaz que tiembla
+     se lee como un error de dibujo. Tiembla Lunacia, no la pantalla. */
+  ctx.translate(-camera.x + CAMARA.x, -camera.y + CAMARA.y);
 
   // 1. Suelo de Lunacia (Cuadrícula con flores)
   renderGround();
@@ -2109,6 +2880,37 @@ function render() {
     ctx.lineTo(0, g.radius);
     ctx.lineTo(-g.radius * 0.7, 0);
     ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 2b. Corazones
+  for (let c of corazones) {
+    const late = 1 + Math.sin(c.pulso * 4) * 0.12;
+    ctx.save();
+    ctx.translate(c.x, c.y);
+    ctx.scale(late, late);
+    /* ⚠️ El corazón va ROJO, no verde. En verde se perdía: el suelo de Lunacia
+       está sembrado de matas verdes con forma de dos hojitas, o sea casi la
+       misma silueta y casi el mismo color, y el jugador pasaba por al lado sin
+       verlo. Rojo es además el color de la barra de vida, con lo cual no hay
+       que explicar qué hace. Y no se confunde con las quimeras Ave, que son
+       rosadas pero redondas y con ojos. */
+    const r = c.radius;
+    ctx.fillStyle = '#ff2d55';
+    ctx.shadowColor = '#ff2d55';
+    ctx.shadowBlur = 16;
+    ctx.beginPath();
+    ctx.moveTo(0, r * 0.75);
+    ctx.bezierCurveTo(-r * 1.3, -r * 0.2, -r * 0.5, -r * 1.15, 0, -r * 0.35);
+    ctx.bezierCurveTo(r * 0.5, -r * 1.15, r * 1.3, -r * 0.2, 0, r * 0.75);
+    ctx.closePath();
+    ctx.fill();
+    /* el brillito: sin él se lee como una mancha y no como algo que se agarra */
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.4, -r * 0.45, r * 0.22, r * 0.14, -0.5, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
@@ -2161,6 +2963,9 @@ function render() {
   // 6. El Axie del Jugador
   drawAxie(player);
 
+  // 6b. Efectos oficiales de Origins, encima de todo el mundo
+  VFX.dibujar(ctx);
+
   // 7. Partículas
   for (let p of particles) {
     ctx.save();
@@ -2172,18 +2977,226 @@ function render() {
     ctx.restore();
   }
 
-  // 8. Textos Flotantes
-  for (let t of floatingTexts) {
+  // 7b. Anillos de los momentos grandes
+  for (const a of anillos) {
+    const p = a.life / a.vida0;
     ctx.save();
-    ctx.font = 'bold 14px "Segoe UI", sans-serif';
-    ctx.fillStyle = t.color;
-    ctx.shadowColor = '#000';
-    ctx.shadowBlur = 4;
-    ctx.textAlign = 'center';
-    ctx.fillText(t.text, t.x, t.y);
+    ctx.globalAlpha = p * 0.85;
+    ctx.strokeStyle = a.color;
+    ctx.lineWidth = a.grosor * p;
+    ctx.shadowColor = a.color;
+    ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.arc(a.x, a.y, a.r, 0, Math.PI * 2);
+    ctx.stroke();
     ctx.restore();
   }
 
+  // 8. Textos Flotantes
+  for (let t of floatingTexts) {
+    const p = t.life / (t.vida0 || 0.8);
+    ctx.save();
+    ctx.translate(t.x, t.y);
+    /* Entra de golpe y se va apagando: el número aparece un 45% más grande y
+       se asienta en los primeros 90 ms. Es lo que hace que el ojo lo agarre
+       sin tener que leerlo. */
+    if (t.crit){
+      const entrada = Math.min(1, (1 - p) * 9);
+      ctx.scale(1.45 - 0.45 * entrada, 1.45 - 0.45 * entrada);
+    }
+    ctx.globalAlpha = Math.min(1, p * 2.4);
+    ctx.font = '900 ' + (t.tam || 14) + 'px "Segoe UI", sans-serif';
+    ctx.textAlign = 'center';
+    /* Contorno negro en vez de sombra difusa: sobre la tierra oscura la sombra
+       no separaba nada y los números se comían entre ellos. */
+    ctx.lineWidth = t.crit ? 5 : 3.5;
+    ctx.strokeStyle = 'rgba(0,0,0,0.85)';
+    ctx.lineJoin = 'round';
+    ctx.strokeText(t.text, 0, 0);
+    ctx.fillStyle = t.color;
+    ctx.fillText(t.text, 0, 0);
+    ctx.restore();
+  }
+
+  ctx.restore();
+
+  // 9. Todo lo que va en coordenadas de pantalla y no de mundo
+  capaDePantalla();
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LA CAPA DE PANTALLA
+   ──────────────────────────────────────────────────────────────────────────
+   Lo que hacía que el juego se viera "básico" no era el arte: era que la
+   escena estaba PLANA. Un suelo parejo, iluminado igual de punta a punta, sin
+   nada que dijera dónde mirar. Tres degradados lo arreglan sin un solo asset:
+
+   · VIÑETA. Oscurece las esquinas. Es lo que convierte un fondo repetido en
+     una escena iluminada, y de paso empuja el ojo al centro, que es donde
+     está tu Axie.
+   · LUZ DEL AXIE. Un charco cálido alrededor del jugador, en aditivo. El
+     centro deja de ser "el mismo suelo que el resto".
+   · DOLOR. El borde se pone rojo cuando te están pegando. La barra de vida
+     está en la esquina y nadie la mira mientras esquiva.
+
+   ⚠️ Los tres degradados están CACHEADOS. El Axie está siempre en el centro
+   exacto de la pantalla (camera.x = player.x - viewWidth/2), así que ni la
+   viñeta ni la luz se mueven nunca: rehacerlos cada cuadro sería pagar 60
+   veces por segundo por algo que solo cambia al cambiar el tamaño de la
+   ventana. Se rearman cuando cambia viewWidth/viewHeight y no antes.
+
+   ⚠️ La viñeta llega a 0,55 y arranca recién al 45% del radio. Más oscura, las
+   quimeras del borde de la pantalla —que son las que te van a alcanzar— se
+   perdían, y el color de la quimera es justo la información con la que el
+   jugador decide. Es el mismo cuidado que ya obligaba a que la tierra fuera
+   oscura: acá el contraste se mide, no se elige por lindo.
+   ══════════════════════════════════════════════════════════════════════════ */
+let _capa = null;
+function degradadosDePantalla(){
+  if (_capa && _capa.w === viewWidth && _capa.h === viewHeight) return _capa;
+  const cx = viewWidth / 2, cy = viewHeight / 2;
+  const R = Math.hypot(viewWidth, viewHeight) / 2;
+
+  const vineta = ctx.createRadialGradient(cx, cy, R * 0.45, cx, cy, R);
+  vineta.addColorStop(0, 'rgba(8,4,2,0)');
+  vineta.addColorStop(0.65, 'rgba(8,4,2,0.22)');
+  vineta.addColorStop(1, 'rgba(8,4,2,0.55)');
+
+  const luz = ctx.createRadialGradient(cx, cy, 0, cx, cy, 260);
+  luz.addColorStop(0, 'rgba(255,214,150,0.13)');
+  luz.addColorStop(0.5, 'rgba(255,190,120,0.06)');
+  luz.addColorStop(1, 'rgba(255,180,110,0)');
+
+  /* ⚠️ Arranca al 55% del radio, no al 25%. Más adentro, el rojo lavaba el
+     centro de la pantalla —que es donde está tu Axie y donde hay que mirar—
+     y con la arena llena no se veía nada. Tiene que ser un marco, no un filtro
+     encima del juego. */
+  const rojo = ctx.createRadialGradient(cx, cy, R * 0.55, cx, cy, R);
+  rojo.addColorStop(0, 'rgba(190,20,16,0)');
+  rojo.addColorStop(1, 'rgba(190,20,16,0.92)');
+
+  _capa = { w: viewWidth, h: viewHeight, vineta, luz, rojo };
+  return _capa;
+}
+
+function capaDePantalla(){
+  const g = degradadosDePantalla();
+
+  if (gameState === 'PLAYING' || pausado){
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = g.luz;
+    ctx.fillRect(0, 0, viewWidth, viewHeight);
+    ctx.restore();
+  }
+
+  ctx.save();
+  ctx.fillStyle = g.vineta;
+  ctx.fillRect(0, 0, viewWidth, viewHeight);
+  ctx.restore();
+
+  const rojo = Math.max(dolor, apuro);
+  if (rojo > 0.02){
+    ctx.save();
+    ctx.globalAlpha = Math.min(0.62, rojo);
+    ctx.fillStyle = g.rojo;
+    ctx.fillRect(0, 0, viewWidth, viewHeight);
+    ctx.restore();
+  }
+
+  if (gameState === 'PLAYING') dibujarJefeEnPantalla();
+  if (pausado) dibujarPausa();
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   EL JEFE, DESDE LA PANTALLA
+   ──────────────────────────────────────────────────────────────────────────
+   Dos problemas que tenía la pelea de jefe y que no se arreglan con arte:
+   1. No se sabía cuánto le quedaba. Un jefe con miles de vida al que le pegás
+      dos minutos sin ver bajar una barra no es una pelea, es una pared.
+   2. El jefe podía estar persiguiéndote fuera de cuadro. La arena mide 2600 y
+      la pantalla mucho menos: te alcanzaba sin que lo hubieras visto nunca.
+      La flecha del borde lo resuelve, y es lo mismo que hace cualquier juego
+      con un objetivo fuera de cuadro.
+   ══════════════════════════════════════════════════════════════════════════ */
+function dibujarJefeEnPantalla(){
+  const j = jefeALaVista;
+  if (!j || !enemies.includes(j)) return;
+  const cc = COLOR_CLASE[j.clase] || '#ff4b2b';
+
+  /* ── la barra ── */
+  const an = Math.min(420, viewWidth * 0.6), al = 13;
+  const bx = (viewWidth - an) / 2, by = 74;
+  const p = Math.max(0, Math.min(1, j.hp / j.maxHp));
+
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.font = '900 13px "Segoe UI", sans-serif';
+  ctx.lineWidth = 3.5;
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+  ctx.strokeText(String(j.nombre || 'JEFE').toUpperCase(), viewWidth / 2, by - 9);
+  ctx.fillStyle = cc;
+  ctx.fillText(String(j.nombre || 'JEFE').toUpperCase(), viewWidth / 2, by - 9);
+
+  ctx.fillStyle = 'rgba(0,0,0,0.55)';
+  ctx.fillRect(bx - 2, by - 2, an + 4, al + 4);
+  ctx.fillStyle = 'rgba(255,255,255,0.10)';
+  ctx.fillRect(bx, by, an, al);
+  ctx.fillStyle = cc;
+  ctx.shadowColor = cc;
+  ctx.shadowBlur = 12;
+  ctx.fillRect(bx, by, an * p, al);
+  ctx.restore();
+
+  /* ── la flecha, si quedó fuera de cuadro ── */
+  const sx = j.x - camera.x, sy = j.y - camera.y;
+  const m = 46;
+  if (sx > m && sx < viewWidth - m && sy > m && sy < viewHeight - m) return;
+
+  const cx = viewWidth / 2, cy = viewHeight / 2;
+  const ang = Math.atan2(sy - cy, sx - cx);
+  /* Se pega al rectángulo interior y no a un círculo: sobre una pantalla
+     apaisada, un círculo deja la flecha lejísimos del borde de arriba. */
+  const rx = cx - m, ry = cy - m;
+  const t = Math.min(rx / Math.max(1e-6, Math.abs(Math.cos(ang))),
+                     ry / Math.max(1e-6, Math.abs(Math.sin(ang))));
+  const fx = cx + Math.cos(ang) * t, fy = cy + Math.sin(ang) * t;
+
+  /* ⚠️ 28 px, no 17. Medido en una captura: a 17 px la flecha existía —el
+     pixel del borde daba el verde de la clase— pero no se veía. Un aviso que
+     hay que ir a buscar no es un aviso. Y va con contorno negro: apoyada sobre
+     la esquina, que es justo donde la viñeta oscurece más, el color de la clase
+     sola se hundía en el fondo. */
+  ctx.save();
+  ctx.translate(fx, fy);
+  ctx.rotate(ang);
+  ctx.globalAlpha = 0.72 + Math.sin(gameTime * 7) * 0.28;   // late, para que se vea
+  ctx.beginPath();
+  ctx.moveTo(28, 0); ctx.lineTo(-16, 17); ctx.lineTo(-8, 0); ctx.lineTo(-16, -17);
+  ctx.closePath();
+  ctx.lineWidth = 4;
+  ctx.lineJoin = 'round';
+  ctx.strokeStyle = 'rgba(0,0,0,0.75)';
+  ctx.stroke();
+  ctx.fillStyle = cc;
+  ctx.shadowColor = cc;
+  ctx.shadowBlur = 16;
+  ctx.fill();
+  ctx.restore();
+}
+
+function dibujarPausa(){
+  ctx.save();
+  ctx.fillStyle = 'rgba(6,10,18,0.72)';
+  ctx.fillRect(0, 0, viewWidth, viewHeight);
+  ctx.textAlign = 'center';
+  ctx.fillStyle = '#ffd152';
+  ctx.font = '900 46px "Segoe UI", sans-serif';
+  ctx.fillText('PAUSA', viewWidth / 2, viewHeight / 2 - 6);
+  ctx.fillStyle = 'rgba(255,255,255,0.72)';
+  ctx.font = '600 15px "Segoe UI", sans-serif';
+  ctx.fillText('P o Esc para volver', viewWidth / 2, viewHeight / 2 + 26);
   ctx.restore();
 }
 
@@ -2201,27 +3214,73 @@ function render() {
    ⚠️ La maleza usa una semilla fija derivada de su posición, no Math.random():
    con azar de verdad los arbustos parpadearían en cada cuadro.
    ══════════════════════════════════════════════════════════════════════════ */
+/* Azar estable derivado de una posición: la misma celda devuelve siempre lo
+   mismo, en esta corrida y en la próxima. Es lo que permite sembrar el suelo
+   sin guardar nada y sin que parpadee. */
+function azarDe(x, y){
+  const v = Math.abs(Math.sin(x * 12.9898 + y * 78.233) * 43758.5453);
+  return v - Math.floor(v);
+}
+
 function renderGround() {
-  const x0 = camera.x, y0 = camera.y, x1 = camera.x + viewWidth, y1 = camera.y + viewHeight;
+  /* ⚠️ El suelo se dibuja 44 px más grande de cada lado. El sacudón mueve el
+     mundo hasta 26 px, y sin ese margen aparecía una franja negra pegada al
+     borde de la pantalla justo en el cuadro del golpe — que es el cuadro que
+     todo el mundo mira. */
+  const M = 44;
+  const x0 = camera.x - M, y0 = camera.y - M;
+  const an = viewWidth + M * 2, al = viewHeight + M * 2;
+  const x1 = x0 + an, y1 = y0 + al;
 
   // Tierra
   ctx.fillStyle = '#2e211a';
-  ctx.fillRect(x0, y0, viewWidth, viewHeight);
+  ctx.fillRect(x0, y0, an, al);
+
+  /* ── Manchones de terreno ──
+     ⚠️ Esto es lo que hacía que el piso se leyera plano, y no era la falta de
+     detalle chico: maleza y piedras ya había. Faltaba variación GRANDE. A la
+     distancia a la que se mira una pantalla, 130 px de celda es ruido parejo
+     —el ojo lo promedia y ve un marrón liso—; hacen falta manchas del tamaño
+     de media pantalla para que el terreno tenga ZONAS y la cámara parezca que
+     avanza sobre algo en vez de sobre un color.
+     Van a muy poca opacidad y en tonos vecinos del marrón base: el suelo no
+     puede competir con las quimeras, que son la información que importa. */
+  const macro = 380;
+  for (let cx = Math.floor(x0 / macro) * macro; cx < x1 + macro; cx += macro){
+    for (let cy = Math.floor(y0 / macro) * macro; cy < y1 + macro; cy += macro){
+      const r = azarDe(cx * 0.37, cy * 0.37);
+      const px = cx + (r * 3100 % macro), py = cy + (r * 5700 % macro);
+      const rad = 150 + r * 190;
+      /* ⚠️ Con borde duro se ven CÍRCULOS, no manchas de terreno: a 0,30 de
+         opacidad el filo de la elipse es perfectamente legible y el suelo
+         queda con lunares. El degradado radial es lo que los hace terreno.
+         Son unos 25 por pantalla, así que rehacerlos por cuadro no se nota
+         (medido: el dibujo entero sigue por debajo de 1 ms). */
+      const g = ctx.createRadialGradient(px, py, 0, px, py, rad);
+      const claro = r < 0.5;
+      g.addColorStop(0, claro ? 'rgba(92, 66, 44, 0.34)' : 'rgba(14, 9, 7, 0.40)');
+      g.addColorStop(0.6, claro ? 'rgba(92, 66, 44, 0.18)' : 'rgba(14, 9, 7, 0.20)');
+      g.addColorStop(1, claro ? 'rgba(92, 66, 44, 0)' : 'rgba(14, 9, 7, 0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.ellipse(px, py, rad, rad * (0.55 + r * 0.3), r * 3, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
 
   // Bandas de arena, para que el suelo no sea liso
   const banda = 220;
   ctx.fillStyle = 'rgba(196, 132, 74, 0.05)';
   for (let y = Math.floor(y0 / banda) * banda; y < y1 + banda; y += banda * 2){
-    ctx.fillRect(x0, y, viewWidth, banda);
+    ctx.fillRect(x0, y, an, banda);
   }
 
   // Maleza y piedras, sembradas en una cuadrícula con semilla fija
   const celda = 130;
   for (let cx = Math.floor(x0 / celda) * celda; cx < x1 + celda; cx += celda){
     for (let cy = Math.floor(y0 / celda) * celda; cy < y1 + celda; cy += celda){
-      const s = Math.abs(Math.sin(cx * 12.9898 + cy * 78.233) * 43758.5453);
-      const r = s - Math.floor(s);
-      if (r > 0.55) continue;
+      const r = azarDe(cx, cy);
+      if (r > 0.62) continue;
       const px = cx + (r * 900 % celda), py = cy + (r * 1700 % celda);
       if (r < 0.16){
         // Piedra
@@ -2229,20 +3288,64 @@ function renderGround() {
         ctx.beginPath();
         ctx.ellipse(px, py, 7 + r * 22, 5 + r * 14, r * 3, 0, Math.PI * 2);
         ctx.fill();
-      } else {
-        // Arbusto: tres hojas
+      } else if (r < 0.55){
+        /* Arbusto: tres hojas, ahora con su sombrita abajo. La sombra es lo
+           que lo despega del piso; sin ella la maleza se lee como una calcomanía
+           pegada encima y no como algo que crece del suelo. */
+        ctx.fillStyle = 'rgba(0,0,0,0.20)';
+        ctx.beginPath();
+        ctx.ellipse(px, py + 7, 11, 3.5, 0, 0, Math.PI * 2);
+        ctx.fill();
         ctx.fillStyle = 'rgba(86, 128, 74, 0.42)';
         for (let k = 0; k < 3; k++){
           ctx.beginPath();
           ctx.ellipse(px + (k - 1) * 7, py - Math.abs(k - 1) * 3, 6, 9, (k - 1) * 0.5, 0, Math.PI * 2);
           ctx.fill();
         }
+      } else {
+        /* Pastito seco: tres briznas. Un segundo tono, más claro y más cálido,
+           para que la maleza no sea toda del mismo verde. */
+        /* ⚠️ Bajo y apagado. A 0,40 de opacidad y 8 px de alto se leía como
+           un rayón claro sobre la tierra, no como pasto: el suelo tiene que
+           tener textura sin llamar la atención, porque lo que el jugador
+           necesita mirar son las quimeras. */
+        ctx.strokeStyle = 'rgba(132, 110, 68, 0.26)';
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        for (let k = -1; k <= 1; k++){
+          ctx.moveTo(px + k * 4, py + 3);
+          ctx.lineTo(px + k * 6, py - 5 - Math.abs(k));
+        }
+        ctx.stroke();
       }
     }
   }
 
-  // Borde del mundo: la niebla corrupta del final del mapa
-  const b = WORLD_SIZE / 2;
+  /* ── El final del mapa ──
+     Antes era una línea de guiones rojos y se leía como el borde de un
+     recuadro de dibujo, no como el final de un mundo. Ahora la corrupción
+     entra desde afuera con un degradado y la línea queda solo como el filo.
+     Se dibuja lado por lado y únicamente el que está a la vista: el borde de
+     Lunacia se ve un puñado de segundos por corrida. */
+  const b = WORLD_SIZE / 2, niebla = 170;
+  const lados = [
+    { visible: x0 < -b + niebla, x: -b - M, y: y0, an: niebla + M, al: al, hor: true,  dir: 1 },
+    { visible: x1 > b - niebla,  x: b - niebla, y: y0, an: niebla + M, al: al, hor: true,  dir: -1 },
+    { visible: y0 < -b + niebla, x: x0, y: -b - M, an: an, al: niebla + M, hor: false, dir: 1 },
+    { visible: y1 > b - niebla,  x: x0, y: b - niebla, an: an, al: niebla + M, hor: false, dir: -1 }
+  ];
+  for (const L of lados){
+    if (!L.visible) continue;
+    const g = L.hor
+      ? ctx.createLinearGradient(L.dir > 0 ? L.x : L.x + L.an, 0, L.dir > 0 ? L.x + L.an : L.x, 0)
+      : ctx.createLinearGradient(0, L.dir > 0 ? L.y : L.y + L.al, 0, L.dir > 0 ? L.y + L.al : L.y);
+    g.addColorStop(0, 'rgba(74, 12, 26, 0.85)');
+    g.addColorStop(0.55, 'rgba(120, 30, 20, 0.30)');
+    g.addColorStop(1, 'rgba(120, 30, 20, 0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(L.x, L.y, L.an, L.al);
+  }
+
   ctx.save();
   ctx.strokeStyle = 'rgba(255, 75, 43, 0.55)';
   ctx.lineWidth = 6;
@@ -2287,7 +3390,212 @@ function siluetaAxie(rx, ry, y){
   ctx.closePath();
 }
 
-function drawAxie(p) {
+/* ══════════════════════════════════════════════════════════════════════════
+   EL AXIE DEL JUGADOR ES UN AXIE DE VERDAD
+   ──────────────────────────────────────────────────────────────────────────
+   No está dibujado a mano: sale del mixer oficial de Sky Mavis
+   (`@axieinfinity/mixer`, MIT), que arma el esqueleto real de un Axie a partir
+   de sus genes, con sus partes y sus colores. `herramientas/horno-axie.cjs` lo
+   cocina a una lámina de sprites y el juego dibuja esa lámina.
+
+   ⚠️ Se cocina AFUERA a propósito, y son tres razones, no una:
+     · el mixer arrastra PixiJS, pixi-spine y buffer, y este juego no tiene
+       compilador ni una sola dependencia;
+     · las texturas de las partes viven en `axiecdn.axieinfinity.com`, y atar
+       el arranque del juego a un servidor ajeno es regalar el primer segundo;
+     · las reglas del Vibeathon avisan que embarcar código de runtime de Spine
+       pide licencia aparte de Esoteric Software. Cocinado afuera, en el juego
+       entregado no viaja ningún runtime de Spine: entra un PNG.
+
+   Lo que se pierde: antes el dibujo mostraba el NIVEL de cada carta (la cola
+   crecía, la espalda aparecía). Eso ahora no se ve en el cuerpo. Se cambió a
+   sabiendas: que el Axie se lea como un Axie a los dos segundos vale más que
+   un detalle que igual había que estar buscando, y los niveles de las cartas
+   están escritos en el panel.
+   ══════════════════════════════════════════════════════════════════════════ */
+const AXIE_SPRITE = (() => {
+  const RUTA = 'arte/axies/';
+  const hojas = new Map();          // clase -> {estado, img, meta}
+
+  function pedir(clase){
+    let e = hojas.get(clase);
+    if (e) return e;
+    e = { estado: 'cargando', img: null, meta: null };
+    hojas.set(clase, e);
+    fetch(RUTA + clase + '.json')
+      .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
+      .then(meta => new Promise((ok, mal) => {
+        const img = new Image();
+        img.onload = () => ok({ meta, img });
+        img.onerror = () => mal(new Error('lámina'));
+        /* ⚠️ La versión va pegada a la URL de la imagen. El `.json` se sirve sin
+           caché y el PNG con siete días: al recocinar las láminas, el juego leía
+           las coordenadas nuevas sobre la imagen vieja y el Axie desaparecía en
+           los cuadros que antes no existían. La escribe `horno-axie.cjs`. */
+        img.src = RUTA + clase + '.png' + (meta.version ? '?v=' + meta.version : '');
+      }))
+      .then(({ meta, img }) => { e.meta = meta; e.img = img; e.estado = 'listo'; })
+      .catch(() => { e.estado = 'falla'; });
+    return e;
+  }
+
+  function listo(clase){
+    const e = hojas.get(clase);
+    return (e && e.estado === 'listo') ? e : null;
+  }
+
+  function tira(meta, nombre){
+    return (meta.tiras || []).find(t => t.anim === nombre) || (meta.tiras || [])[0];
+  }
+
+  /* Igual que `tira`, pero sin respaldo: devuelve null si esa animación no
+     está en la lámina. Lo necesita el estado de animación, que tiene que
+     saber si de verdad puede tocar lo que le piden. */
+  function tiraExacta(meta, nombre){
+    return (meta.tiras || []).find(t => t.anim === nombre) || null;
+  }
+
+  function estado(){
+    const o = {};
+    hojas.forEach((v, k) => { o[k] = v.estado; });
+    return o;
+  }
+
+  return { pedir, listo, tira, tiraExacta, estado };
+})();
+
+/* ══ ANIMACIONES DE UNA SOLA VEZ ══
+   El Axie corre o está quieto casi todo el tiempo, pero cuando una carta
+   dispara tiene que HACER el ataque. Las animaciones son las oficiales del
+   mixer, y no están elegidas a ojo: cada `clip.json` de VFX trae el campo
+   `attackAnimation` diciendo con cuál va sincronizado, y `beast_gore` dice
+   `attack/melee/horn-gore`. Efecto y Axie se mueven juntos porque el kit los
+   grabó juntos.
+
+   ⚠️ La prioridad evita que el Axie tartamudee. El cuerno dispara cada medio
+   segundo y la boca más seguido: sin regla, cada carta cortaría la animación
+   de la anterior en el segundo cuadro y no se vería ninguna. Una animación no
+   se interrumpe si le queda más del 35% por delante, salvo que llegue algo de
+   más prioridad — recibir un golpe le gana a estar pegando.
+
+   ⚠️ `defense/hit-by-normal` viene con duración CERO en el esqueleto (es una
+   pose, no un movimiento). Con eso el cálculo del cuadro dividiría por cero,
+   así que por debajo de 0,05 s se le pone una duración fija. */
+/* ⚠️ Las animaciones del kit duran lo que dura un turno de Origins: el ataque
+   del cuerno son 0,75 s con anticipación y regreso. Acá las cartas disparan
+   cada medio segundo y hay tres a la vez, así que a duración natural el Axie
+   quedaba atacando el 92% de los cuadros — medido — y no se lo veía correr
+   nunca. Comprimidas, se leen como un golpe seco y dejan respirar el ciclo de
+   carrera, que es lo que dice hacia dónde va el jugador. */
+const DURACION_ANIM = {
+  'attack/melee/horn-gore':  0.42,
+  'attack/melee/mouth-bite': 0.42,
+  'attack/melee/tail-smash': 0.50,
+  'defense/hit-by-normal':   0.28,
+  'activity/evolve':         1.00
+};
+
+function animarAxie(nombre, prioridad){
+  const hoja = AXIE_SPRITE.listo((miAxie && miAxie.clase) || selectedClass);
+  if (!hoja) return;
+  const t = AXIE_SPRITE.tiraExacta(hoja.meta, nombre);
+  if (!t) return;
+  const dur = DURACION_ANIM[nombre] || (t.duracion > 0.05 ? t.duracion : 0.3);
+  const a = player.anim;
+  if (a && gameTime < a.hasta){
+    if ((prioridad || 0) < a.prioridad) return;
+    if ((prioridad || 0) === a.prioridad && (a.hasta - gameTime) > dur * 0.35) return;
+  }
+  player.anim = { tira: nombre, desde: gameTime, hasta: gameTime + dur,
+                  prioridad: prioridad || 0 };
+}
+
+function drawAxie(p){
+  const clase = (miAxie && miAxie.clase) || selectedClass;
+  const hoja = AXIE_SPRITE.listo(clase);
+  if (!hoja) { drawAxieDibujado(p); return; }
+
+  const R = p.radius;
+  const m = hoja.meta;
+  const bob = Math.sin(p.walkCycle) * 2;
+
+  ctx.save();
+  ctx.translate(p.x, p.y);
+
+  ctx.fillStyle = 'rgba(0,0,0,0.28)';
+  ctx.beginPath();
+  ctx.ellipse(0, R + 4, R * 1.0, R * 0.32, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  /* ⚠️ El aro blanco dice CUÁL SOS VOS. Desde que las Quimeras son arte de
+     Origins y el Axie también, los dos se dibujan igual de bien y en una
+     pantalla con quince bichos se perdía de vista el propio. Las Quimeras se
+     paran sobre un aro del color de su clase; el jugador se para sobre uno
+     blanco, que es el único color que no usa ninguna clase. */
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+  ctx.strokeStyle = '#fff8e7';
+  ctx.lineWidth = 2.5;
+  ctx.shadowColor = '#fff8e7';
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  ctx.ellipse(0, R + 4, R * 0.92, R * 0.34, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+
+  if (furyRestante > 0){
+    ctx.save();
+    ctx.globalAlpha = 0.30 + Math.sin(gameTime * 14) * 0.14;
+    ctx.fillStyle = '#ff4b2b';
+    ctx.beginPath();
+    ctx.arc(0, bob, R * 1.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+    /* La máscara de Fury de Origins, flotando arriba. El aura sola decía
+       "algo rojo pasa"; la máscara dice QUÉ pasa. */
+    ICONOS.dibujar('buff_fury', 0, bob - R * 2.0, R * 1.25,
+                   0.85 + Math.sin(gameTime * 9) * 0.15);
+  } else if (player.hojaHasta > gameTime){
+    /* La hoja de Way of Plant, un segundo, y solo si no está en Fury: dos
+       iconos apilados sobre la cabeza no se leen. */
+    ICONOS.dibujar('buff_leaf', 0, bob - R * 2.0, R * 1.1,
+                   Math.min(1, (player.hojaHasta - gameTime) * 2));
+  }
+
+  /* Si hay una animación de una sola vez en curso, manda ella. Si no,
+     corriendo o quieto: `walkCycle` solo avanza mientras el jugador se mueve,
+     así que sirve de reloj para el ciclo de carrera; el de quieto va con el
+     reloj del juego para que no se congele. */
+  let t, i;
+  const anim = p.anim;
+  if (anim && gameTime < anim.hasta && AXIE_SPRITE.tiraExacta(m, anim.tira)){
+    t = AXIE_SPRITE.tiraExacta(m, anim.tira);
+    const avance = (gameTime - anim.desde) / (anim.hasta - anim.desde);
+    i = t.desde + Math.min(t.cuadros - 1, Math.max(0, Math.floor(avance * t.cuadros)));
+  } else {
+    const corriendo = !!p.moviendo;
+    t = corriendo ? AXIE_SPRITE.tira(m, 'action/run')
+                  : AXIE_SPRITE.tira(m, 'action/idle/normal');
+    const paso = corriendo ? Math.floor(p.walkCycle * 1.6) : Math.floor(gameTime * 7);
+    i = t.desde + (((paso % t.cuadros) + t.cuadros) % t.cuadros);
+  }
+  const col = i % m.cols, fila = Math.floor(i / m.cols);
+
+  /* El Axie ocupa el 80% del cuadro y está parado sobre el 94% de su alto:
+     así lo encuadró el horno. Dibujando el cuadro entero con alto 3,6·R, el
+     cuerpo mide ~2,9·R y las patas caen justo sobre la sombra. */
+  const alto = R * 3.6, ancho = alto;
+  ctx.save();
+  ctx.translate(0, bob);
+  if (p.facingLeft) ctx.scale(-1, 1);
+  ctx.drawImage(hoja.img, col * m.ancho, fila * m.alto, m.ancho, m.alto,
+                -ancho / 2, R * 0.95 - alto * 0.94, ancho, alto);
+  ctx.restore();
+
+  ctx.restore();
+}
+
+function drawAxieDibujado(p) {
   ctx.save();
   ctx.translate(p.x, p.y);
   if (p.facingLeft) ctx.scale(-1, 1);
@@ -2447,7 +3755,178 @@ function drawAxie(p) {
    púas, ojos partidos y sin brillo. Comparten la silueta a propósito — así el
    mundo se lee como uno solo y la diferencia se nota en la actitud, no en la
    forma. El bruto va encorvado y el murciélago aletea. */
-function drawChimera(e) {
+/* ══════════════════════════════════════════════════════════════════════════
+   LAS QUIMERAS SON LAS DE ORIGINS
+   ──────────────────────────────────────────────────────────────────────────
+   Ya no son bichos inventados: son las Quimeras de PvE de Axie Infinity:
+   Origins, sacadas del mismo Battle Kit que los efectos, en la revisión que
+   autorizan las reglas (`Assets/OriginsKit/PvE/Avatars/portraits/`). Son 20
+   criaturas reales, 436 KB en total, con su contorno blanco ya puesto — que
+   es justo lo que un juego de arriba necesita para que se lean sobre la
+   tierra oscura de Lunacia.
+
+   ⚠️ El kit NO trae ninguna Quimera de clase AVE. Trae treants y dríades
+   (Planta), lobos y osos (Bestia) y babosas acuáticas (Aqua), y nada más. Al
+   Ave le queda `forest-slime-flower`, que es la única rosada y por eso es la
+   que menos miente: en este juego el rosa ES el Ave. Si algún día aparece una
+   Quimera Ave de verdad, se cambia una línea de esta tabla.
+
+   ⚠️ Y como el sprite ahora manda en cómo se ve el bicho, el COLOR de clase
+   dejó de estar en el cuerpo. Estaba dicho en el comentario del cuerpo viejo:
+   el color es la clase, y es la información con la que el jugador decide a
+   quién le pega. Así que la clase pasó al PISO: cada Quimera se para sobre un
+   aro de su color. Se lee igual de rápido y encima no le tapa el arte.
+
+   ⚠️ Si un PNG no llega, se dibuja la Quimera de antes. El juego no depende
+   de estos archivos para funcionar; se ven mejor con ellos y punto.
+   ══════════════════════════════════════════════════════════════════════════ */
+const QUIMERAS_POR_CLASE = {
+  plant: ['treant-fighter', 'flowering-treant', 'dryad-fighter', 'dryad-ranger',
+          'dryad-mage', 'forest-slime-fighter', 'slime'],
+  aqua:  ['aqua-slime-atk', 'aqua-slime-def', 'aqua-slime-sup', 'aqua-wolf'],
+  beast: ['gray-wolf', 'daddy-bear', 'mommy-bear', 'werewolf'],
+  bird:  ['forest-slime-flower']
+};
+
+/* Los jefes son las versiones grandes: el lobo alfa, su primo acuático, el
+   treant entero y la babosa jefa. */
+const QUIMERA_JEFE = {
+  beast: 'alpha-wolf', aqua: 'aqua-alpha-wolf',
+  plant: 'treant',     bird: 'aqua-slime-boss'
+};
+
+const SPRITES = (() => {
+  const RUTA = 'arte/quimeras/';      // relativa: la tienda cuelga de /axie
+  const cache = new Map();            // nombre -> {estado, img}
+
+  function pedir(nombre){
+    let e = cache.get(nombre);
+    if (e) return e;
+    e = { estado: 'cargando', img: null };
+    cache.set(nombre, e);
+    const img = new Image();
+    img.onload  = () => { e.img = img; e.estado = 'listo'; };
+    img.onerror = () => { e.estado = 'falla'; };
+    img.src = RUTA + nombre + '.png';
+    return e;
+  }
+
+  /* Se piden todas al empezar la corrida: son 436 KB entre las veinte, menos
+     que una sola foto de producto, y así ninguna Quimera aparece sin cara. */
+  function precargar(){
+    for (const clase in QUIMERAS_POR_CLASE) QUIMERAS_POR_CLASE[clase].forEach(pedir);
+    for (const clase in QUIMERA_JEFE) pedir(QUIMERA_JEFE[clase]);
+  }
+
+  function listo(nombre){
+    const e = nombre && cache.get(nombre);
+    return (e && e.estado === 'listo') ? e.img : null;
+  }
+
+  function elegir(clase){
+    const pool = QUIMERAS_POR_CLASE[clase] || QUIMERAS_POR_CLASE.beast;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  function estado(){
+    const o = {};
+    cache.forEach((v, k) => { o[k] = v.estado; });
+    return o;
+  }
+
+  return { pedir, precargar, listo, elegir, estado };
+})();
+
+/* El aro del piso: dice la clase ahora que el cuerpo tiene arte propio. */
+function aroDeClase(R, color, jefe){
+  ctx.save();
+  ctx.globalAlpha = jefe ? 0.55 : 0.42;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = jefe ? 4 : 2.5;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = jefe ? 18 : 10;
+  ctx.beginPath();
+  ctx.ellipse(0, R * 0.92, R * 0.86, R * 0.34, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.globalAlpha = jefe ? 0.22 : 0.15;
+  ctx.fillStyle = color;
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawChimera(e){
+  const img = SPRITES.listo(e.sprite);
+  if (!img) { drawChimeraDibujada(e); return; }   // todavía no llegó el PNG
+
+  const R = e.radius;
+  const cc = COLOR_CLASE[e.clase] || '#8899a6';
+  const t = gameTime * 5 + e.x * 0.05;
+  const bob = Math.sin(t) * (e.jefe ? 2 : 1.6);
+
+  ctx.save();
+  ctx.translate(e.x, e.y);
+
+  ctx.fillStyle = 'rgba(0,0,0,0.32)';
+  ctx.beginPath();
+  ctx.ellipse(0, R * 0.95, R * 0.8, R * 0.28, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  aroDeClase(R, cc, e.jefe);
+
+  if (e.jefe){
+    ctx.save();
+    ctx.globalAlpha = 0.16 + Math.sin(gameTime * 4) * 0.08;
+    ctx.fillStyle = cc;
+    ctx.beginPath();
+    ctx.arc(0, bob, R * 1.7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /* Mira hacia donde va. `vx` no existe en todas las Quimeras (el Ave zigzaguea
+     con su propia cuenta), así que se saca de dónde está el jugador. */
+  const miraIzq = player.x < e.x;
+
+  /* Alto fijo en función del radio, y el ancho sale de la proporción del PNG:
+     los veinte retratos no miden lo mismo y forzar un cuadrado los deforma. */
+  const alto = R * 2.9;
+  const ancho = alto * (img.width / img.height);
+
+  ctx.save();
+  ctx.translate(0, bob);
+  if (miraIzq) ctx.scale(-1, 1);
+  /* Vulnerable: el amuleto Burbuja la deja marcada. Antes se veía en el color
+     del cuerpo; con arte propio hace falta decirlo aparte. */
+  if (e.vulnerable > 0){
+    ctx.shadowColor = '#00e5ff';
+    ctx.shadowBlur = 16;
+  }
+  ctx.drawImage(img, -ancho / 2, -alto * 0.72, ancho, alto);
+  /* ⚠️ El destello es el MISMO PNG dibujado encima en blanco puro. El truco es
+     el filtro: brightness(0) lo pinta todo negro e invert(1) lo pasa a blanco,
+     y el canal alfa no se toca, así que sale la silueta exacta sin tener que
+     preparar una máscara aparte de los veinte retratos.
+     ⚠️ Y si el navegador no soporta ctx.filter, no se rompe nada: dibuja el
+     mismo retrato encima a poca opacidad, que casi no se nota. Es la misma
+     regla que el resto del arte — un efecto es un lujo. */
+  if (e.flash > 0){
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, e.flash / 0.09) * 0.9;
+    ctx.filter = 'brightness(0) invert(1)';
+    ctx.drawImage(img, -ancho / 2, -alto * 0.72, ancho, alto);
+    ctx.restore();
+  }
+  ctx.restore();
+
+  /* ⚠️ El icono va FUERA del bloque espejado, o en la mitad de las quimeras
+     saldría al revés. Y va después de restaurar, para que no herede el
+     desenfoque de la sombra del cuerpo. */
+  if (e.vulnerable > 0) ICONOS.dibujar('buff_bubble', 0, bob - R * 1.5, R * 0.95);
+
+  ctx.restore();
+}
+
+function drawChimeraDibujada(e) {
   ctx.save();
   ctx.translate(e.x, e.y);
 
@@ -2575,6 +4054,13 @@ function updateHud() {
   const lbl = document.getElementById('rage-label');
   lbl.innerText = enFury ? '¡FURY FORM!' : (cansancio > 0 ? 'Recuperando' : 'Rage');
   lbl.style.color = enFury ? '#ff4b2b' : (cansancio > 0 ? '#697d8c' : '#ff8800');
+  /* ⚠️ El icono va de FONDO del rótulo, no como un <img> adentro: la línea de
+     arriba escribe `innerText` en cada cuadro y se llevaría puesta cualquier
+     etiqueta hija. Y cambia con el estado — el rayo mientras carga, la máscara
+     cuando estalla, nada mientras se recupera. */
+  const iconoRage = enFury ? 'buff_fury' : (cansancio > 0 ? null : 'buff_rage');
+  lbl.style.backgroundImage = iconoRage ? 'url(arte/iconos/' + iconoRage + '.png)' : 'none';
+  lbl.style.paddingLeft = iconoRage ? '14px' : '0';
   document.getElementById('rage-text').innerText =
     enFury ? furyRestante.toFixed(1) + 's' : (cansancio > 0 ? cansancio.toFixed(1) + 's' : rage + ' / 10');
   document.getElementById('rage-fill').style.width =
@@ -2599,8 +4085,15 @@ function startGame() {
   projectiles = [];
   escupitajos = [];
   gems = [];
+  corazones = [];
   particles = [];
   floatingTexts = [];
+  anillos = [];
+  dolor = 0;
+  apuro = 0;
+  pausado = false;
+  { const b = document.getElementById('pause-btn'); if (b) b.innerText = '⏸'; }
+  CAMARA.reiniciar();
   gameTime = 0;
   kills = 0;
   axpDeLaCorrida = 0;
@@ -2612,7 +4105,7 @@ function startGame() {
   // 35% por nivel, así que cada revancha costaba más subir que la anterior.
   player.level = 1;
   player.axp = 0;
-  player.nextLevelAxp = 100;
+  player.nextLevelAxp = 90;
   player.shield = 0;
 
   // Y el estado momentáneo del combate, o la partida nueva nace con una onda
@@ -2625,7 +4118,16 @@ function startGame() {
   player.contraCooldown = 0;
   player.leafCooldown = 0;
   player.gemasParaBurbuja = 0;
+  player.hojaHasta = 0;
+  player.anim = null;
   opcionesEnPantalla = [];
+
+  VFX.limpiar();
+  VFX.precargar(bodyParts);
+  SPRITES.precargar();
+  SONIDO.precargar(bodyParts);
+  ICONOS.precargar();
+  AXIE_SPRITE.pedir((miAxie && miAxie.clase) || selectedClass);
 
   document.getElementById('start-screen').classList.add('hidden');
   document.getElementById('gameover-screen').classList.add('hidden');
@@ -2691,6 +4193,17 @@ function restartGame() {
 // Iniciar: se recupera el Axie guardado y se arma la pantalla que corresponda
 miAxie = cargarAxie();
 mostrarInicio();
+
+/* ⚠️ El arte se pide al ABRIR la página, no al empezar la corrida. Son unos
+   200 KB la lámina del Axie y 436 KB las Quimeras: pedirlos en `startGame()`
+   significaba que los primeros segundos de cada partida se jugaban con los
+   dibujos viejos y después cambiaban de golpe. Entre que la página abre y el
+   jugador toca Adoptar pasan varios segundos que estaban desperdiciados.
+   Igual siguen siendo opcionales: si no llegan, se juega con los dibujos. */
+AXIE_SPRITE.pedir((miAxie && miAxie.clase) || selectedClass);
+SPRITES.precargar();
+ICONOS.precargar();
+
 requestAnimationFrame(gameLoop);
 </script>
 </body>

@@ -102,13 +102,18 @@ const TIPOS = {
   '.png':  'image/png',   '.webp': 'image/webp',
   '.avif': 'image/avif',  '.svg':  'image/svg+xml',
   '.ico':  'image/x-icon','.txt':  'text/plain; charset=utf-8',
-  '.xml':  'application/xml; charset=utf-8'
+  '.xml':  'application/xml; charset=utf-8',
+  /* Los sonidos del juego del Vibeathon. Sin esto salían como
+     application/octet-stream y hay navegadores que se niegan a reproducirlos. */
+  '.ogg':  'audio/ogg',   '.mp3':  'audio/mpeg',
+  '.m4a':  'audio/mp4',   '.wav':  'audio/wav'
 };
 
 /* Las imágenes casi nunca cambian -> caché larga.
    El HTML y el catálogo sí cambian -> siempre revalidar. */
 function cache(ext){
-  if (['.jpg','.jpeg','.png','.webp','.avif','.svg','.ico'].includes(ext)) return 'public, max-age=604800';
+  if (['.jpg','.jpeg','.png','.webp','.avif','.svg','.ico',
+       '.ogg','.mp3','.m4a','.wav'].includes(ext)) return 'public, max-age=604800';
   if (ext === '.json' || ext === '.html') return 'no-cache';
   return 'public, max-age=3600';
 }
