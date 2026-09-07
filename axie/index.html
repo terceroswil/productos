@@ -654,6 +654,9 @@
     <div class="hud-panel">
       <div id="timer-display" class="hud-timer">00:00</div>
       <div class="hud-stats">⚔️ <span id="kills-display">0</span> Kills</div>
+      <button id="btnExtraer" class="hud-btn" onclick="extraerAhora()" hidden
+              style="background:linear-gradient(135deg,#1f8a5a,#8be4b1); color:#08120c; font-weight:800"
+              title="Salir con lo cosechado y el bono">⏏ Extraer</button>
       <button id="pause-btn" class="hud-btn" onclick="alternarPausa()" title="Pausa (P o Esc)">⏸</button>
       <button id="sound-btn" class="hud-btn" onclick="toggleAudio()">🔊 Sonido</button>
     </div>
@@ -755,6 +758,26 @@
       Sus partes corporales ahora pueden llegar al <b id="asc-techo">nivel 2</b>.
     </p>
     <button class="btn-start" onclick="cerrarAscension()">Sincronizar</button>
+  </div>
+
+  <!-- La puerta de los 10:00: extraer o quedarse -->
+  <div id="puerta-modal" class="overlay-screen hidden">
+    <div class="badge-vibeathon">⚡ Extracción lista ⚡</div>
+    <h2 style="font-size: 34px; color: #8be4b1; margin-bottom: 6px;">AGUANTASTE LOS 10 MINUTOS</h2>
+    <p style="color: #d1dbe5; font-size: 15px; max-width: 500px; line-height: 1.5;">
+      Podés extraer ahora y llevarte <b id="puerta-bono">el bono</b>,
+      o quedarte en la <b style="color:#ff4b2b">Zona Corrupta</b>: las quimeras
+      se ponen más duras cada minuto y el bono sube <b>25% por nivel</b>.
+    </p>
+    <p style="color: #ff8a7a; font-size: 14px; font-weight: 800; margin-top: 10px; max-width: 500px;">
+      ⚠️ Si te matan ahí adentro perdés el bono entero. Lo cosechado te lo
+      llevás igual.
+    </p>
+    <div style="display:flex; gap:14px; flex-wrap:wrap; justify-content:center; margin-top:8px">
+      <button class="btn-start" onclick="extraerAhora()">Extraer · <span id="puerta-axp">0</span> AXP</button>
+      <button class="btn-start" style="background:linear-gradient(135deg,#ff4b2b,#ff9068)"
+              onclick="entrarEnLaZona()">Quedarme</button>
+    </div>
   </div>
 </div>
 
@@ -1518,6 +1541,7 @@ function cargarAxie(){
     a.axpTotal = entero(a.axpTotal, 9e12);
     a.axpDisponible = entero(a.axpDisponible, 9e12);
     a.ascensiones = entero(a.ascensiones, ASCENSIONES.length);
+    a.mejorAmenaza = entero(a.mejorAmenaza, 99);
     const partes = {};
     for (const k in bodyParts) partes[k] = entero(a.partes && a.partes[k], bodyParts[k].maxLevel);
     a.partes = partes;
@@ -1538,6 +1562,7 @@ function adoptarAxie(){
     axpTotal: 0,
     axpDisponible: 0,
     ascensiones: 0,
+    mejorAmenaza: 0,
     partes: Object.fromEntries(Object.keys(bodyParts).map(k => [k, 0]))
   };
   guardarAxie();
@@ -1685,12 +1710,62 @@ let shockwaves = [];
 let escupitajos = [];        // lo que disparan las quimeras Aqua
 let jefeALaVista = null;     // para la barra de vida de arriba
 let proximoJefe = 1;         // cuántos jefes van salidos
+let proximoJefeZona = 0;     // cuándo sale el próximo dentro de la Zona
 
 /* La corrida tiene final: aguantar 10 minutos y salir. Sin una meta el juego
    solo se puede perder, y una partida que únicamente termina mal no da ganas
    de volver a entrar. */
 const META_SEGUNDOS = 600;
 const CADA_JEFE = 120;
+
+/* ══════════════════════════════════════════════════════════════════════════
+   LA ZONA CORRUPTA — lo que pasa después de la meta
+   ──────────────────────────────────────────────────────────────────────────
+   El problema medido: de la cuarta corrida en adelante TODAS las partidas
+   ganadas daban el mismo número, 1082 quimeras y 28.575 AXP. Una vez que las
+   partes llegan a 5 no hay nada nuevo y el juego se termina de verdad ahí. Un
+   juego que se termina no se puntúa.
+
+   A los 10:00 la extracción deja de ser el final y pasa a ser una PUERTA. El
+   jugador elige:
+
+     · EXTRAER — la corrida termina exactamente como terminaba antes, con el
+       mismo bono del 50%.
+     · QUEDARSE — la dificultad sigue subiendo por niveles de amenaza, y cada
+       nivel aguantado suma 25% más de bono.
+
+   ⚠️ Y quedarse tiene que COSTAR algo, o no es una decisión: si el bono ya
+   estuviera guardado, quedarse sería gratis y todo el mundo se quedaría
+   siempre. Por eso **si te matan en la Zona Corrupta perdés el bono entero** y
+   te llevás solo lo cosechado. Ahí sí hay una apuesta: cuánto más aguanto
+   antes de que me alcancen.
+
+   ⚠️ Esto NO toca el arco medido de la progresión. El jugador que extrae a los
+   600 recibe lo mismo, al AXP exacto, que antes de este cambio; el bot con el
+   que se mide el arco extrae. Todo lo de acá abajo es opcional y solo se
+   activa si el jugador elige quedarse.
+   ══════════════════════════════════════════════════════════════════════════ */
+let extraccionLista = false;   // se llegó a la meta al menos una vez
+let enSobretiempo = false;     // el jugador eligió quedarse
+let decidiendo = false;        // está abierta la pantalla de la puerta
+
+/* Nivel de amenaza: 0 hasta la meta, y de ahí uno más cada 60 segundos. Es el
+   número que el jugador persigue cuando ya no hay nada más que comprar. */
+function nivelDeAmenaza(){
+  if (!enSobretiempo) return 0;
+  return 1 + Math.floor((gameTime - META_SEGUNDOS) / 60);
+}
+/* Segundos dentro de la Zona. Fuera de ella es 0, y por eso todas las fórmulas
+   de dificultad de abajo quedan IDÉNTICAS a las medidas durante los primeros
+   diez minutos: se les suma cero. */
+function segundosDeZona(){
+  return enSobretiempo ? Math.max(0, gameTime - META_SEGUNDOS) : 0;
+}
+/* El bono de extracción: 50% al llegar a la meta, y 25% más por cada nivel de
+   amenaza aguantado. */
+function bonoDeExtraccion(){
+  return 0.5 + 0.25 * nivelDeAmenaza();
+}
 let enemies = [];
 let gems = [];
 
@@ -1814,7 +1889,7 @@ const keys = {};
    inicio no tiene que pasar nada: pausar un menú deja al jugador con dos
    pantallas encimadas y sin manera obvia de salir. */
 function alternarPausa(){
-  if (gameState !== 'PLAYING') return;
+  if (gameState !== 'PLAYING' || decidiendo) return;   // la puerta no se pausa
   pausado = !pausado;
   const b = document.getElementById('pause-btn');
   if (b) b.innerText = pausado ? '▶' : '⏸';
@@ -1934,7 +2009,11 @@ function spawnEnemy() {
      Medido: 10 corridas, muerte promedio a los 85 s, la mejor a los 165, y el
      primer jefe recién sale a los 120. A 0,30 la vida que llega se queda
      siempre por debajo del daño que el jugador puede tener a esa altura. */
-  const hp = (22 + gameTime * 0.30) * c.hp;
+  /* ⚠️ El término de la Zona va SUMADO y vale cero fuera de ella: durante los
+     primeros diez minutos esta fórmula es exactamente la medida, al decimal.
+     El 0,9 es el triple de la pendiente normal — la Zona tiene que matarte, no
+     alargarte la partida. */
+  const hp = (22 + gameTime * 0.30 + segundosDeZona() * 0.9) * c.hp;
 
   /* ⚠️ El COLOR es la clase, no el tipo. Antes el color decía el tipo y un
      borde decía la clase, y las dos señales se peleaban: un slime verde de
@@ -2429,7 +2508,7 @@ function gameLoop(timestamp) {
 
   CAMARA.latir(dt);
 
-  if (gameState === 'PLAYING' && !pausado && !CAMARA.congelada) {
+  if (gameState === 'PLAYING' && !pausado && !decidiendo && !CAMARA.congelada) {
     update(dt);
   }
   render();
@@ -2514,7 +2593,10 @@ function update(dt) {
      jugador necesita para decidir. Con techo, si no matás dejan de aparecer:
      la presión sube hasta un límite y ahí se queda esperándote. El jefe no
      cuenta para el techo, o un jefe lento congelaría la partida. */
-  const TOPE_QUIMERAS = 55;
+  /* En la Zona el techo sube de a 4 por nivel de amenaza, hasta 75. Medido:
+     dibujar 55 cuesta 0,70 ms y 75 se mantiene bien debajo de los 2 de
+     presupuesto. Fuera de la Zona son 55, los de siempre. */
+  const TOPE_QUIMERAS = 55 + Math.min(20, Math.floor(segundosDeZona() / 60) * 4);
   spawnTimer += dt;
   /* ⚠️ La rampa tiene que durar lo que tarda el build en existir. Con 0,006
      la aparición llegaba a su tope a los 163 segundos, y a esa altura el
@@ -2522,21 +2604,33 @@ function update(dt) {
      máxima le caía encima antes de tener con qué contestarla, y ahí es donde
      se morían todas las corridas medidas. Con 0,0035 el tope llega recién a
      los 280, que es cuando ya hay dos o tres cartas subidas. */
-  const spawnRate = Math.max(0.42, 1.4 - (gameTime * 0.0035));
+  /* El piso de 0,42 se hunde dentro de la Zona hasta 0,16. Fuera vale 0,42
+     exacto, que es el número medido. */
+  const pisoZona = Math.max(0.16, 0.42 - segundosDeZona() * 0.0008);
+  const spawnRate = Math.max(pisoZona, 1.4 - (gameTime * 0.0035));
   if (spawnTimer >= spawnRate) {
     spawnTimer = 0;
     if (enemies.length - (jefeALaVista ? 1 : 0) < TOPE_QUIMERAS) spawnEnemy();
   }
 
-  // Un jefe cada dos minutos
-  if (gameTime >= proximoJefe * CADA_JEFE && proximoJefe * CADA_JEFE < META_SEGUNDOS){
+  // Un jefe cada dos minutos, y cada uno en la Zona
+  if (!enSobretiempo){
+    if (gameTime >= proximoJefe * CADA_JEFE && proximoJefe * CADA_JEFE < META_SEGUNDOS){
+      spawnJefe(proximoJefe);
+      proximoJefe++;
+    }
+  } else if (gameTime >= proximoJefeZona){
     spawnJefe(proximoJefe);
     proximoJefe++;
+    proximoJefeZona = gameTime + 60;
   }
 
-  // Aguantar hasta la meta: eso es ganar
-  if (gameTime >= META_SEGUNDOS){
-    gameOver(true);
+  /* Aguantar hasta la meta ya no termina la corrida: abre la puerta. Y se
+     abre UNA sola vez — `extraccionLista` se queda en true para siempre, así
+     que al volver de la Zona no reaparece cada cuadro. */
+  if (gameTime >= META_SEGUNDOS && !extraccionLista){
+    extraccionLista = true;
+    abrirPuerta();
     return;
   }
 
@@ -4040,12 +4134,24 @@ function updateHud() {
 
   /* El reloj cuenta hacia la meta, no hacia arriba: así el jugador sabe
      cuánto le falta para ganar en vez de solo cuánto lleva sobreviviendo. */
-  const resta = Math.max(0, META_SEGUNDOS - gameTime);
-  const minutes = Math.floor(resta / 60).toString().padStart(2, '0');
-  const seconds = Math.floor(resta % 60).toString().padStart(2, '0');
   const reloj = document.getElementById('timer-display');
-  reloj.innerText = `${minutes}:${seconds}`;
-  reloj.style.color = (jefeALaVista && enemies.includes(jefeALaVista)) ? '#ff4b2b' : '#ffd152';
+  if (enSobretiempo){
+    /* ⚠️ Dentro de la Zona el reloj cambia de SENTIDO. Antes de la meta el
+       jugador necesita saber cuánto le falta para ganar; después ya ganó, y lo
+       único que se mide es cuánto aguanta. Un reloj que sigue contando hacia
+       atrás desde cero no diría nada. */
+    const dentro = segundosDeZona();
+    const m = Math.floor(dentro / 60).toString().padStart(2, '0');
+    const sg = Math.floor(dentro % 60).toString().padStart(2, '0');
+    reloj.innerText = `☣${nivelDeAmenaza()} · +${m}:${sg}`;
+    reloj.style.color = '#ff4b2b';
+  } else {
+    const resta = Math.max(0, META_SEGUNDOS - gameTime);
+    const minutes = Math.floor(resta / 60).toString().padStart(2, '0');
+    const seconds = Math.floor(resta % 60).toString().padStart(2, '0');
+    reloj.innerText = `${minutes}:${seconds}`;
+    reloj.style.color = (jefeALaVista && enemies.includes(jefeALaVista)) ? '#ff4b2b' : '#ffd152';
+  }
 
   document.getElementById('kills-display').innerText = kills;
 
@@ -4099,6 +4205,12 @@ function startGame() {
   axpDeLaCorrida = 0;
   jefeALaVista = null;
   proximoJefe = 1;
+  proximoJefeZona = 0;
+  extraccionLista = false;
+  enSobretiempo = false;
+  decidiendo = false;
+  document.getElementById('puerta-modal').classList.add('hidden');
+  document.getElementById('btnExtraer').hidden = true;
 
   // ⚠️ La progresión también se reinicia. Sin esto, "Jugar de Nuevo" arrancaba
   // con el nivel y el umbral de AXP de la partida anterior: nextLevelAxp crece
@@ -4135,6 +4247,43 @@ function startGame() {
   lastTimestamp = performance.now();
 }
 
+/* ══ La puerta de los 10:00 ══
+   Se frena el mundo con `decidiendo` en vez de con gameState: gameState se
+   mira en media docena de lugares lejos de acá y agregarle un valor nuevo
+   rompería cosas. Es el mismo freno que usa la pausa. */
+function abrirPuerta(){
+  decidiendo = true;
+  for (const k in keys) keys[k] = false;      // que no siga caminando solo
+  const bono = Math.round(axpDeLaCorrida * bonoDeExtraccion());
+  document.getElementById('puerta-bono').innerText =
+    '+' + bono.toLocaleString('es') + ' AXP de bono';
+  document.getElementById('puerta-axp').innerText =
+    (axpDeLaCorrida + bono).toLocaleString('es');
+  document.getElementById('puerta-modal').classList.remove('hidden');
+  SONIDO.tocar('nivel', 0.5, 'levelup');
+}
+
+function cerrarPuerta(){
+  decidiendo = false;
+  document.getElementById('puerta-modal').classList.add('hidden');
+}
+
+function extraerAhora(){
+  cerrarPuerta();
+  gameOver(true);
+}
+
+function entrarEnLaZona(){
+  cerrarPuerta();
+  enSobretiempo = true;
+  proximoJefeZona = gameTime + 30;            // el primero llega enseguida
+  document.getElementById('btnExtraer').hidden = false;
+  createFloatingText(player.x, player.y - 70, '¡ZONA CORRUPTA!', '#ff4b2b', 'aviso');
+  CAMARA.sacudir(0.9);
+  anillos.push({ x: player.x, y: player.y, r: 20, vel: 900, life: 0.8, vida0: 0.8,
+                 color: '#ff4b2b', grosor: 8 });
+}
+
 function gameOver(gano) {
   gameState = 'GAMEOVER';
   const minutes = Math.floor(gameTime / 60).toString().padStart(2, '0');
@@ -4142,12 +4291,22 @@ function gameOver(gano) {
 
   /* Ganar es aguantar hasta la meta. El bono de extracción es la mitad de lo
      cosechado: hace que valga la pena quedarse en vez de morir tranquilo. */
+  /* Ahora hay TRES finales, no dos. El del medio es el que le da sentido a la
+     Zona: morirse ahí adentro no es lo mismo que morirse antes de la meta,
+     porque ya habías ganado y lo tiraste por querer un nivel más. */
+  const amenazaFinal = nivelDeAmenaza();
   const titulo = document.getElementById('gameover-title');
+  document.getElementById('btnExtraer').hidden = true;
   if (gano){
-    axpDeLaCorrida += Math.round(axpDeLaCorrida * 0.5);
-    titulo.innerText = '¡EXTRACCIÓN CON ÉXITO!';
+    axpDeLaCorrida += Math.round(axpDeLaCorrida * bonoDeExtraccion());
+    titulo.innerText = amenazaFinal > 0
+      ? '¡EXTRACCIÓN DESDE LA ZONA · AMENAZA ' + amenazaFinal + '!'
+      : '¡EXTRACCIÓN CON ÉXITO!';
     titulo.style.color = '#8be4b1';
     playSound('levelup');
+  } else if (enSobretiempo){
+    titulo.innerText = 'LA ZONA TE COMIÓ · AMENAZA ' + amenazaFinal;
+    titulo.style.color = '#ff4b2b';
   } else {
     titulo.innerText = '¡TU AXIE HA CAÍDO!';
     titulo.style.color = '#ff4b2b';
@@ -4159,6 +4318,9 @@ function gameOver(gano) {
 
   /* ══ Lo que la corrida le deja al Axie: esto es lo que NO se pierde ══ */
   if (miAxie){
+    /* El récord se guarda aunque te hayan matado: es lo más hondo que llegaste
+       y es el número que reemplaza al "ya no hay nada que comprar". */
+    if (amenazaFinal > (miAxie.mejorAmenaza || 0)) miAxie.mejorAmenaza = amenazaFinal;
     const nivelAntes = nivelPorAxp(miAxie.axpTotal);
     miAxie.axpTotal += axpDeLaCorrida;
     miAxie.axpDisponible += axpDeLaCorrida;

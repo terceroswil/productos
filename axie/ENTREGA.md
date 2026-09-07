@@ -2,8 +2,8 @@
 
 Todo lo que va en el formulario, ya escrito y listo para pegar.
 
-Actualizado el 6 de septiembre de 2026 contra el commit `7a71f1c`, con el
-formulario real a la vista.
+Actualizado el 7 de septiembre de 2026, con el formulario real a la vista y la
+Zona Corrupta ya en el juego.
 
 ---
 
@@ -67,10 +67,34 @@ El propio formulario avisa: *"Saving confirms the link format, not that the
 game is playable. Review checks whether judges can open it."* O sea que el
 chequeo automático lo va a abrir de verdad.
 
-Y el plazo va **hasta el 21**: son dos semanas de tener que dejar la PC
-prendida, sin abrir AutoTrópico —que pelea por el puerto 3001— y sin un corte
-de luz. **Subirlo a un hosting estático** (Netlify Drop: se arrastra la carpeta
-`axie/`) son diez minutos y saca el riesgo entero de encima.
+Y no son dos semanas: el juzgamiento arranca DESPUÉS del cierre del 21 y la
+página del Vibeathon dice **"Judging: Date pending"**. O sea que la PC tiene que
+quedarse prendida un tiempo que todavía nadie sabe, sin abrir AutoTrópico —que
+pelea por el puerto 3001— y sin un corte de luz.
+
+**Decisión tomada el 7 de septiembre: se sostiene el túnel.** Queda anotado el
+riesgo y qué hacer si se decide cambiar.
+
+⚠️ **Si algún día se mueve, que NO sea a Netlify.** Verificado en su propia
+página de precios: el plan gratis da **300 créditos con límite duro**, el ancho
+de banda cuesta **20 créditos por GB** y cada publicación **15**. Son unos
+10,5 GB al mes ≈ 2.100 sesiones, y **no hay excedente que se pueda pagar**: al
+agotarlos el sitio se detiene hasta el mes siguiente. Para un juego que puede
+aparecer en la galería pública del Vibeathon, ese es exactamente el modo de
+falla que hay que evitar.
+
+**Cloudflare Pages** es el que corresponde, y ya hay cuenta —el túnel y
+`loscaseritos.com` pasan por ahí—. Su documentación dice: *"On both free and
+paid plans, requests to static assets are free and unlimited"*, y este juego es
+estático puro, sin Functions. Tope de 1.000 archivos y 25 MiB por archivo; el
+juego tiene 85 y el más grande pesa 1,56 MB. Se sube arrastrando la carpeta
+desde *Workers & Pages → Create application → Drag and drop*, y para actualizar
+es *Create a new deployment* conservando la misma URL.
+
+⚠️ **Y no se arrastra `axie/` entera**: todo lo que se sube queda descargable.
+Van `index.html` + `arte/` + `vfx/` (85 archivos, 8,9 MB, con los LICENSE.md
+adentro). Quedan afuera `MEJORAS.md` y `ENTREGA.md` —este archivo— que listan
+todas las debilidades del juego, más `herramientas/` y `thumbnail.jpg`.
 
 ---
 
@@ -92,6 +116,12 @@ That is the whole idea. The AXP levels the same Axie run after run, and every
 cards. The Axie Core doc asks third-party builders to feed the player's Axie
 instead of building isolated experiences, and AXP is what a game at this tier
 can legitimately feed. This game does not mint or promise tokens.
+
+Reaching ten minutes is not the end but a door: extract with your bonus, or push
+into the Corrupted Zone, where the threat level climbs a step every minute —
+tougher Chimeras arriving faster, a boss every sixty seconds — and each step
+adds 25% to that bonus. Die in there and you lose the bonus entirely. That is
+the bet the endgame is built on.
 
 Everything Axie on screen is the real thing, not an impression of it:
 
@@ -145,7 +175,8 @@ phone. Pause with P, Esc, or the button in the HUD. Your Axie's cards fire on
 their own cooldowns, so the only thing you steer is where it stands. Collect
 AXP gems to level up; on each level-up you pick one of three — evolve a
 body-part card, equip a Rune, or attach a Charm to a specific card. Survive ten
-minutes to extract. Your Axie keeps its AXP after you die.
+minutes to reach the extraction door, then choose: leave with your bonus, or
+push into the Corrupted Zone for more. Your Axie keeps its AXP after you die.
 ```
 
 ### Herramientas de IA, si lo pide aparte
@@ -191,6 +222,8 @@ herramientas/, which is run by hand and is not part of the game.
 | Dibujo por cuadro, 1280×720, arena llena (55 quimeras, que es el techo) | **0,70 ms** de un presupuesto de 2, en un cuadro de 16,7 |
 | Peor caso (las 55 quimeras destellando a la vez) | 1,67 ms |
 | Corrida completa con `arte/` y `vfx/` **borradas** | 180 s, 159 muertes, cero errores |
+| Variedad del final (el criterio del §6) | **1082, 1069, 1360, 1823** muertes en cuatro corridas |
+| Dibujo con 71 quimeras, el techo de la Zona Corrupta | **0,72 ms** de un presupuesto de 2 |
 | Peso del juego entero | 9,0 MB, 92 archivos |
 | Dependencias / pasos de compilación | **cero** |
 | Familias del Battle Kit usadas | VFX web, retratos de Quimeras, SFX de batalla, iconos de estado |
@@ -207,9 +240,11 @@ tercera, y el Axie llega al nivel 60 entre la sexta y la octava.
 - **Son 3 clases jugables, no 6** (Bestia, Planta, Aqua). El triángulo de
   Origins es de nueve clases; acá funciona porque los enemigos cubren los tres
   grupos, pero no es el completo.
-- **La corrida termina a los 10:00 y no sigue.** Una vez que las partes llegan
-  al tope, dos partidas ganadas dan casi el mismo número. Está identificado en
-  `MEJORAS.md` §6.
+- ~~La corrida termina a los 10:00 y no sigue.~~ **Arreglado el 7 de
+  septiembre.** A los 10:00 hay una puerta: extraer, o entrar en la Zona
+  Corrupta, donde sube un nivel de amenaza por minuto y el bono con él — pero
+  si te matan ahí perdés el bono. Medido: cuatro corridas dieron 1082, 1069,
+  1360 y 1823 muertes, contra el 1082-1083 fijo de antes.
 - **El AXP vive en `localStorage`, no en la cadena.** `cargarAxie()` y
   `guardarAxie()` son las dos únicas funciones que lo tocan; apuntarlas a la API
   de Sky Mavis y a una wallet de Ronin es un cambio contenido, no una
@@ -225,8 +260,7 @@ tercera, y el Axie llega al nivel 60 entre la sexta y la octava.
 
 En orden, y todo está detallado en `MEJORAS.md`:
 
-1. **§6, el final plano.** Es el 25 % de Jugabilidad y lo único de la lista que
-   no se arregla bajando un asset.
+1. ~~§6, el final plano.~~ ✅ hecho el 7 de septiembre.
 2. **§5, las 6 clases y el triángulo completo.** Lo que más suma al 35 %, y lo
    que más se puede desmadrar: si aprieta el tiempo, mejor tres bien que seis a
    medias.

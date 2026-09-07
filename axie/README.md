@@ -42,8 +42,20 @@ not.
 Ten minutes, with a named boss every two — one of each class, so each of the four
 asks something different of your build. The clock counts down rather than up,
 because a player should know how far they are from winning and not just how long
-they have lasted. Reaching zero is an extraction, and it pays a bonus on
-everything you harvested. A game you can only lose is a game you play once.
+they have lasted. A game you can only lose is a game you play once.
+
+Reaching zero is not the end, though. It is a **door**. The world stops and you
+choose: extract with your bonus, or stay in the **Corrupted Zone**, where the
+threat level climbs a step every minute — tougher Chimeras, arriving faster, a
+boss every sixty seconds instead of every two minutes — and each step adds 25%
+to the extraction bonus. You can leave at any time.
+
+Staying has to cost something or it is not a choice: **die in the Zone and you
+lose the bonus entirely**, keeping only what you harvested. That is the bet, and
+it is what the run was missing. Measured before the Zone existed, every won run
+from the fourth onwards returned the identical number — 1082 Chimeras and 28,575
+AXP — because once the cards cap out there is nothing left to find. Four runs
+after it: 1082, 1069, 1360, 1823.
 
 Every Chimera wears its class as its colour, and the colour is a read on
 behaviour rather than only a damage multiplier:

@@ -255,6 +255,57 @@ número de muertes.
 
 ---
 
+### ✅ HECHO el 7 de septiembre — la Zona Corrupta
+
+Se hizo el primero, que es el recomendado. A los 10:00 la extracción deja de
+ser el final y pasa a ser una **puerta**: el mundo se frena y el jugador elige.
+
+- **Extraer** — la corrida termina exactamente como terminaba antes, con el
+  mismo bono del 50 %.
+- **Quedarse** — se entra en la Zona Corrupta. Sube un **nivel de amenaza** por
+  minuto, y cada nivel suma **25 % más de bono**. Se puede extraer en cualquier
+  momento con el botón ⏏ del HUD.
+
+⚠️ **Quedarse tiene que costar algo o no es una decisión.** Si el bono quedara
+guardado, quedarse sería gratis y todos se quedarían siempre. Por eso **morir
+en la Zona hace perder el bono entero**; lo cosechado se conserva. Ahí sí hay
+una apuesta: cuánto más aguanto antes de que me alcancen.
+
+**La escalada** (todos los términos valen CERO fuera de la Zona):
+
+| | fuera | amenaza 1 | amenaza 3 | amenaza 6 | amenaza 9 |
+|---|---|---|---|---|---|
+| vida de la quimera | `22 + t·0,30` | 202 | 346 | 562 | 778 |
+| la misma sin Zona | — | 202 | 238 | 292 | 346 |
+| segundos entre apariciones | 0,42 | 0,42 | 0,324 | 0,18 | 0,16 |
+| techo de quimeras vivas | 55 | 55 | 63 | 75 | 75 |
+| bono de extracción | +50 % | +75 % | +125 % | +200 % | +275 % |
+
+Los jefes pasan de uno cada 120 s a **uno cada 60 s** dentro de la Zona.
+
+⚠️ **El arco medido de §10.8 no se tocó, y se comprobó punto por punto.** Las
+tres fórmulas llevan un término sumado que vale cero mientras `enSobretiempo`
+sea falso, así que entre 0 y 600 segundos dan exactamente los números medidos
+—verificado en 0, 60, 163, 280, 400 y 599,9 s: vida, rampa y techo idénticos—.
+Y el bot con el que se mide el arco extrae en la puerta: **1082 muertes y
+28.575 AXP**, los mismos números de siempre.
+
+**Comprobado:**
+
+| | |
+|---|---|
+| El criterio del §6 (dos corridas ganadas no pueden dar lo mismo) | ✅ **1082, 1069, 1360, 1823** muertes en cuatro corridas |
+| Con un Axie al tope, profundidad alcanzada en la Zona | amenaza **2, 5 y 4** (110, 272 y 218 s adentro) |
+| Seis corridas, tres clases, los tres finales | cero errores, sin fugas |
+| Dibujo por cuadro a 1280×720 con 71 quimeras (techo de la Zona) | **0,72 ms** de un presupuesto de 2 |
+| El mundo detrás de la puerta | congelado: 1,2 s de reloj real, `gameTime` no avanzó y no murió nadie |
+
+El récord de amenaza se guarda en el Axie (`mejorAmenaza`), saneado al leerlo
+de `localStorage` como el resto. Es el número que reemplaza al "ya no hay nada
+que comprar".
+
+---
+
 ## 7. Fondo y HUD de Origins
 
 **Por qué.** El suelo es una cuadrícula pintada a mano en canvas. El kit trae
@@ -398,7 +449,7 @@ Estas no son preferencias, son cosas medidas o exigidas.
 | 2 | Iconos de estado (§4) | muy bajo | Axie Core | ✅ |
 | 3 | Animaciones de ataque del Axie (§3) | medio | Axie Core, jugabilidad | ✅ |
 | 4 | Capa de presentación (§9) | bajo | **la primera impresión** | ✅ |
-| 5 | Final de partida (§6) | medio | **Jugabilidad** | ⬜ |
+| 5 | Final de partida (§6) | medio | **Jugabilidad** | ✅ |
 | 6 | Las 6 clases y el triángulo (§5) | alto | **Axie Core** | ⬜ |
 | 7 | Marcos de carta de Origins (§8) | medio | Axie Core | ⬜ parcial: la rareza y la clase ya se ven, falta el marco del kit |
 | 8 | Fondo (§7) | medio, con riesgo | estético | ⬜ |
