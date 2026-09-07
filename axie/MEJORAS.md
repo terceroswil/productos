@@ -3,14 +3,16 @@
 Instrucciones para el próximo tramo de trabajo, ordenadas por lo que suman
 contra lo que cuestan. Escrito el 5 de septiembre de 2026.
 
-⚠️ **Hay DOS fechas y la que manda es la primera.** La **presentación es el 8 de
-septiembre**; el cierre de envíos del Vibeathon es el **21 de septiembre, 13:00
-UTC**. Este plan se escribió mirando el 21, y por eso ordena el trabajo como si
-hubiera dos semanas. Desde el 6 de septiembre la decisión tomada es **congelar
-el código y llegar al 8 con los documentos**: el juego corre sin errores, a
-0,70 ms por cuadro, con tres corridas completas medidas — y tocar lógica a dos
-días de presentar es el riesgo más grande que queda. Lo que sigue de la lista se
-retoma después del 8, contra el 21.
+⚠️ **Hay TRES fechas y es fácil confundirlas.** Registro cerrado el 7 de
+septiembre (ya hecho); los envíos **abren** el **8 de septiembre, 13:00 UTC** y
+**cierran** el **21 de septiembre, 13:00 UTC**. El 8 es cuando se PUEDE enviar,
+no un plazo: el panel del Vibeathon lo dice con todas las letras.
+
+O sea que este plan, escrito mirando el 21, tenía bien el horizonte: hay dos
+semanas. Y como el proyecto queda editable y se puede volver a enviar creando
+una versión nueva, la jugada es **enviar el 8 apenas abre** —para que exista un
+envío válido desde el primer día— y **seguir con esta lista hasta el 21**.
+El detalle del formulario está en `ENTREGA.md`.
 
 Cada punto dice **por qué**, **dónde**, **cómo**, **qué no hacer** y **cómo se
 comprueba**. El último apartado es lo que no hay que tocar: son cosas medidas,

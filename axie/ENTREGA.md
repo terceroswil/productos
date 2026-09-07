@@ -1,196 +1,237 @@
 # Entrega — Axie Vibeathon 2026
 
-Todo lo que hay que pegar en el formulario, ya escrito. Lo que está en
-**`⬜ COMPLETAR`** es lo único que no puedo saber yo.
+Todo lo que va en el formulario, ya escrito y listo para pegar.
 
-Armado el 6 de septiembre de 2026, contra el commit `2d8e424`.
-**Presentación: 8 de septiembre.** Cierre de envíos del Vibeathon: 21 de
-septiembre, 13:00 UTC.
+Actualizado el 6 de septiembre de 2026 contra el commit `7a71f1c`, con el
+formulario real a la vista.
 
 ---
 
-## ⚠️ Lo primero, antes que el formulario
+## Las fechas, que son tres y se confunden
 
-**El enlace jugable depende de que esta computadora esté prendida.**
+| | cuándo | estado |
+|---|---|---|
+| Cierre de **registro** | 7 de septiembre, 13:00 UTC | ✅ ya hecho, el 3 de septiembre |
+| **Apertura** de envíos | **8 de septiembre, 13:00 UTC** | ⏳ es lo único que falta para poder enviar |
+| **Cierre** de envíos | **21 de septiembre, 13:00 UTC** | el plazo de verdad |
 
-`https://loscaseritos.com/axie` no vive en un servidor alquilado: sale de esta
-PC por un túnel de Cloudflare y funciona mientras la ventana de `INICIAR.bat`
-esté abierta (ver `deploy/COMO-ESTA-PUBLICADA.md`). Comprobado el 6 de
-septiembre: contesta 200 en 0,59 s y sirve la versión de hoy.
+⚠️ **El 8 es cuando se ABRE, no cuando cierra.** El panel lo dice: el único
+*"item left"* es *"Submissions are not open"*, y se resuelve solo. No falta
+ningún dato del autor para poder enviar.
 
-Pero un jurado que abra ese link el 8 con la PC apagada ve un error, y eso no
-se puede explicar después. **Antes de mandar el formulario, una de estas dos:**
+Eso deja **15 días de trabajo**, no dos. Y como el propio panel avisa que
+*"Your Project stays editable. If you make changes later, submit again to
+create a new version"*, la jugada es:
 
-1. **Subir el juego a un hosting estático** (Netlify Drop: se arrastra la
-   carpeta `axie/` y listo). Son diez minutos, no depende de nada de acá, y el
-   link no se cae nunca. Es la opción sana.
-2. Si va el link actual: dejar la PC prendida y `INICIAR.bat` abierto del 8 al
-   21, y **no abrir AutoTrópico**, que pelea por el puerto 3001.
-
-Con cualquiera de las dos, abrir el link una vez desde el celular con datos
-móviles antes de mandarlo — es la única forma de saber que contesta desde
-afuera y no solo desde la red de casa.
+1. **El 8, apenas abre, enviar.** Que exista un envío válido desde el primer
+   día. Un envío guardado no cuenta: hoy el panel dice *"No submissions yet"*.
+2. **Seguir trabajando hasta el 21** y volver a enviar. Cada envío crea un
+   recibo nuevo y conserva los anteriores.
 
 ---
 
-## Campos del formulario
+## ⚠️ Lo que hay que arreglar antes de enviar
 
-### Nombre del juego
-```
-Axie Survivors: Core Evolution
-```
+### 1. La descripción guardada es del 3 de septiembre y dice dos cosas falsas
 
-### Una línea
-```
-A survivors roguelite where the AXP you harvest never resets — it levels the one Axie that is yours, run after run.
-```
+La versión guardada quedó congelada **antes** de los jefes, del final de
+corrida, del sonido oficial, de los iconos, de las animaciones del Axie y de
+toda la capa de presentación. Además afirma esto:
 
-### Descripción corta (~50 palabras)
-```
-A browser survivors roguelite built on the Axie Origins Battle Kit. You adopt
-one Axie, name it, and every run feeds it: the AXP you harvest survives your
-death and levels the same Axie forever. Real Origins Chimeras, VFX, battle SFX
-and mixer-generated Axies. One HTML file, no build step.
-```
+> ⭐ **Ascension System:** Maximize your body parts to trigger full Axie
+> Ascension, unleashing ultimate celestial attacks!
 
-### Descripción larga (~200 palabras)
+Las dos mitades están mal, y se comprueba en el código:
+
+- La Ascensión **no se dispara maximizando las partes**. Va cada 10 niveles del
+  Axie (10, 20, 30, 40, 50, 60), como en Axie de verdad.
+- **No hay "ultimate celestial attacks".** Lo que hace la Ascensión es subir el
+  TECHO de las partes permanentes: `techoDePartes = min(5, 1 + ascensiones)`.
+
+Un jurado que juegue diez minutos busca el ataque celestial y no lo encuentra.
+Es la clase de cosa que cuesta más cara que la funcionalidad que promete.
+
+### 2. `Inputs: Keyboard Mouse Touch` — el mouse no se usa para jugar
+
+Verificado: **cero** `mousemove` y **cero** `mousedown` en todo el juego. El
+mouse sirve para tocar botones de menú y nada más. Va `Keyboard, Touch`.
+
+### 3. El enlace jugable depende de que esta computadora esté prendida
+
+`https://loscaseritos.com/axie` sale de esta PC por un túnel de Cloudflare y
+vive mientras la ventana de `INICIAR.bat` esté abierta (ver
+`deploy/COMO-ESTA-PUBLICADA.md`). Comprobado el 6 de septiembre: contesta 200
+en 0,59 s, sirve la versión de hoy, y los `.ogg` salen como `audio/ogg`.
+
+El propio formulario avisa: *"Saving confirms the link format, not that the
+game is playable. Review checks whether judges can open it."* O sea que el
+chequeo automático lo va a abrir de verdad.
+
+Y el plazo va **hasta el 21**: son dos semanas de tener que dejar la PC
+prendida, sin abrir AutoTrópico —que pelea por el puerto 3001— y sin un corte
+de luz. **Subirlo a un hosting estático** (Netlify Drop: se arrastra la carpeta
+`axie/`) son diez minutos y saca el riesgo entero de encima.
+
+---
+
+## Los campos, con su texto
+
+### Descripción — reemplazar la guardada por esta
+
 ```
 Axie Survivors: Core Evolution is a survivors-style roguelite that runs in a
 browser with no build step and no dependencies — one HTML file plus a folder of
-Axie assets.
+official Axie assets.
 
-You adopt a single Axie and name it. Each run you hold off waves of corrupted
+You adopt one Axie and name it. Each run you hold off waves of corrupted
 Chimeras across Lunacia for ten minutes, with a named boss every two, and
-harvest AXP. When you die the run resets; your Axie does not. The AXP levels the
-same Axie run after run, unlocking Ascensions and permanent body-part cards.
-That persistence is the point: the Axie Core doc asks third-party builders to
-feed the player's Axie rather than build isolated experiences, and this game
-feeds AXP, which is what a game at this tier can legitimately feed. It does not
-mint or promise tokens.
+harvest AXP. When you die the run resets — your Axie does not.
 
-Everything Axie on screen is the real thing. Your Axie is generated by the
-official @axieinfinity/mixer from real genes and baked to a spritesheet with
-seven of its animations. The Chimeras, the combat VFX, the battle SFX and the
-status icons all come from the Axie Origins Battle Kit. The class triangle,
-Runes, Charms, Potential Points, Rage and Fury Form are Origins systems adapted
-to the format, not invented ones.
+That is the whole idea. The AXP levels the same Axie run after run, and every
+10 levels it can Ascend, which raises the ceiling of its permanent body-part
+cards. The Axie Core doc asks third-party builders to feed the player's Axie
+instead of building isolated experiences, and AXP is what a game at this tier
+can legitimately feed. This game does not mint or promise tokens.
+
+Everything Axie on screen is the real thing, not an impression of it:
+
+- Your Axie is generated by the official @axieinfinity/mixer from real genes and
+  baked to a spritesheet with seven of its animations — run, idle, the three
+  melee attacks, taking a hit, and activity/evolve, which is what plays on an
+  Ascension.
+- The Chimeras, the combat VFX, the battle SFX and the status icons all come
+  from the Axie Origins Battle Kit, at the revision the rules authorise.
+- Body-part cards for the Horn, Tail, Mouth, Back, Ears and Eyes, plus the class
+  triangle, Runes, Charms, Potential Points, Rage and Fury Form — Origins
+  systems adapted to the survivors format, not invented ones.
+- Every Chimera wears its class as its colour, and the colour is a read on
+  behaviour, not just a damage multiplier: Birds weave, Beasts telegraph and
+  charge, Plants wall you in, Aquatics keep their distance and spit.
+
+Delete the asset folders and the game still boots and plays, falling back to
+hand-drawn creatures and synthesised audio. That was verified by deleting them,
+not assumed.
+
+Built with AI: Antigravity for the first playable prototype, then Claude Code
+(Claude Opus 5) for the Axie Core persistence layer, the balance, the
+official-asset integration and the presentation layer. The game is piloted from
+the browser console frame by frame, so the design is measured rather than
+guessed at. No AI-generated art or audio.
 ```
 
-### Enlace jugable
+**Si el campo no acepta tanto**, cortar desde *"Every Chimera wears its class"*
+y desde *"Delete the asset folders"*. Los dos primeros párrafos y la lista de
+assets son los que cargan el 35 % de Encaje con Axie Core y no se tocan.
+
+### Playable game link
 ```
 https://loscaseritos.com/axie
 ```
-⚠️ Ver el aviso de arriba antes de pegar esto.
+⚠️ Ver el punto 3 de arriba antes de dejarlo así.
 
-### Repositorio
-Hay dos y no son lo mismo. Elegir según lo que pida el formulario:
+### How to play
 
-| | enlace | qué tiene |
-|---|---|---|
-| Público | `https://github.com/terceroswil/productos/tree/juego-axie-vibeathon/axie` | El código entero, los documentos, las herramientas. **Sin los binarios del kit.** |
-| Privado | `https://github.com/terceroswil/axie-survivors` | El espejo del juego solo. Hay que darle acceso al jurado si se manda este. |
+| campo | valor |
+|---|---|
+| Devices | `Desktop, Mobile, Tablet` |
+| Browsers | `Chromium, Firefox, Safari` |
+| **Inputs** | `Keyboard, Touch` ← **sacar Mouse**, no se usa para jugar |
+| Access | `None` |
 
-⚠️ **Los 79 archivos de `arte/` y `vfx/` (8,4 MB) no están en el repo público a
-propósito.** Su licencia dice que el kit no es *"an open-source dump"* y que el
-uso queda limitado al Vibeathon; el repo `productos` es público. El juego está
-hecho para sobrevivir a eso: sin esas carpetas arranca, juega y cae en las
-criaturas dibujadas a mano y los bips sintetizados. Las tres herramientas de
-`herramientas/` las vuelven a bajar del commit autorizado.
+### Player notes
+```
+Move with WASD / Arrow keys, or drag the joystick at the bottom left on a
+phone. Pause with P, Esc, or the button in the HUD. Your Axie's cards fire on
+their own cooldowns, so the only thing you steer is where it stands. Collect
+AXP gems to level up; on each level-up you pick one of three — evolve a
+body-part card, equip a Rune, or attach a Charm to a specific card. Survive ten
+minutes to extract. Your Axie keeps its AXP after you die.
+```
 
-Si el formulario pide **el juego completo y jugable**, va un ZIP de la carpeta
-`axie/` (9,0 MB, 92 archivos), no el repo.
-
-### Herramientas de IA usadas
+### Herramientas de IA, si lo pide aparte
 ```
 - Antigravity — the first playable prototype: render loop, wave spawning, the
   six body-part attacks, the mobile joystick, the synthesised audio.
 - Claude Code (Claude Opus 5) — the Axie Core persistence layer, Runes, Charms,
   Potential Points, the class triangle, Rage and Fury Form, the balance work,
   the Origins VFX / SFX / status icons / Axie animations, and the presentation
-  layer. The game is piloted from the console (update(1/60) and render() in a
-  loop) so the design is measured rather than guessed at.
+  layer.
 
-No AI-generated art or audio. Every Axie asset comes from the official kit or
-the official mixer.
+No AI-generated art or audio.
 ```
 
-### Licencia y atribución
+### Licencia y atribución, si lo pide aparte
 ```
 The game — code, gameplay systems, the writing — is MIT.
 
 arte/ and vfx/ are not. Those are Sky Mavis / Axie Infinity assets from the
 Axie Origins Battle Kit at commit 069a59b772e54633d04a3d9d12ecde73b3e4be5d,
-used under the limited licence the Vibeathon rules grant: for the Vibeathon,
-not redistributed on their own, not commercially. LICENSE.md and Third Party
-Notices.md sit in both folders and stay with any copy. arte/PROCEDENCIA.md
-records exactly which file came from which path of the kit and what was done
-to it. No Spine runtime is shipped: all Spine work happens in herramientas/,
-which is run by hand and is not part of the game.
+used under the limited licence the Vibeathon rules grant. LICENSE.md and Third
+Party Notices.md sit in both folders and stay with any copy.
+arte/PROCEDENCIA.md records which file came from which path of the kit and what
+was done to it. No Spine runtime is shipped: all Spine work happens in
+herramientas/, which is run by hand and is not part of the game.
 ```
 
-### Controles
-```
-WASD or arrow keys. On a phone, drag the joystick at the bottom left. Pause
-with P, Esc, or the HUD button. Cards fire on their own cooldowns — the only
-thing you steer is where your Axie stands.
-```
-
-### ⬜ COMPLETAR — solo vos podés
+### ⬜ Solo vos
 
 | campo | nota |
 |---|---|
-| **Nombre del equipo / del participante** | |
-| **Wallet de Ronin** | **No la pegues acá ni me la pases**: va directo en el formulario del Vibeathon y en ningún otro lado. |
-| **Enlace al video / demo** | Si el formulario lo pide. |
-| **Correo de contacto** | |
-| **Redes / handle** | |
+| Wallet de Ronin, si la pide | **No me la pases.** Va directo en el formulario y en ningún otro lado. |
+| Project thumbnail | Hoy es `axie/thumbnail.jpg`, 988 KB. Está del 3 de septiembre: no muestra nada de lo de ahora. Vale la pena recapturarlo. |
+| Video / demo, si lo pide | |
 
 ---
 
 ## Lo que se puede afirmar, porque está medido
 
-Todo esto se midió el 6 de septiembre y se puede repetir; no son impresiones.
-
 | | |
 |---|---|
 | Corridas completas de 10 minutos, una por clase | 3, **sin un solo error y sin fugas** |
 | Dibujo por cuadro, 1280×720, arena llena (55 quimeras, que es el techo) | **0,70 ms** de un presupuesto de 2, en un cuadro de 16,7 |
-| Peor caso imaginable (las 55 quimeras destellando a la vez) | 1,67 ms |
+| Peor caso (las 55 quimeras destellando a la vez) | 1,67 ms |
+| Corrida completa con `arte/` y `vfx/` **borradas** | 180 s, 159 muertes, cero errores |
 | Peso del juego entero | 9,0 MB, 92 archivos |
 | Dependencias / pasos de compilación | **cero** |
 | Familias del Battle Kit usadas | VFX web, retratos de Quimeras, SFX de batalla, iconos de estado |
-| Corrida completa con `arte/` y `vfx/` **borradas** | 180 s, 159 muertes, cero errores, cae solo en las criaturas dibujadas a mano |
 
-Ese último renglón es el que respalda decir que nada del arte está en el camino
-crítico: se probó borrando las dos carpetas de verdad, no leyendo el código.
-
-El arco de la progresión está medido también, pero **el 5 de septiembre**, no
-hoy — la pasada de presentación no tocó el balance, así que sigue valiendo:
-sobre cuatro vidas simuladas de seis corridas, se muere a los ~255 s la
-primera, se gana la tercera, y el Axie llega al nivel 60 entre la sexta y la
-octava.
+El arco de la progresión está medido también, pero **el 5 de septiembre**: la
+pasada de presentación no tocó el balance, así que sigue valiendo. Sobre cuatro
+vidas simuladas de seis corridas, se muere a los ~255 s la primera, se gana la
+tercera, y el Axie llega al nivel 60 entre la sexta y la octava.
 
 ---
 
-## Qué NO decir en la presentación
+## Qué NO prometer
 
-Cosas que el juego no hace, y que conviene no prometer:
-
-- **No hay 6 clases jugables, hay 3** (Bestia, Planta, Aqua). El triángulo de
-  Origins es de nueve clases; acá funciona con los tres grupos, que es lo que
-  hace falta para que el triángulo tenga sentido, pero no es el completo.
+- **Son 3 clases jugables, no 6** (Bestia, Planta, Aqua). El triángulo de
+  Origins es de nueve clases; acá funciona porque los enemigos cubren los tres
+  grupos, pero no es el completo.
 - **La corrida termina a los 10:00 y no sigue.** Una vez que las partes llegan
-  al tope, dos partidas ganadas dan casi el mismo número. Está identificado y
-  escrito en `MEJORAS.md` §6; es lo primero que se retoma después del 8.
-- **El AXP vive en el navegador**, en `localStorage`, no en la cadena.
-  `cargarAxie()` y `guardarAxie()` son las dos únicas funciones que lo tocan, y
-  apuntarlas a la API de Sky Mavis y a una wallet de Ronin es un cambio
-  contenido, no una reescritura. Decirlo así es más fuerte que insinuar que ya
-  está conectado.
+  al tope, dos partidas ganadas dan casi el mismo número. Está identificado en
+  `MEJORAS.md` §6.
+- **El AXP vive en `localStorage`, no en la cadena.** `cargarAxie()` y
+  `guardarAxie()` son las dos únicas funciones que lo tocan; apuntarlas a la API
+  de Sky Mavis y a una wallet de Ronin es un cambio contenido, no una
+  reescritura. Decirlo así es más fuerte que insinuar que ya está conectado.
 - **La curva de AXP está comprimida a propósito.** El Axie #5147 necesita 71.720
   AXP para pasar de nivel 35 a 36; acá la subida entera a 60 son ~217.000 y la
   primera Ascensión cae en la primera corrida. Un jurado tiene tres partidas, no
   tres meses. La escala es de demostración; la estructura de abajo es la real.
 
-Decir estas cuatro cosas antes de que las pregunten vale más que esconderlas:
-las tres primeras se notan jugando diez minutos.
+---
+
+## Con 15 días, qué haría después de enviar el 8
+
+En orden, y todo está detallado en `MEJORAS.md`:
+
+1. **§6, el final plano.** Es el 25 % de Jugabilidad y lo único de la lista que
+   no se arregla bajando un asset.
+2. **§5, las 6 clases y el triángulo completo.** Lo que más suma al 35 %, y lo
+   que más se puede desmadrar: si aprieta el tiempo, mejor tres bien que seis a
+   medias.
+3. **§8, los marcos de carta de Origins.** Los assets ya están ubicados y
+   verificados en el kit: `PvE/UI/Chapter/riddle_card_<clase>.png` es el marco
+   por clase con ventana de arte, y `PvE/Cards/Tools/` son las ilustraciones
+   reales de las cartas. Es contenido, no lógica: el riesgo es bajo.
+4. Recapturar el thumbnail y grabar el video.
