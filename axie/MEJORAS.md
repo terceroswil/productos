@@ -1,8 +1,16 @@
 # Axie Survivors — plan de mejoras
 
 Instrucciones para el próximo tramo de trabajo, ordenadas por lo que suman
-contra lo que cuestan. Escrito el 5 de septiembre de 2026. Cierre de envíos del
-Vibeathon: **21 de septiembre, 13:00 UTC**.
+contra lo que cuestan. Escrito el 5 de septiembre de 2026.
+
+⚠️ **Hay DOS fechas y la que manda es la primera.** La **presentación es el 8 de
+septiembre**; el cierre de envíos del Vibeathon es el **21 de septiembre, 13:00
+UTC**. Este plan se escribió mirando el 21, y por eso ordena el trabajo como si
+hubiera dos semanas. Desde el 6 de septiembre la decisión tomada es **congelar
+el código y llegar al 8 con los documentos**: el juego corre sin errores, a
+0,70 ms por cuadro, con tres corridas completas medidas — y tocar lógica a dos
+días de presentar es el riesgo más grande que queda. Lo que sigue de la lista se
+retoma después del 8, contra el 21.
 
 Cada punto dice **por qué**, **dónde**, **cómo**, **qué no hacer** y **cómo se
 comprueba**. El último apartado es lo que no hay que tocar: son cosas medidas,

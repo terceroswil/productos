@@ -12,14 +12,23 @@ Built for the [Axie Vibeathon 2026](https://vibeathon.axieinfinity.ai/).
 ## What it is
 
 One HTML file, a folder of art and a folder of effects. No build step and no
-dependencies; the sound is synthesised with the Web Audio API. Everything you
-see that is an Axie or a Chimera is the real thing, not an impression of it:
+dependencies. Everything you see or hear that belongs to Axie is the real
+thing, not an impression of it:
 
 - **Your Axie** is built by the official `@axieinfinity/mixer` from real genes,
-  with its real parts and colours, baked to a spritesheet.
+  with its real parts and colours, baked to a spritesheet. Seven animations
+  come along: run, idle, the three melee attacks, taking a hit, and
+  `activity/evolve`, which is what plays on an Ascension.
 - **The Chimeras** are the PvE Chimeras of Axie Infinity: Origins, straight out
   of the Battle Kit — treants, dryads, wolves, bears, slimes.
-- **The combat VFX** are the Origins skill and buff effects.
+- **The combat VFX** are the Origins skill and buff effects, started on each
+  clip's own `OnHit` event rather than at frame zero.
+- **The sound** is the Origins battle SFX. The clip that plays is chosen by the
+  same id the VFX uses, so the horn, the bite and the tail each hit with their
+  own sound in their own class. Synthesised Web Audio beeps stay behind them as
+  a fallback: delete the folder and the game still makes noise.
+- **The status icons** are Origins', on the four mechanics where the meaning is
+  identical — Rage, Fury Form, Way of Plant and the Bubble charm's Vulnerable.
 
 All of it is local and loads on demand. If none of it arrives the game still
 plays: it falls back to the hand-drawn creatures it had before.
@@ -59,8 +68,12 @@ Move with **WASD** or the **arrow keys**. On a phone or tablet, drag the joystic
 at the bottom left. That is the whole scheme: your Axie's cards fire on their own
 cooldowns, so the only thing you steer is where it stands.
 
+Pause with **P**, **Esc**, or the button in the HUD — the button exists because
+a phone has no P key and this game has a joystick.
+
 On each level-up you pick one of three: evolve a body-part card, equip a Rune, or
-attach a Charm to a specific card.
+attach a Charm to a specific card. The card's frame is its rarity and the band
+across its top is its class, the way Origins reads a card.
 
 ## How it maps to Axie Core
 
@@ -194,11 +207,23 @@ what this one feeds.
 ## Running it locally
 
 It is a single file, but it must be served over HTTP rather than opened from the
-filesystem. Any static server works:
+filesystem — the art is fetched, and `file://` blocks that. Any static server
+works:
 
 ```bash
 npx serve .
 ```
+
+⚠️ **`arte/` and `vfx/` are not in the public repository.** They are Sky Mavis
+assets under a licence that limits them to the Vibeathon and says in as many
+words that the kit is not an open-source dump, so the binaries stay out of a
+public mirror; only their `LICENSE.md` and `Third Party Notices.md` travel here.
+The game is built to survive exactly that: with both folders missing it still
+boots, still plays, and falls back to the hand-drawn creatures and the
+synthesised beeps. To rebuild them from the kit, run the three tools in
+`herramientas/` — `vfx-preparar.cjs`, `sfx-preparar.cjs` and `horno-axie.cjs`
+— which download from the authorised commit and say exactly what they did.
+`arte/PROCEDENCIA.md` is the record of where every file came from.
 
 ## Where the progression lives
 
@@ -211,12 +236,26 @@ a Ronin wallet is a contained change rather than a rewrite.
 - **Antigravity** — the first playable prototype: render loop, wave spawning, the
   six body-part attacks, the mobile joystick and the synthesised audio.
 - **Claude Code (Claude Opus 5)** — the Axie Core persistence layer, Runes,
-  Charms, Potential Points, the class triangle, Rage and Fury Form, the artwork,
-  the balance work, and the Origins VFX integration with the tool that prepares
-  the atlases. The game was run headless, frame by frame, to measure the design
-  rather than guess at it — which is how three balance bugs were found and
-  fixed, and how the VFX were checked: 1200 frames, 500 kills, no errors, and
-  0.97 ms of a 16.7 ms frame.
+  Charms, Potential Points, the class triangle, Rage and Fury Form, the
+  artwork, the balance work, the Origins VFX, SFX, status icons and Axie
+  animations, and the presentation layer: camera shake, hit-stop, the white
+  flash on a struck Chimera, the vignette and the Axie's light, the boss health
+  bar and its off-screen arrow.
+
+  The game is piloted from the console — `update(1/60)` and `render()` in a
+  loop — so the design is measured rather than guessed at. That is how three
+  balance bugs were found and fixed, and how each pass is signed off. Last
+  measured: three complete ten-minute runs, one per class, **zero errors and no
+  leaks**; **0.70 ms** of drawing in a 16.7 ms frame at 1280×720 with the arena
+  at its 55-Chimera cap, against a 2 ms budget.
+
+  It is also how a bad idea got caught. The red at the screen's edge first rose
+  with every point of damage taken, and that block runs *once per Chimera
+  touching you*: measured across a whole run, the screen was strongly tinted
+  **40% of the time**, because in a survivors game being in contact is the
+  normal state, not an emergency. Splitting it into a hit tint and a separate
+  low-health pulse, computed once per frame from health actually lost, brought
+  it to **3%**.
 
 No AI-generated art or audio.
 
