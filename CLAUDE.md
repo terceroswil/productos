@@ -11,11 +11,14 @@ del mercado boliviano.
   con la de MOTO-IVIR que es verde. Avisa si el puerto ya estaba ocupado y avisa
   en rojo si el servidor se cayó, en vez de cerrarse sola.
 - `node serve.js` → tienda en `http://localhost:3001`, panel en `/admin.html`
-- ⚠️ **El 3001 lo comparte con el proyecto `autoventa` (AutoTrópico)**, que lo tiene
-  FIJO en el código (`const PORT = process.env.PORT || 3001`). No se pueden tener
-  los dos abiertos: el que arranque segundo no levanta. `INICIAR.bat` lo detecta y
-  lo dice, pero la ventana que ve el error es la de la tienda, así que si AutoTrópico
-  llegó primero hay que cerrarlo a él.
+- ✅ **El choque con AutoTrópico por el 3001 ya no existe** (07/09/2026).
+  `autoventa` se mudó al **3002**: `server.js` dice `const PORT = process.env.PORT
+  || 3002` y su `iniciar_servidor.bat` también. Verificado en todo el proyecto —
+  no queda una sola referencia al 3001 fuera de `node_modules`. Los dos pueden
+  estar abiertos a la vez.
+  ⚠️ Esta nota decía lo contrario hasta hoy, y por estar desactualizada se repitió
+  tres veces la advertencia de "no abras AutoTrópico" cuando ya estaba resuelto.
+  El 3001 es de la tienda y de nadie más. MOTO-IVIR va en el 3000.
 - `node serve.js --red` → además contesta a la WiFi, para probar en el celular.
   Qué pasa con el panel en ese modo depende de si hay clave configurada:
   - **sin `.env`**: `admin.html`, `herramientas/`, `logos/` y `data/` solo contestan a

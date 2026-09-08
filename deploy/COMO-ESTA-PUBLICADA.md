@@ -44,9 +44,10 @@ una ventana celeste que hay que dejar abierta.
 > Si querés que arranque sola al prender la PC: `Win + R` → `shell:startup` →
 > arrastrar ahí un acceso directo del `INICIAR.bat`.
 
-⚠️ **El 3001 lo comparte con el proyecto `autoventa` (AutoTrópico)**, que lo
-tiene fijo en el código. No pueden estar los dos abiertos: el que arranque
-segundo no levanta. `INICIAR.bat` lo detecta y avisa en amarillo.
+✅ **El choque con AutoTrópico ya no existe** (07/09/2026). `autoventa` se mudó
+al **3002**, así que los dos pueden estar abiertos a la vez. El 3001 es solo de
+la tienda; MOTO-IVIR va en el 3000. `INICIAR.bat` igual avisa si el puerto
+estuviera ocupado, que ahora solo puede pasar por una copia de la propia tienda.
 
 ---
 

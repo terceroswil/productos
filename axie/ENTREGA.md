@@ -69,8 +69,9 @@ chequeo automático lo va a abrir de verdad.
 
 Y no son dos semanas: el juzgamiento arranca DESPUÉS del cierre del 21 y la
 página del Vibeathon dice **"Judging: Date pending"**. O sea que la PC tiene que
-quedarse prendida un tiempo que todavía nadie sabe, sin abrir AutoTrópico —que
-pelea por el puerto 3001— y sin un corte de luz.
+quedarse prendida un tiempo que todavía nadie sabe, y sin un corte de luz.
+(Lo de "no abrir AutoTrópico" ya no corre: se mudó al 3002 el 07/09/2026 y no
+pelea más por el puerto.)
 
 **Decisión tomada el 7 de septiembre: se sostiene el túnel.** Queda anotado el
 riesgo y qué hacer si se decide cambiar.
