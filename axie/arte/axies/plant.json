@@ -1,0 +1,54 @@
+{
+  "clase": "plant",
+  "variante": "plant-02",
+  "cols": 8,
+  "filas": 6,
+  "ancho": 160,
+  "alto": 160,
+  "tiras": [
+    {
+      "anim": "action/run",
+      "desde": 0,
+      "cuadros": 8,
+      "duracion": 0.75
+    },
+    {
+      "anim": "action/idle/normal",
+      "desde": 8,
+      "cuadros": 6,
+      "duracion": 1.333299994468689
+    },
+    {
+      "anim": "attack/melee/horn-gore",
+      "desde": 14,
+      "cuadros": 6,
+      "duracion": 0.75
+    },
+    {
+      "anim": "attack/melee/mouth-bite",
+      "desde": 20,
+      "cuadros": 6,
+      "duracion": 0.75
+    },
+    {
+      "anim": "attack/melee/tail-smash",
+      "desde": 26,
+      "cuadros": 6,
+      "duracion": 1
+    },
+    {
+      "anim": "defense/hit-by-normal",
+      "desde": 32,
+      "cuadros": 5,
+      "duracion": 0
+    },
+    {
+      "anim": "activity/evolve",
+      "desde": 37,
+      "cuadros": 8,
+      "duracion": 1.5
+    }
+  ],
+  "origen": "@axieinfinity/mixer 1.4.9 + axiecdn mixer-stuffs/v6",
+  "version": "5d9ae49a"
+}
