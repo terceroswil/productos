@@ -14,6 +14,16 @@ Zona Corrupta ya en el juego.
 | Cierre de **registro** | 7 de septiembre, 13:00 UTC | ✅ ya hecho, el 3 de septiembre |
 | **Apertura** de envíos | **8 de septiembre, 13:00 UTC** | ⏳ es lo único que falta para poder enviar |
 | **Cierre** de envíos | **21 de septiembre, 13:00 UTC** | el plazo de verdad |
+| Anuncio de **finalistas** | 29 de septiembre | |
+| **Ronda 2** | 4 al 31 de octubre | solo si pasa |
+| **Ganadores** | 5 de noviembre | |
+
+⚠️ **Las tres últimas fechas cambian la decisión del túnel.** Cuando se resolvió
+sostenerlo, el juzgamiento figuraba como *"Date pending"*. Ahora se sabe: la PC
+tiene que servir el juego hasta el **21 de septiembre** seguro, y hasta el **31
+de octubre** si pasa a la Ronda 2. Casi dos meses sin cortes. Eso empuja fuerte
+a mover el juego a Cloudflare Pages, que ya está evaluado y elegido más abajo.
+Confirmar contra el panel antes de actuar: esto sale del anuncio, no del panel.
 
 ⚠️ **El 8 es cuando se ABRE, no cuando cierra.** El panel lo dice: el único
 *"item left"* es *"Submissions are not open"*, y se resuelve solo. No falta
@@ -100,6 +110,52 @@ todas las debilidades del juego, más `herramientas/` y `thumbnail.jpg`.
 ---
 
 ## Los campos, con su texto
+
+### Título
+```
+Axie Survivors: Core Evolution
+```
+
+### Pitch de una línea
+```
+A survivors-style roguelite where one Axie holds off ten minutes of corrupted
+Chimeras and keeps every point of AXP it earns — the run resets, your Axie does
+not.
+```
+
+### Descripción corta
+```
+Adopt one Axie and hold off waves of corrupted Chimeras across Lunacia for ten
+minutes, with a named boss every two. Die and the run resets — your Axie does
+not: it keeps its AXP, levels, and Ascends every 10 levels to raise the ceiling
+of its permanent body-part cards. Your Axie, the Chimeras, the combat VFX and
+the battle SFX are official Axie assets, not lookalikes. Runs in a browser, no
+install, no wallet needed to play.
+```
+
+### Enlace al repositorio (puede quedar PRIVADO)
+```
+https://github.com/terceroswil/axie-survivors
+```
+⚠️ **El espejo está atrasado.** Se mantiene con `git subtree split` desde
+`axie/`, y no se sincroniza desde antes de que entraran los 79 archivos de
+assets y los arreglos del 7 de septiembre. Antes de pegar este enlace hay que
+decidir dos cosas:
+
+1. **Actualizarlo o no.** Si el jurado lo abre y ve una versión vieja, es peor
+   que un repo privado. El anuncio dice expresamente que **puede quedar
+   privado**: dejarlo privado y al día es la opción cómoda.
+2. **Si se sincroniza, los assets del Battle Kit quedan publicados ahí.** Van
+   con sus `LICENSE.md`, y es lo que hace cualquier participante, pero es una
+   decisión tuya y todavía no la tomaste.
+
+### Video de demostración
+⚠️ **Va en la Ronda 1, no después.** El anuncio oficial lista *"a fallback demo
+video"* entre los materiales de una entrada completa. No está grabado.
+
+No es un bloqueante para hoy: los envíos van del **8 al 21** y el panel deja
+crear versiones nuevas. Se envía hoy sin él y se agrega antes del 21. Pero no
+se puede dar por hecho que no lo piden.
 
 ### Descripción — reemplazar la guardada por esta
 
