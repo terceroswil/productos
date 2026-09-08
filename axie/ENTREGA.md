@@ -155,9 +155,17 @@ assets son los que cargan el 35 % de Encaje con Axie Core y no se tocan.
 
 ### Playable game link
 ```
-https://loscaseritos.com/axie
+https://loscaseritos.com/axie/
 ```
-⚠️ Ver el punto 3 de arriba antes de dejarlo así.
+⚠️ **Con la barra final.** Sin ella el navegador toma como base la raíz del
+dominio y pide los assets del juego a `/arte/...`, que no es público: contesta
+un 302 al login, el `fetch` se traga el HTML de `entrar.html` y el juego se
+dibuja con las criaturas de respaldo — sin un solo asset oficial de Axie, que
+es justo lo que carga el 35% de Encaje con Axie Core. El servidor ahora
+redirige `/axie` a `/axie/` con un 301, así que las dos entran; igual va la
+barra en el formulario, para no depender de la redirección.
+
+⚠️ Ver también el punto 3 de arriba.
 
 ### How to play
 

@@ -550,9 +550,25 @@ const servidor = http.createServer(async (req, res) => {
     '/panel': '/admin.html',  '/panel/': '/admin.html',
     '/admin': '/admin.html',  '/admin/': '/admin.html',
     '/entrar': '/entrar.html','/entrar/': '/entrar.html',
-    '/axie': '/axie/index.html', '/axie/': '/axie/index.html'
+    '/axie/': '/axie/index.html'
   };
   if (ATAJOS[rel]) rel = ATAJOS[rel];
+
+  /* ⚠️ `/axie` SIN barra final va por redirección, no por atajo, y esa
+     diferencia decide si el juego se ve o no.
+     Los otros atajos apuntan a archivos de la RAÍZ, así que da igual servirlos
+     de una. El juego no: vive en su carpeta y todas sus rutas son relativas
+     (`arte/axies/plant.png`). Servido en `/axie`, el navegador toma como base
+     la raíz del dominio y las pide a `/arte/axies/...`, que no está en la
+     lista blanca — con login puesto contesta un 302 a `entrar.html`, el
+     `fetch` se traga el HTML del login, `r.json()` revienta y el juego dibuja
+     las criaturas de respaldo. Se ve como si estuviera roto el juego, y esa
+     es la dirección que va en el formulario del Vibeathon.
+     Con la barra final la base es `/axie/` y todo cae en su lugar. */
+  if (rel === '/axie'){
+    res.writeHead(301, { Location: '/axie/' + (url.search || '') });
+    return res.end();
+  }
 
   /* ⚠️ Lo que no sale NUNCA, ni con la sesión abierta. Va ANTES del permiso.
      La lista blanca de arriba decide qué ve un desconocido; esta decide qué no
