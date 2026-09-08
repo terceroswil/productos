@@ -1,0 +1,63 @@
+===========================================================
+  PENDIENTE — hacer cuando el ciber este vacio
+  (necesita reiniciar la PC, por eso no se hizo el 06/09/2026)
+===========================================================
+
+QUE FALTA
+---------
+Que la PC se encienda SOLA cuando vuelve la luz.
+Hoy viene apagado de fabrica: si se corta la luz, la maquina
+queda apagada hasta que alguien apriete el boton.
+
+Todo lo demas ya esta hecho y funcionando:
+  - El tunel de Cloudflare arranca solo con Windows
+  - loscaseritos.com (puerto 3001) arranca solo al encender
+  - motoivir.com  (puerto 3000) arranca solo al encender
+  - Los tres arrancan SIN que nadie inicie sesion
+
+
+PASOS
+-----
+ 1. Reiniciar la PC
+ 2. Apretar SUPR (Del) apenas prenda, antes del logo de Windows
+ 3. F7 para el modo avanzado
+ 4. Ir a:  Advanced  ->  APM Configuration
+ 5. Buscar:  Restore AC Power Loss
+ 6. Cambiarlo de "Power Off" a "POWER ON"
+ 7. F10 para guardar y salir
+
+La placa es una ASUS TUF GAMING X570-PLUS (WI-FI).
+
+
+LA PRUEBA (2 minutos, hacela en el mismo viaje)
+-----------------------------------------------
+ 1. Dejar que Windows arranque
+ 2. QUEDARSE EN LA PANTALLA DE CONTRASEÑA. No entrar.
+ 3. Agarrar el celular CON DATOS MOVILES (no con el WiFi)
+ 4. Abrir  loscaseritos.com  y  motoivir.com
+
+Si los dos cargan sin haber iniciado sesion, esta todo listo.
+Eso es exactamente lo que va a pasar a las 3 de la mañana
+cuando vuelva la luz.
+
+Ojo: el internet tarda unos 10 minutos en volver despues de un
+corte. Es normal que en ese rato los sitios no anden todavia.
+El tunel reintenta solo y se conecta cuando la conexion aparece.
+
+
+SI QUERES VER QUE LAS TAREAS ESTAN
+-----------------------------------
+PowerShell COMO ADMINISTRADOR, y pegar:
+
+Get-ScheduledTask -TaskName 'Los Caseritos - Tienda','MOTO-IVIR - Web' | Select-Object TaskName, State
+
+(Sin permisos de administrador no se ven, porque corren como
+SYSTEM. Que no aparezcan en una ventana normal es lo esperado,
+no es un error.)
+
+
+OTRO PENDIENTE, APARTE
+----------------------
+El disco C: tiene 5 GB libres de 223. Eso es poco y con el
+tiempo hace fallar las actualizaciones de Windows. No tiene
+nada que ver con los sitios, pero conviene mirarlo.
