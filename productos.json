@@ -222,6 +222,38 @@
       ],
       "variantes": null,
       "id": 3
+    },
+    {
+      "cat": "Herramientas",
+      "sub": "Eléctricas",
+      "em": "📦",
+      "marca": "coca",
+      "name": "cocacola",
+      "desc": "dulce",
+      "descLarga": "la mayoria la toma",
+      "price": 10,
+      "precioAntes": 15,
+      "stock": 100,
+      "nuevo": true,
+      "palabras": [
+        "coca",
+        "cola"
+      ],
+      "img": [
+        "img/cocacola-mubktuxmjbr.jpg",
+        "img/cocacola-mubktvomuvj.jpg",
+        "img/cocacola-mubktw6l6y6.jpg"
+      ],
+      "variantes": {
+        "nombre": "we",
+        "opciones": [
+          {
+            "label": "tgra",
+            "delta": 0
+          }
+        ]
+      },
+      "id": 4
     }
   ]
 }

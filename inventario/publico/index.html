@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0a140f">
+<title>Inventario — Los Caseritos</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%230a7d54'/%3E%3Ctext x='50' y='70' font-size='58' text-anchor='middle'%3E%F0%9F%93%A6%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="estilos.css">
+<script src="app.js" defer></script>
+</head>
+<body>
+
+<!-- ═══════════ Primera vez: crear la cuenta del dueño ═══════════ -->
+<div id="pantalla-config" class="entrada" hidden>
+  <form id="form-config" class="caja-entrada" autocomplete="off">
+    <div class="marca"><span class="ic">📦</span> Inventario · Los Caseritos</div>
+    <h2>Crear la cuenta del dueño</h2>
+    <p class="suave chico">Es la primera vez que se abre el sistema. Esta cuenta puede ver todo y dar de alta a los vendedores.</p>
+    <label for="c-nombre">Nombre</label>
+    <input id="c-nombre" required maxlength="60" placeholder="Ej.: Julio Pérez">
+    <label for="c-usuario">Usuario para entrar</label>
+    <input id="c-usuario" required maxlength="30" placeholder="Ej.: julio" autocapitalize="none">
+    <label for="c-clave">Clave (8 caracteres o más)</label>
+    <input id="c-clave" type="password" required minlength="8" autocomplete="new-password">
+    <label for="c-clave2">Repetir la clave</label>
+    <input id="c-clave2" type="password" required minlength="8" autocomplete="new-password">
+    <button class="primario" type="submit">Crear y entrar</button>
+    <div class="error" id="c-error"></div>
+  </form>
+</div>
+
+<!-- ═══════════ Entrar ═══════════ -->
+<div id="pantalla-entrada" class="entrada" hidden>
+  <form id="form-entrada" class="caja-entrada">
+    <div class="marca"><span class="ic">📦</span> Inventario · Los Caseritos</div>
+    <label for="e-usuario">Usuario</label>
+    <input id="e-usuario" required autocomplete="username" autocapitalize="none">
+    <label for="e-clave">Clave</label>
+    <input id="e-clave" type="password" required autocomplete="current-password">
+    <button class="primario" type="submit">Entrar</button>
+    <div class="error" id="e-error"></div>
+  </form>
+</div>
+
+<!-- ═══════════ La aplicación ═══════════ -->
+<div id="app" hidden>
+  <header>
+    <div class="wrap">
+      <div class="barra">
+        <div class="marca"><span class="ic">📦</span> Inventario</div>
+        <span class="sp"></span>
+        <!-- solo el dueño elige tienda; el vendedor ve la suya fija -->
+        <select id="sel-tienda" class="sel-tienda" title="Tienda en la que se está operando" hidden></select>
+        <span id="tienda-fija" class="etiqueta verde" hidden></span>
+        <div class="quien"><b id="quien-nombre"></b><span id="quien-rol"></span></div>
+        <button id="btn-salir" class="mini">Salir</button>
+      </div>
+      <nav class="pestanas" id="pestanas"></nav>
+    </div>
+  </header>
+
+  <main class="wrap">
+
+    <!-- ── Hoy (dueño) ── -->
+    <section id="v-hoy" class="vista" hidden>
+      <div class="fila">
+        <h2 class="crece">Hoy en las tiendas</h2>
+        <span class="suave chico" id="hoy-hora"></span>
+        <button id="hoy-actualizar" class="mini">Actualizar</button>
+      </div>
+      <div class="tarjetas" id="hoy-tarjetas"></div>
+      <h3>Alertas</h3>
+      <div id="hoy-alertas"></div>
+      <h3>Lo más vendido hoy</h3>
+      <div class="tabla-caja" id="hoy-top"></div>
+    </section>
+
+    <!-- ── Vender ── -->
+    <section id="v-vender" class="vista" hidden>
+      <div class="buscador">
+        <input id="vender-buscar" placeholder="Escanee el código o escriba el nombre del producto" autocomplete="off" enterkeyhint="enter">
+        <div class="resultados" id="vender-resultados" hidden></div>
+      </div>
+      <div class="venta">
+        <div class="tabla-caja" id="vender-lista"></div>
+        <aside class="cobro">
+          <div class="suave chico">TOTAL</div>
+          <div class="total" id="vender-total">Bs 0</div>
+          <div class="pagos">
+            <button class="pago activo" data-pago="efectivo" type="button">💵 Efectivo</button>
+            <button class="pago" data-pago="qr" type="button">📱 QR</button>
+          </div>
+          <div id="vender-efectivo">
+            <label for="vender-recibe">Paga con (opcional, para calcular el cambio)</label>
+            <input id="vender-recibe" inputmode="decimal" placeholder="Ej.: 50">
+            <div class="vuelto" id="vender-vuelto"></div>
+          </div>
+          <button class="primario cobrar" id="vender-cobrar" disabled>Cobrar</button>
+          <button class="mini peligro" id="vender-vaciar" type="button">Vaciar la lista</button>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ── Recibir mercadería ── -->
+    <section id="v-recibir" class="vista" hidden>
+      <h2>Recibir mercadería</h2>
+      <p class="suave chico">Escanee cada producto que llegó y ponga cuántos son. Al registrar, se suman al stock de esta tienda.</p>
+      <div class="buscador">
+        <input id="recibir-buscar" placeholder="Escanee el código o escriba el nombre del producto" autocomplete="off">
+        <div class="resultados" id="recibir-resultados" hidden></div>
+      </div>
+      <div class="tabla-caja" id="recibir-lista"></div>
+      <label for="recibir-nota">¿De dónde vino? (opcional)</label>
+      <input id="recibir-nota" maxlength="200" placeholder="Ej.: Proveedor de Cochabamba, factura 123">
+      <p></p>
+      <button class="primario" id="recibir-guardar" disabled>Registrar entrada</button>
+    </section>
+
+    <!-- ── Ventas ── -->
+    <section id="v-ventas" class="vista" hidden>
+      <div class="fila">
+        <h2 class="crece" id="ventas-titulo">Ventas</h2>
+        <input type="date" id="ventas-dia" class="sel-tienda" hidden>
+        <select id="ventas-tienda" class="sel-tienda" hidden></select>
+      </div>
+      <div class="tarjetas" id="ventas-resumen"></div>
+      <p></p>
+      <div id="ventas-lista"></div>
+    </section>
+
+    <!-- ── Stock (dueño) ── -->
+    <section id="v-stock" class="vista" hidden>
+      <div class="fila">
+        <h2 class="crece">Stock por tienda</h2>
+        <button id="stock-contar" class="primario">Contar o corregir stock</button>
+      </div>
+      <div class="fila">
+        <input id="stock-buscar" class="crece" placeholder="Buscar producto o código">
+        <label class="check"><input type="checkbox" id="stock-problemas"> Solo con problemas</label>
+      </div>
+      <p></p>
+      <div class="tabla-caja" id="stock-tabla"></div>
+
+      <div id="conteo" hidden>
+        <h3 id="conteo-titulo">Conteo</h3>
+        <p class="suave chico">
+          Escriba cuántos hay de verdad en el estante. Deje vacío lo que no contó.<br>
+          • Si es la <b>primera vez</b> que se cuenta ese producto en esta tienda, queda como <b>inventario inicial</b>.<br>
+          • Si ya tenía movimientos, la diferencia queda como <b>ajuste</b>: hace falta un motivo y aparece en las alertas.
+        </p>
+        <div class="tabla-caja" id="conteo-tabla"></div>
+        <label for="conteo-nota">Motivo (obligatorio si hay ajustes)</label>
+        <input id="conteo-nota" maxlength="200" placeholder="Ej.: Conteo mensual, se rompió uno, vino fallado">
+        <p></p>
+        <div class="fila">
+          <button class="primario" id="conteo-guardar">Guardar conteo</button>
+          <button id="conteo-cancelar">Cancelar</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Productos (dueño) ── -->
+    <section id="v-productos" class="vista" hidden>
+      <div class="fila">
+        <h2 class="crece">Productos y precios</h2>
+        <button id="prod-importar">Traer de la tienda online</button>
+        <button id="prod-nuevo" class="primario">+ Nuevo producto</button>
+      </div>
+      <div class="fila">
+        <input id="prod-buscar" class="crece" placeholder="Buscar producto o código">
+        <label class="check"><input type="checkbox" id="prod-inactivos"> Mostrar los dados de baja</label>
+      </div>
+      <p></p>
+      <div class="tabla-caja" id="prod-tabla"></div>
+    </section>
+
+    <!-- ── Movimientos (dueño) ── -->
+    <section id="v-movimientos" class="vista" hidden>
+      <div class="fila">
+        <h2 class="crece">Historial de movimientos</h2>
+        <select id="mov-tienda" class="sel-tienda"></select>
+        <select id="mov-tipo" class="sel-tienda">
+          <option value="">Todos los tipos</option>
+          <option value="venta">Ventas</option>
+          <option value="anulacion">Anulaciones</option>
+          <option value="entrada">Entradas</option>
+          <option value="ajuste">Ajustes</option>
+          <option value="inicial">Inventario inicial</option>
+        </select>
+      </div>
+      <p class="suave chico">Cada cosa que entró o salió, quién la hizo y cuándo. Nada de esto se puede borrar.</p>
+      <div class="tabla-caja" id="mov-tabla"></div>
+    </section>
+
+    <!-- ── Usuarios (dueño) ── -->
+    <section id="v-usuarios" class="vista" hidden>
+      <div class="fila">
+        <h2 class="crece">Usuarios</h2>
+        <button id="usr-nuevo" class="primario">+ Nuevo usuario</button>
+      </div>
+      <p class="suave chico">Cada vendedor con su propio usuario: así cada venta queda a nombre de quien la hizo. No compartan claves.</p>
+      <div class="tabla-caja" id="usr-tabla"></div>
+    </section>
+  </main>
+</div>
+
+<!-- ═══════════ Diálogo: producto ═══════════ -->
+<dialog id="dlg-producto">
+  <form id="form-producto" method="dialog">
+    <h2 id="prod-titulo">Producto</h2>
+    <label for="p-nombre">Nombre</label>
+    <input id="p-nombre" required maxlength="120">
+    <div class="dos">
+      <div>
+        <label for="p-categoria">Categoría</label>
+        <input id="p-categoria" maxlength="60" list="lista-categorias">
+        <datalist id="lista-categorias"></datalist>
+      </div>
+      <div>
+        <label for="p-codigo">Código de barras</label>
+        <input id="p-codigo" maxlength="40" placeholder="Toque acá y escanee" autocomplete="off">
+      </div>
+    </div>
+    <div class="dos">
+      <div>
+        <label for="p-precio">Precio (Bs)</label>
+        <input id="p-precio" required inputmode="decimal">
+      </div>
+      <div>
+        <label for="p-antes">Precio antes, si está en oferta (Bs)</label>
+        <input id="p-antes" inputmode="decimal" placeholder="Vacío si no hay oferta">
+      </div>
+    </div>
+    <div class="dos">
+      <div>
+        <label for="p-costo">Costo de compra (Bs, opcional)</label>
+        <input id="p-costo" inputmode="decimal" placeholder="Para calcular la ganancia">
+      </div>
+      <div>
+        <label for="p-minimo">Avisar cuando queden (unidades)</label>
+        <input id="p-minimo" inputmode="numeric" placeholder="0 = no avisar">
+      </div>
+    </div>
+    <label class="check"><input type="checkbox" id="p-activo"> Se vende (desmarcar para darlo de baja)</label>
+    <div class="error" id="p-error"></div>
+    <div class="acciones">
+      <button type="button" data-cerrar>Cancelar</button>
+      <button type="submit" class="primario">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ═══════════ Diálogo: usuario ═══════════ -->
+<dialog id="dlg-usuario">
+  <form id="form-usuario" method="dialog" autocomplete="off">
+    <h2 id="usr-titulo">Usuario</h2>
+    <label for="u-nombre">Nombre</label>
+    <input id="u-nombre" required maxlength="60">
+    <label for="u-usuario">Usuario para entrar</label>
+    <input id="u-usuario" required maxlength="30" autocapitalize="none">
+    <label for="u-clave" id="u-clave-label">Clave (8 caracteres o más)</label>
+    <input id="u-clave" type="password" autocomplete="new-password">
+    <div class="dos">
+      <div>
+        <label for="u-rol">Rol</label>
+        <select id="u-rol">
+          <option value="vendedor">Vendedor</option>
+          <option value="dueno">Dueño (ve todo)</option>
+        </select>
+      </div>
+      <div id="u-tienda-caja">
+        <label for="u-tienda">Tienda</label>
+        <select id="u-tienda"></select>
+      </div>
+    </div>
+    <label class="check"><input type="checkbox" id="u-activo"> Puede entrar (desmarcar para darlo de baja)</label>
+    <div class="error" id="u-error"></div>
+    <div class="acciones">
+      <button type="button" data-cerrar>Cancelar</button>
+      <button type="submit" class="primario">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="aviso" class="aviso" hidden></div>
+</body>
+</html>

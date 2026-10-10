@@ -20,3 +20,6 @@ Thumbs.db
 desktop.ini
 .DS_Store
 *.log
+
+# Base de datos del inventario: ventas, stock y usuarios de las tiendas
+data/inventario/

@@ -1,0 +1,140 @@
+/* ══════════════════════════════════════════════════════════════════════
+   Inventario — estilos
+   Los mismos colores del panel (admin.html) para que se sienta parte de
+   la misma casa. Oscuro fijo: en un mostrador con luz de tubo se lee mejor
+   y cansa menos la vista en una jornada entera.
+   ⚠️ La política de seguridad (CSP) prohíbe estilos escritos dentro del
+   HTML (style="..."): todo va acá, por clases.
+   ══════════════════════════════════════════════════════════════════════ */
+
+:root{ color-scheme:dark;
+  --bg:#0a140f; --surface:#11201a; --surface-2:#183026;
+  --ink:#eaf5ee; --ink-soft:#9fb6a8; --line:#223a2e;
+  --green:#2fd08f; --green-deep:#18a870; --amber:#ffb056; --coral:#ff8378;
+  --grad:linear-gradient(135deg,#2fd08f,#12946a);
+  --f-display:"Trebuchet MS","Segoe UI",system-ui,sans-serif;
+  --f-body:"Segoe UI",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none !important}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);line-height:1.5;font-size:15px}
+.wrap{max-width:1240px;margin:0 auto;padding:0 16px}
+h2{font-family:var(--f-display);font-size:1.25rem;margin:0 0 12px}
+h3{font-family:var(--f-display);font-size:1rem;margin:22px 0 10px}
+p{margin:0 0 10px}
+.suave{color:var(--ink-soft)}
+.chico{font-size:.82rem}
+.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+
+/* ── controles ── */
+button,.btn{font-family:var(--f-body);font-weight:700;border-radius:11px;cursor:pointer;border:1px solid var(--line);
+  background:var(--surface);color:var(--ink);padding:10px 16px;font-size:.9rem;transition:.15s}
+button:hover{border-color:var(--green)}
+button:disabled{opacity:.45;cursor:not-allowed}
+.primario{background:var(--grad);border-color:transparent;color:#05130d}
+.peligro{color:var(--coral)}
+.mini{padding:6px 11px;font-size:.8rem}
+input,select,textarea{font-family:var(--f-body);font-size:.95rem;background:var(--surface);color:var(--ink);
+  border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none;width:100%}
+input:focus,select:focus,textarea:focus{border-color:var(--green)}
+select option{background:var(--surface);color:var(--ink)}
+input[type=checkbox]{width:auto}
+label{display:block;font-size:.8rem;font-weight:700;color:var(--ink-soft);margin:12px 0 5px}
+label.check{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:.9rem}
+.fila{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.fila > .crece{flex:1;min-width:180px}
+.dos{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+
+/* ── entrada y configuración ── */
+.entrada{min-height:100vh;display:grid;place-items:center;padding:20px}
+.caja-entrada{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:28px}
+.caja-entrada .primario{width:100%;margin-top:18px;padding:13px}
+.marca{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:800;font-size:1.15rem}
+.marca .ic{width:36px;height:36px;border-radius:11px;background:var(--grad);display:grid;place-items:center;font-size:1.2rem}
+.error{color:var(--coral);font-size:.88rem;margin-top:10px;min-height:1.2em}
+
+/* ── cabecera y pestañas ── */
+header{position:sticky;top:0;z-index:30;background:var(--bg);border-bottom:1px solid var(--line)}
+.barra{display:flex;align-items:center;gap:12px;padding:10px 0;flex-wrap:wrap}
+.barra .sp{flex:1}
+.quien{font-size:.85rem;color:var(--ink-soft);text-align:right;line-height:1.25}
+.quien b{color:var(--ink);display:block}
+.sel-tienda{width:auto;padding:7px 10px;font-weight:700}
+.pestanas{display:flex;gap:6px;padding:0 0 10px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.pestana{background:transparent;border:1px solid var(--line);color:var(--ink-soft);border-radius:999px;padding:8px 16px;white-space:nowrap}
+.pestana.activa{background:var(--grad);color:#05130d;border-color:transparent}
+main{padding:18px 0 80px}
+
+/* ── tarjetas y tablas ── */
+.tarjetas{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.tarjeta{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px}
+.tarjeta .titulo{font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);font-weight:700}
+.tarjeta .grande{font-family:var(--f-display);font-size:1.7rem;font-weight:800;margin:4px 0}
+.tarjeta.total{border-color:var(--green-deep)}
+.tabla-caja{overflow-x:auto;-webkit-overflow-scrolling:touch;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th{text-align:left;font-size:.7rem;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-soft);
+  padding:10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+.vacio{padding:26px;text-align:center;color:var(--ink-soft)}
+.neg{color:var(--coral);font-weight:800}
+.bajo{color:var(--amber);font-weight:800}
+.pos{color:var(--green)}
+.etiqueta{display:inline-block;font-size:.72rem;font-weight:800;padding:2px 8px;border-radius:999px;background:var(--surface-2);color:var(--ink-soft)}
+.etiqueta.roja{background:color-mix(in srgb,var(--coral) 22%,transparent);color:var(--coral)}
+.etiqueta.ambar{background:color-mix(in srgb,var(--amber) 22%,transparent);color:var(--amber)}
+.etiqueta.verde{background:color-mix(in srgb,var(--green) 20%,transparent);color:var(--green)}
+.tachado{text-decoration:line-through;color:var(--ink-soft);font-size:.8rem;margin-left:6px}
+
+/* ── buscador de productos (vender y recibir) ── */
+.buscador{position:relative}
+.buscador input{font-size:1.1rem;padding:14px 16px;border-radius:14px}
+.resultados{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;background:var(--surface);
+  border:1px solid var(--green-deep);border-radius:14px;overflow:hidden;box-shadow:0 12px 30px #0008}
+.resultado{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;border:none;border-radius:0;
+  border-bottom:1px solid var(--line);background:transparent;padding:12px 14px;font-weight:600}
+.resultado:last-child{border-bottom:none}
+.resultado.marcado,.resultado:hover{background:var(--surface-2)}
+.resultado .sub{color:var(--ink-soft);font-size:.8rem;font-weight:400}
+
+/* ── vender ── */
+.venta{display:grid;grid-template-columns:1fr 320px;gap:16px;margin-top:14px;align-items:start}
+.cobro{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:18px;position:sticky;top:120px}
+.cobro .total{font-family:var(--f-display);font-size:2.3rem;font-weight:800;line-height:1.1;margin:2px 0 12px}
+.pagos{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.pago.activo{background:var(--surface-2);border-color:var(--green);color:var(--green)}
+.vuelto{font-size:1.1rem;font-weight:800;margin-top:8px}
+.cobrar{width:100%;margin-top:16px;padding:16px;font-size:1.15rem}
+.cant{display:inline-flex;align-items:center;gap:6px}
+.cant button{padding:4px 11px;font-size:1rem}
+.cant input{width:64px;text-align:center;padding:6px}
+
+/* ── ventas ── */
+.venta-item{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.venta-item.anulada{opacity:.65}
+.venta-item .cab{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.venta-item .monto{margin-left:auto;font-weight:800;font-size:1.05rem}
+.venta-item .detalle{font-size:.85rem;color:var(--ink-soft);margin-top:4px}
+
+/* ── alertas ── */
+.alerta{border-left:3px solid var(--amber);background:var(--surface);padding:10px 14px;border-radius:0 10px 10px 0;margin-bottom:8px;font-size:.9rem}
+.alerta.roja{border-color:var(--coral)}
+
+/* ── diálogos ── */
+dialog{background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:18px;padding:22px;width:min(520px,94vw)}
+dialog::backdrop{background:#000a}
+dialog .acciones{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+
+/* ── aviso flotante ── */
+.aviso{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:100;background:var(--surface-2);
+  border:1px solid var(--green);color:var(--ink);padding:12px 18px;border-radius:14px;box-shadow:0 10px 30px #000a;
+  max-width:min(560px,92vw);font-weight:600}
+.aviso.error{border-color:var(--coral);margin:0}
+
+@media (max-width:820px){
+  .venta{grid-template-columns:1fr}
+  .cobro{position:static}
+  .quien{display:none}
+  .dos{grid-template-columns:1fr}
+}
