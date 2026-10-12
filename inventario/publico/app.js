@@ -1441,7 +1441,7 @@
       usuario: $('u-usuario').value.trim(),
       clave: $('u-clave').value || undefined,
       rol: $('u-rol').value,
-      tienda_id: $('u-rol').value === 'vendedor' ? Number($'u-tienda').value : null,
+      tienda_id: $('u-rol').value === 'vendedor' ? Number($('u-tienda').value) : null,
       activo: $('u-activo').checked
     };
 
@@ -1464,5 +1464,9 @@
   });
 
   // Arrancar aplicación
-  document.addEventListener('DOMContentLoaded', inicializar);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', inicializar);
+  } else {
+    inicializar();
+  }
 })();
