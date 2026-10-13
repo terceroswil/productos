@@ -48,12 +48,10 @@ function esPublico(rel){
   if (PUBLICO_EXACTO.has(rel)) return true;
   /* las fotos de los productos, y nada más que imágenes */
   if (/^\/img\/[^/]+\.(jpg|jpeg|png|webp|avif|svg)$/i.test(rel)) return true;
-  /* El juego del Vibeathon: todo lo que cuelga de /axie/, pero solo nombres
-     normales — ningún segmento puede empezar con punto, así no entran ni ".."
-     ni archivos ocultos. ⚠️ NO volver al `(\/.*)?` de antes: dejaba pasar
-     cualquier cosa y con eso se salía de la carpeta (ver el corte de arriba
-     de todo en el manejador de peticiones). */
-  if (/^\/axie(\/[a-z0-9_-][a-z0-9._-]*)+$/i.test(rel)) return true;
+  /* ⚠️ Si algún día se publica una carpeta entera, NO usar `(\/.*)?`: deja
+     pasar cualquier cosa y con eso se sale de la carpeta. Los segmentos van
+     `[a-z0-9_-][a-z0-9._-]*`, que no puede ser ".." ni un archivo oculto.
+     (Pasó con la carpeta del juego, que ya no existe.) */
   return false;
 }
 
@@ -67,6 +65,11 @@ const NUNCA = [
   /^\/\.git\//i,
   /^\/data\//i,                       // respaldos, analítica, corte de sesiones
   /^\/src\//i,                        // el código del servidor
+  /* /inventario/ lo atiende inventario/servidor.js ANTES de llegar acá. Esto
+     queda por las variantes que ese desvío no agarra: en Windows
+     "/Inventario/servidor.js" (con mayúscula) es el mismo archivo. */
+  /^\/inventario\//i,
+  /^\/stock-inventario\.json/i,       // lo que deja el inventario: sale ya aplicado dentro de productos.json
   /^\/node_modules\//i,
   /\.cjs$/i,                          // las herramientas de línea de comandos
   /^\/(serve|generar-sitemap)\.js$/i,
@@ -86,6 +89,64 @@ const DATOS  = cfg.DATOS;
 const EVENTOS = path.join(DATOS, 'eventos.jsonl');
 const CATALOGO = cfg.CATALOGO;   // en servidor vive en DATOS_DIR
 const FOTOS    = cfg.FOTOS;      // idem: las fotos que sube el comerciante
+
+/* ─────────────── el stock lo lleva el inventario (12/10/2026) ───────────────
+   El sistema de inventario (otro servidor, puerto 3003) sabe cuánto hay de
+   verdad en la tienda que despacha los pedidos online, y lo deja en este
+   archivo, al lado del catálogo, cada vez que se vende o entra mercadería:
+
+       { "tienda": "Ivirgarzama", "stock": { "3": 12, "7": 0 } }   ← id: unidades
+
+   Al servir productos.json se pisa el "stock" de esos productos con el del
+   inventario y se les agrega "stockInv": true, que el panel usa para
+   bloquear la casilla (escribir un número ahí ya no cambia nada).
+
+   ⚠️ Tres cosas a propósito:
+   - Solo se pisa lo que FIGURA en el archivo. Un producto que el inventario
+     todavía no contó sigue con el número escrito a mano en el panel. Si se
+     tomara "no figura" como 0, el día que se prende el inventario toda la
+     tienda pasaría a "agotado".
+   - No se escribe dentro de productos.json: el panel guarda ese archivo
+     entero desde su memoria y pisaría el stock con el de hace un rato.
+   - Si el archivo no está, está roto o el inventario está apagado, la
+     tienda sigue EXACTAMENTE como antes. Borrarlo es la forma de volver al
+     stock a mano. Ningún fallo de acá puede tirar la tienda. */
+const STOCK_INVENTARIO = path.join(path.dirname(CATALOGO), 'stock-inventario.json');
+
+let catalogoArmado = { firma: '', cuerpo: null };
+
+/* Devuelve el texto de productos.json con el stock del inventario puesto, o
+   null si no hay nada que aplicar (y entonces se sirve el archivo tal cual). */
+function catalogoConStock(){
+  let stInv, stCat;
+  try { stInv = fs.statSync(STOCK_INVENTARIO); stCat = fs.statSync(CATALOGO); } catch (e) { return null; }
+  /* se rearma solo cuando cambió alguno de los dos archivos */
+  const firma = stCat.mtimeMs + ':' + stCat.size + '|' + stInv.mtimeMs + ':' + stInv.size;
+  if (firma === catalogoArmado.firma) return catalogoArmado.cuerpo;
+
+  let cuerpo = null;
+  try {
+    const delInventario = JSON.parse(fs.readFileSync(STOCK_INVENTARIO, 'utf8'));
+    const stock = delInventario.stock;
+    const datos = JSON.parse(fs.readFileSync(CATALOGO, 'utf8'));
+    if (stock && typeof stock === 'object' && Array.isArray(datos.productos)){
+      let tocados = 0;
+      for (const p of datos.productos){
+        const s = stock[p.id];
+        if (Number.isInteger(s) && s >= 0){ p.stock = s; p.stockInv = true; tocados++; }
+      }
+      if (tocados){
+        /* para que el panel pueda decir "Stock Ivirgarzama" y no solo "Stock" */
+        if (typeof delInventario.tienda === 'string') datos.stockInvTienda = delInventario.tienda.slice(0, 60);
+        cuerpo = JSON.stringify(datos);
+      }
+    }
+  } catch (e) {
+    cuerpo = null;   // archivo a medio escribir o roto: se sirve el catálogo de siempre
+  }
+  catalogoArmado = { firma, cuerpo };
+  return cuerpo;
+}
 
 /* Dónde se anota la hora del último "Salir", para que ese corte sobreviva a
    los reinicios. Ver la explicación en src/seguridad.js. */
@@ -285,6 +346,33 @@ function guardarCatalogo(texto, confirmado){
   const ids = datos.productos.map(p => p.id);
   if (new Set(ids).size !== ids.length) throw new Error('Hay IDs de producto repetidos');
 
+  /* ⚠️ Un número de producto no se usa DOS veces, nunca.
+     El panel numeraba "el más alto + 1". Borrando la Sartén (#1) y creando
+     una Licuadora, la Licuadora volvía a ser la #1, y el inventario —que
+     reconoce los productos por ese número— creía que era el mismo producto:
+     heredaba el stock, el código de barras, el costo y todo el historial de
+     ventas de la Sartén. Probado el 13/10/2026.
+     Ahora el catálogo recuerda el número más alto que se usó (ultimoId) y
+     acá se rechaza cualquier producto NUEVO que traiga un número ya usado. */
+  let idsDeAntes = new Set(), masAltoDeAntes = 0;
+  try {
+    const previo = JSON.parse(fs.readFileSync(CATALOGO, 'utf8'));
+    idsDeAntes = new Set((previo.productos || []).map(p => p.id));
+    masAltoDeAntes = Math.max(Number(previo.ultimoId) || 0, ...[...idsDeAntes].map(Number).filter(Number.isFinite), 0);
+  } catch (e) { /* todavía no hay catálogo */ }
+  const reusado = datos.productos.find(p => !idsDeAntes.has(p.id) && Number(p.id) <= masAltoDeAntes);
+  if (reusado){
+    throw new Error('"' + reusado.name + '" quedó con el número #' + reusado.id + ', que ya fue de otro producto. ' +
+                    'Recargá el panel (F5) y volvé a crearlo: va a tomar un número nuevo.');
+  }
+  datos.ultimoId = Math.max(masAltoDeAntes, ...ids.map(Number).filter(Number.isFinite), 0);
+
+  /* "stockInv" no es un dato del producto: lo agrega catalogoConStock() al
+     servir el catálogo, y el panel lo devuelve tal cual lo recibió. Si se
+     guardara, quedaría pegado aunque después se apague el inventario. */
+  for (const p of datos.productos) if (p) delete p.stockInv;
+  delete datos.stockInvTienda;
+
   /* Freno de mano: perder la mitad de los productos de golpe casi siempre es
      un accidente, no una decisión. Se pregunta antes en vez de obedecer. */
   if (!confirmado && fs.existsSync(CATALOGO)){
@@ -306,6 +394,21 @@ function guardarCatalogo(texto, confirmado){
     fs.copyFileSync(CATALOGO, path.join(DATOS, 'respaldos', 'productos-' + sello + '.json'));
   }
   fs.writeFileSync(CATALOGO, JSON.stringify(datos, null, 2), 'utf8');
+
+  /* Lo de acá abajo es mantenimiento: si falla, el catálogo ya quedó guardado. */
+  try {
+    /* se guardan los últimos 100 respaldos; antes se juntaban para siempre */
+    const dir = path.join(DATOS, 'respaldos');
+    const viejos = fs.readdirSync(dir).filter(f => /^productos-.*\.json$/.test(f)).sort();
+    for (const f of viejos.slice(0, Math.max(0, viejos.length - 100))) fs.rmSync(path.join(dir, f), { force: true });
+  } catch (e) { /* no importa */ }
+  try {
+    /* el mapa del sitio que lee Google: listaba 25 productos cuando ya quedaban 4 */
+    /* SIN_SITEMAP=1 lo usan las pruebas, que guardan catálogos de mentira:
+       sitemap.xml vive en la carpeta del proyecto y lo pisarían. */
+    if (process.env.SIN_SITEMAP !== '1') require('./generar-sitemap').generar(datos);
+  } catch (e) { console.error('  ✗ no se pudo rehacer sitemap.xml:', e.message); }
+
   return datos.productos.length;
 }
 
@@ -424,9 +527,55 @@ function borrarFoto(archivo){
 
 /* ─────────────────────────────── servidor ─────────────────────────────── */
 
-const servidor = http.createServer(async (req, res) => {
-  const url = new URL(req.url, 'http://localhost');
-  const ruta = decodeURIComponent(url.pathname);
+/* ── El inventario vive ADENTRO de la tienda (12/10/2026) ──
+   Mismo programa, mismo puerto, mismo túnel: loscaseritos.com/inventario.
+   Lo pidió el dueño para que Chimoré y Entre Ríos puedan entrar desde su
+   pueblo; antes era otro servidor (3003) que solo contestaba en esta PC.
+   Todo lo que llega a /inventario/ se le pasa a inventario/servidor.js, que
+   tiene sus propios usuarios, su propia cookie y su propia lista cerrada de
+   archivos. Nada de eso pasa por tienePermiso() ni por la lista blanca.
+   ⚠️ Si el inventario no carga (falta node:sqlite, base rota), la tienda
+   arranca IGUAL y /inventario/ contesta 503. Que no venda el mostrador no
+   puede dejar sin vender a la web. */
+let inventario = null;
+try {
+  inventario = require('./inventario/servidor');
+} catch (e) {
+  console.error('\n  ⛔ EL INVENTARIO NO ARRANCÓ: ' + e.message);
+  console.error('     La tienda sigue andando; loscaseritos.com/inventario va a dar error.\n');
+}
+
+async function atender(req, res){
+  /* Una dirección con un % mal armado hace reventar a decodeURIComponent.
+     Sin atajarlo, ese error subía sin que nadie lo agarre. */
+  let url, ruta;
+  try {
+    url = new URL(req.url, 'http://localhost');
+    ruta = decodeURIComponent(url.pathname);
+  } catch (e) {
+    res.writeHead(400, { 'Content-Type': TIPOS['.html'] });
+    return res.end('<h1>400</h1><p>Dirección inválida.</p><p><a href="/">Ir a la tienda</a></p>');
+  }
+
+  /* ── siempre con candado ──
+     El 13/10/2026 http://loscaseritos.com (sin la "s") abría igual que
+     https. Quien entrara así al inventario o al panel mandaba su clave sin
+     cifrar. Cloudflare avisa por dónde entró el visitante: si fue por http,
+     se lo manda a https antes de mostrarle nada.
+     En esta computadora (localhost) no hay cabecera y no se redirige. */
+  const entroPor = String(req.headers['x-forwarded-proto'] || '').toLowerCase();
+  const visitante = String(req.headers['cf-visitor'] || '');
+  const sitio = String(req.headers.host || '');
+  if (cfg.TRAS_PROXY && (entroPor === 'http' || visitante.includes('"scheme":"http"')) && /^[a-z0-9.-]+$/i.test(sitio)){
+    res.writeHead(301, { Location: 'https://' + sitio + req.url });
+    return res.end();
+  }
+  /* y que el navegador se acuerde un mes de entrar siempre por https */
+  if (entroPor === 'https') res.setHeader('Strict-Transport-Security', 'max-age=2592000');
+  /* nadie puede meter la tienda ni el panel dentro de un marco de otra página
+     (el truco de tapar un botón para que hagas clic donde no querés) */
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
 
   /* ⚠️ Ninguna dirección legítima lleva ".." ni barra invertida. El parser de
      URL normaliza los ".." escritos tal cual, pero NO los que vienen pegados a
@@ -440,6 +589,29 @@ const servidor = http.createServer(async (req, res) => {
   if (ruta.includes('\\') || ruta.includes('\0') || ruta.split('/').includes('..')){
     res.writeHead(400, { 'Content-Type': TIPOS['.html'] });
     return res.end('<h1>400</h1><p>Dirección inválida.</p><p><a href="/">Ir a la tienda</a></p>');
+  }
+
+  /* ---- inventario ---- */
+  /* Sin barra final va por redirección: la pantalla pide todo con rutas
+     relativas ("api/ventas", "app.js"), y servida en /inventario el
+     navegador las buscaría en la raíz, que es la tienda. La misma trampa
+     que tuvo /axie. */
+  if (ruta === '/inventario'){
+    res.writeHead(301, { Location: cfg.BASE + '/inventario/' + (url.search || '') });
+    return res.end();
+  }
+  if (ruta.startsWith('/inventario/')){
+    if (!inventario){
+      res.writeHead(503, { 'Content-Type': TIPOS['.html'] });
+      return res.end('<h1>El inventario no está disponible</h1><p>Avisale al dueño: hay que revisar la ventana de Los Caseritos.</p>');
+    }
+    try {
+      return await inventario.manejar(req, res, ruta.slice('/inventario'.length), url);
+    } catch (e) {
+      console.error('  ✗ error sin atajar en el inventario:', e);
+      if (!res.headersSent) res.writeHead(500);
+      return res.end();
+    }
   }
 
   /* ---- API ---- */
@@ -549,26 +721,9 @@ const servidor = http.createServer(async (req, res) => {
   const ATAJOS = {
     '/panel': '/admin.html',  '/panel/': '/admin.html',
     '/admin': '/admin.html',  '/admin/': '/admin.html',
-    '/entrar': '/entrar.html','/entrar/': '/entrar.html',
-    '/axie/': '/axie/index.html'
+    '/entrar': '/entrar.html','/entrar/': '/entrar.html'
   };
   if (ATAJOS[rel]) rel = ATAJOS[rel];
-
-  /* ⚠️ `/axie` SIN barra final va por redirección, no por atajo, y esa
-     diferencia decide si el juego se ve o no.
-     Los otros atajos apuntan a archivos de la RAÍZ, así que da igual servirlos
-     de una. El juego no: vive en su carpeta y todas sus rutas son relativas
-     (`arte/axies/plant.png`). Servido en `/axie`, el navegador toma como base
-     la raíz del dominio y las pide a `/arte/axies/...`, que no está en la
-     lista blanca — con login puesto contesta un 302 a `entrar.html`, el
-     `fetch` se traga el HTML del login, `r.json()` revienta y el juego dibuja
-     las criaturas de respaldo. Se ve como si estuviera roto el juego, y esa
-     es la dirección que va en el formulario del Vibeathon.
-     Con la barra final la base es `/axie/` y todo cae en su lugar. */
-  if (rel === '/axie'){
-    res.writeHead(301, { Location: '/axie/' + (url.search || '') });
-    return res.end();
-  }
 
   /* ⚠️ Lo que no sale NUNCA, ni con la sesión abierta. Va ANTES del permiso.
      La lista blanca de arriba decide qué ve un desconocido; esta decide qué no
@@ -600,6 +755,22 @@ const servidor = http.createServer(async (req, res) => {
     res.writeHead(403, { 'Content-Type': TIPOS['.html'] });
     return res.end('<h1>403</h1><p>Esta parte solo se abre desde la computadora del negocio.</p>' +
                    '<p><a href="/">Ir a la tienda</a></p>');
+  }
+
+  /* El catálogo sale con el stock del inventario puesto, si lo hay. Si no hay
+     nada que aplicar (o algo falla), sigue de largo y se sirve el archivo. */
+  if (rel === '/productos.json'){
+    let cuerpo = null;
+    try { cuerpo = catalogoConStock(); } catch (e) { cuerpo = null; }
+    if (cuerpo !== null){
+      res.writeHead(200, {
+        'Content-Type': TIPOS['.json'],
+        'Content-Length': Buffer.byteLength(cuerpo),
+        'Cache-Control': cache('.json'),
+        'X-Content-Type-Options': 'nosniff'
+      });
+      return res.end(cuerpo);
+    }
   }
 
   /* Con los datos en una carpeta aparte (servidor), el catálogo y las fotos se
@@ -634,6 +805,21 @@ const servidor = http.createServer(async (req, res) => {
     'X-Content-Type-Options': 'nosniff'
   });
   fs.createReadStream(archivo).pipe(res);
+}
+
+/* ⚠️ atender() es async: un error que se le escape NO lo ataja nadie, y Node
+   cierra el programa entero ante un error así. Como tienda e inventario son
+   un solo programa, un error tonto en un pedido dejaba a las tres tiendas
+   sin poder cobrar. Acá se ataja todo lo que se haya escapado: ese pedido
+   contesta 500 y los demás siguen andando. */
+const servidor = http.createServer((req, res) => {
+  atender(req, res).catch(e => {
+    console.error('  ✗ error sin atajar en ' + req.method + ' ' + req.url + ':', e);
+    try {
+      if (!res.headersSent) res.writeHead(500, { 'Content-Type': TIPOS['.html'] });
+      res.end('<h1>Algo falló</h1><p>Probá de nuevo en un momento.</p>');
+    } catch (e2) { /* la conexión ya estaba cerrada */ }
+  });
 });
 
 servidor.listen(PUERTO, HOST, () => {
@@ -665,6 +851,11 @@ servidor.listen(PUERTO, HOST, () => {
       console.log('');
       console.log('  Para abrirlo en el celular:  node serve.js --red');
     }
+  }
+
+  if (inventario){
+    console.log('');
+    inventario.presentar('http://localhost:' + PUERTO + '/inventario/');
   }
 
   if (cfg.avisos.length){

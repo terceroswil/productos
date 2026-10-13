@@ -25,6 +25,9 @@ p{margin:0 0 10px}
 .suave{color:var(--ink-soft)}
 .chico{font-size:.82rem}
 .num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+/* Alineaciones sueltas: van por clase porque style="..." lo bloquea la CSP. */
+.centro{text-align:center}
+.der{text-align:right}
 
 /* ── controles ── */
 button,.btn{font-family:var(--f-body);font-weight:700;border-radius:11px;cursor:pointer;border:1px solid var(--line);
@@ -38,6 +41,8 @@ input,select,textarea{font-family:var(--f-body);font-size:.95rem;background:var(
   border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none;width:100%}
 input:focus,select:focus,textarea:focus{border-color:var(--green)}
 select option{background:var(--surface);color:var(--ink)}
+/* lo que no se puede cambiar acá se nota antes de tocarlo */
+input[readonly]{opacity:.6;cursor:not-allowed}
 input[type=checkbox]{width:auto}
 label{display:block;font-size:.8rem;font-weight:700;color:var(--ink-soft);margin:12px 0 5px}
 label.check{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:.9rem}
@@ -91,7 +96,8 @@ tr:last-child td{border-bottom:none}
 .buscador{position:relative}
 .buscador input{font-size:1.1rem;padding:14px 16px;border-radius:14px}
 .resultados{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:20;background:var(--surface);
-  border:1px solid var(--green-deep);border-radius:14px;overflow:hidden;box-shadow:0 12px 30px #0008}
+  border:1px solid var(--green-deep);border-radius:14px;overflow:hidden auto;max-height:min(60vh,520px);
+  box-shadow:0 12px 30px #0008}
 .resultado{display:flex;justify-content:space-between;gap:10px;width:100%;text-align:left;border:none;border-radius:0;
   border-bottom:1px solid var(--line);background:transparent;padding:12px 14px;font-weight:600}
 .resultado:last-child{border-bottom:none}
@@ -116,6 +122,27 @@ tr:last-child td{border-bottom:none}
 .venta-item .cab{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .venta-item .monto{margin-left:auto;font-weight:800;font-size:1.05rem}
 .venta-item .detalle{font-size:.85rem;color:var(--ink-soft);margin-top:4px}
+.venta-item .nota-anulada{margin-top:6px}
+
+/* ── vender algo que el sistema dice que no hay ── */
+.sin-stock{margin-top:16px;border:1px solid var(--amber);border-radius:14px;padding:14px;
+  background:color-mix(in srgb,var(--amber) 10%,transparent)}
+.sin-stock ul{margin:8px 0;padding-left:20px}
+.sin-stock button{width:100%;margin-top:8px;padding:13px}
+
+/* ── caja ── */
+.caja-form{background:var(--surface);border:1px solid var(--green-deep);border-radius:16px;padding:18px;max-width:560px}
+.caja-form .contado{font-size:1.5rem;font-weight:800;padding:14px 16px;border-radius:14px}
+.caja-form .primario{width:100%;margin-top:16px;padding:14px;font-size:1.05rem}
+.caja-form ul{margin:8px 0 0;padding-left:20px;color:var(--ink-soft);font-size:.88rem}
+
+.gasto-form{display:grid;grid-template-columns:150px 130px 1fr auto;gap:8px;align-items:end;max-width:760px}
+.gasto-form label{margin-top:0}
+.input-tras{width:84px;text-align:center;padding:6px}
+@media (max-width:700px){ .gasto-form{grid-template-columns:1fr 1fr} .gasto-form .ancho-total{grid-column:1 / -1} }
+
+/* ── conteo ── */
+.col-conteo{width:140px}
 
 /* ── alertas ── */
 .alerta{border-left:3px solid var(--amber);background:var(--surface);padding:10px 14px;border-radius:0 10px 10px 0;margin-bottom:8px;font-size:.9rem}
@@ -132,9 +159,30 @@ dialog .acciones{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
   max-width:min(560px,92vw);font-weight:600}
 .aviso.error{border-color:var(--coral);margin:0}
 
+.solo-movil{display:none}
+
 @media (max-width:820px){
   .venta{grid-template-columns:1fr}
   .cobro{position:static}
   .quien{display:none}
   .dos{grid-template-columns:1fr}
+}
+
+/* ── la lista de venta en el celular ──
+   Como tabla de 5 columnas medía 516 px en una pantalla de 341: el subtotal
+   y la ✕ de quitar quedaban fuera, y había que arrastrar de costado en cada
+   venta. Acá deja de ser tabla: el nombre ocupa un renglón entero y abajo
+   van cantidad, subtotal y quitar. El precio por unidad pasa a ir debajo
+   del nombre (.solo-movil) y su columna se esconde. */
+@media (max-width:560px){
+  .lista-venta,.lista-venta tbody{display:block}
+  .lista-venta thead{display:none}
+  .lista-venta tr{display:grid;grid-template-columns:1fr auto auto;align-items:center;gap:6px 12px;
+    padding:10px 12px;border-bottom:1px solid var(--line)}
+  .lista-venta tr:last-child{border-bottom:none}
+  .lista-venta td{padding:0;border:none}
+  .lista-venta td:nth-child(1){grid-column:1 / -1}
+  .lista-venta td:nth-child(2){display:none}
+  .lista-venta td.centro{text-align:left}
+  .solo-movil{display:block}
 }

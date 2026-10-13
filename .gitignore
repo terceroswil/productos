@@ -13,6 +13,13 @@ data/respaldos/
 data/eventos.jsonl
 # hora del ultimo "Salir": corta las sesiones abiertas y es de esta instalacion
 data/sesiones-cortadas
+# Base de datos del inventario: ventas, stock y usuarios de las tiendas
+data/inventario/
+
+# El stock que deja el sistema de inventario para que la tienda lo muestre.
+# Se reescribe con cada venta del mostrador: es un dato, no codigo.
+stock-inventario.json
+stock-inventario.json.tmp
 
 # ── Ruido del sistema ─────────────────────────────────────────────
 node_modules/
@@ -20,6 +27,3 @@ Thumbs.db
 desktop.ini
 .DS_Store
 *.log
-
-# Base de datos del inventario: ventas, stock y usuarios de las tiendas
-data/inventario/

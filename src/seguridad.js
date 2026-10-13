@@ -110,7 +110,11 @@ function leerCookies(cabecera){
   String(cabecera || '').split(';').forEach(par => {
     const i = par.indexOf('=');
     if (i < 1) return;
-    salida[par.slice(0, i).trim()] = decodeURIComponent(par.slice(i + 1).trim());
+    /* ⚠️ decodeURIComponent revienta con un % mal armado ("%E0%A4%A"), y la
+       cookie la escribe quien quiera. Sin este try, UNA visita a /panel con
+       una cookie rota tiraba el programa entero: tienda e inventario.
+       Probado el 13/10/2026. Una cookie ilegible se ignora, y listo. */
+    try { salida[par.slice(0, i).trim()] = decodeURIComponent(par.slice(i + 1).trim()); } catch (e) { /* se ignora */ }
   });
   return salida;
 }

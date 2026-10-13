@@ -19,7 +19,7 @@ const { DatabaseSync } = require('node:sqlite');
 const fs = require('fs');
 const path = require('path');
 
-const VERSION_ESQUEMA = 1;
+const VERSION_ESQUEMA = 5;
 
 /* Las tres tiendas del cliente. Se cargan solas la primera vez. */
 const TIENDAS_INICIALES = ['Ivirgarzama', 'Chimoré', 'Entre Ríos'];
@@ -60,7 +60,12 @@ CREATE TABLE IF NOT EXISTS productos(
   stock_minimo  INTEGER NOT NULL DEFAULT 0,
   activo        INTEGER NOT NULL DEFAULT 1,
   catalogo_id   INTEGER UNIQUE,           -- id en productos.json (tienda online)
-  creado        INTEGER NOT NULL
+  creado        INTEGER NOT NULL,
+  -- Las opciones que tiene en la web (tamaño, color...) con su diferencia de
+  -- precio, como JSON: {"nombre":"Tamaño","opciones":[{"label":"32 cm","delta":4000}]}
+  -- (delta en centavos). Igual que en la web, el STOCK es del producto entero,
+  -- no de cada opción: lo que cambia por opción es el precio.
+  variantes     TEXT
 );
 
 CREATE TABLE IF NOT EXISTS ventas(
@@ -73,7 +78,11 @@ CREATE TABLE IF NOT EXISTS ventas(
   anulada          INTEGER NOT NULL DEFAULT 0,
   anulada_por      INTEGER REFERENCES usuarios(id),
   anulada_fecha    INTEGER,
-  motivo_anulacion TEXT
+  motivo_anulacion TEXT,
+  -- La pantalla manda una clave distinta por cada cobro. Si el mismo cobro
+  -- llega dos veces (se cortó internet y se tocó Cobrar de nuevo), la
+  -- segunda vez no crea otra venta. El índice único está en migrar().
+  clave            TEXT
 );
 
 CREATE TABLE IF NOT EXISTS venta_items(
@@ -84,7 +93,8 @@ CREATE TABLE IF NOT EXISTS venta_items(
   -- el precio y el costo se copian al momento de vender: si mañana cambia
   -- el precio, la venta de hoy tiene que seguir diciendo lo que se cobró
   precio_unit  INTEGER NOT NULL,
-  costo_unit   INTEGER
+  costo_unit   INTEGER,
+  variante     TEXT                       -- qué opción se vendió ("32 cm"), si el producto tiene
 );
 
 CREATE TABLE IF NOT EXISTS movimientos(
@@ -99,6 +109,64 @@ CREATE TABLE IF NOT EXISTS movimientos(
   venta_id     INTEGER REFERENCES ventas(id),
   nota         TEXT
 );
+
+-- Cierre de caja: al terminar su turno, cada persona cuenta la plata de lo
+-- que cobró ELLA y lo anota. Va por persona y no por tienda porque en una
+-- misma tienda hay turnos (mañana, tarde, fin de semana): así la diferencia
+-- de una no se mezcla con la de la otra.
+-- Se guardan los números del momento (cuánto se esperaba, cuánto contó):
+-- si después el dueño anula una venta vieja, el cierre sigue diciendo lo
+-- que pasó ese día.
+CREATE TABLE IF NOT EXISTS cierres(
+  id          INTEGER PRIMARY KEY,
+  tienda_id   INTEGER NOT NULL REFERENCES tiendas(id),
+  usuario_id  INTEGER NOT NULL REFERENCES usuarios(id),
+  desde       INTEGER NOT NULL,          -- su cierre anterior en esa tienda (0 = el primero)
+  hasta       INTEGER NOT NULL,          -- cuándo cerró
+  ventas      INTEGER NOT NULL,          -- ventas válidas del período
+  anuladas    INTEGER NOT NULL,
+  efectivo    INTEGER NOT NULL,          -- lo que tenía que haber en efectivo
+  qr          INTEGER NOT NULL,          -- lo cobrado por QR (no está en la caja)
+  contado     INTEGER NOT NULL CHECK (contado >= 0),   -- lo que dijo que hay
+  diferencia  INTEGER NOT NULL,          -- contado - (efectivo - devoluciones): negativo = falta
+  nota        TEXT,
+  -- Plata que devolvió por ventas que YA estaban en un cierre anterior y se
+  -- anularon después. Sale de la caja, así que se resta de lo esperado.
+  devoluciones INTEGER NOT NULL DEFAULT 0,
+  -- Si la cerró el dueño en nombre de otra persona (la cambiaron de tienda o
+  -- la dieron de baja sin cerrar), quién fue. Vacío = la cerró ella.
+  cerrado_por INTEGER REFERENCES usuarios(id),
+  gastos      INTEGER NOT NULL DEFAULT 0   -- gastos y retiros anotados en el período
+);
+CREATE INDEX IF NOT EXISTS cierres_quien ON cierres(tienda_id, usuario_id, hasta);
+
+CREATE TRIGGER IF NOT EXISTS cierres_no_se_editan BEFORE UPDATE ON cierres
+BEGIN SELECT RAISE(ABORT, 'Un cierre de caja no se modifica'); END;
+
+CREATE TRIGGER IF NOT EXISTS cierres_no_se_borran BEFORE DELETE ON cierres
+BEGIN SELECT RAISE(ABORT, 'Un cierre de caja no se borra'); END;
+
+-- Plata que SALE de la caja sin ser una devolución: un flete, una bolsa de
+-- hielo, o el dueño que pasa y se lleva efectivo (retiro). Sin esto la caja
+-- nunca cuadraba y todo terminaba en la nota del cierre.
+-- Como todo lo demás: no se edita ni se borra. Un error se corrige en la
+-- nota del cierre.
+CREATE TABLE IF NOT EXISTS gastos(
+  id          INTEGER PRIMARY KEY,
+  fecha       INTEGER NOT NULL,
+  tienda_id   INTEGER NOT NULL REFERENCES tiendas(id),
+  usuario_id  INTEGER NOT NULL REFERENCES usuarios(id),
+  tipo        TEXT NOT NULL CHECK (tipo IN ('gasto','retiro')),
+  monto       INTEGER NOT NULL CHECK (monto > 0),
+  motivo      TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS gastos_quien ON gastos(tienda_id, usuario_id, fecha);
+
+CREATE TRIGGER IF NOT EXISTS gastos_no_se_editan BEFORE UPDATE ON gastos
+BEGIN SELECT RAISE(ABORT, 'Un gasto anotado no se modifica'); END;
+
+CREATE TRIGGER IF NOT EXISTS gastos_no_se_borran BEFORE DELETE ON gastos
+BEGIN SELECT RAISE(ABORT, 'Un gasto anotado no se borra'); END;
 
 CREATE INDEX IF NOT EXISTS mov_tienda_producto ON movimientos(tienda_id, producto_id);
 CREATE INDEX IF NOT EXISTS mov_fecha           ON movimientos(fecha);
@@ -136,9 +204,7 @@ function abrir(carpeta){
      tiendas guardan en el mismo instante, la segunda espera en vez de fallar. */
   db.exec('PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
   db.exec(ESQUEMA);
-
-  const { user_version } = db.prepare('PRAGMA user_version').get();
-  if (user_version === 0) db.exec('PRAGMA user_version = ' + VERSION_ESQUEMA);
+  migrar(db);
 
   const { n } = db.prepare('SELECT COUNT(*) AS n FROM tiendas').get();
   if (n === 0){
@@ -146,6 +212,56 @@ function abrir(carpeta){
     TIENDAS_INICIALES.forEach(t => alta.run(t));
   }
   return db;
+}
+
+/* Lo que cambió desde la versión 1. CREATE TABLE IF NOT EXISTS no toca una
+   tabla que ya existe, así que una base vieja necesita que le agreguen las
+   columnas nuevas a mano. Se mira la tabla y no el número de versión: así
+   da igual por dónde venga la base, queda bien.
+   v2: ventas.clave (ver el comentario en la tabla).
+   v3: la tabla cierres. Es una tabla nueva, la crea ESQUEMA sola. */
+function migrar(db){
+  const columnas = db.prepare('PRAGMA table_info(ventas)').all().map(c => c.name);
+  if (!columnas.includes('clave')) db.exec('ALTER TABLE ventas ADD COLUMN clave TEXT');
+  /* v4: variantes de precio y dos datos más en los cierres */
+  const tiene = (tabla, col) => db.prepare('PRAGMA table_info(' + tabla + ')').all().some(c => c.name === col);
+  if (!tiene('productos', 'variantes'))   db.exec('ALTER TABLE productos ADD COLUMN variantes TEXT');
+  if (!tiene('venta_items', 'variante'))  db.exec('ALTER TABLE venta_items ADD COLUMN variante TEXT');
+  if (!tiene('cierres', 'devoluciones'))  db.exec('ALTER TABLE cierres ADD COLUMN devoluciones INTEGER NOT NULL DEFAULT 0');
+  if (!tiene('cierres', 'cerrado_por'))   db.exec('ALTER TABLE cierres ADD COLUMN cerrado_por INTEGER REFERENCES usuarios(id)');
+  /* v5: gastos y retiros de caja (la tabla gastos la crea ESQUEMA) */
+  if (!tiene('cierres', 'gastos'))        db.exec('ALTER TABLE cierres ADD COLUMN gastos INTEGER NOT NULL DEFAULT 0');
+  /* Va acá y no en ESQUEMA: en una base vieja la columna recién existe ahora. */
+  db.exec('CREATE UNIQUE INDEX IF NOT EXISTS ventas_clave ON ventas(clave) WHERE clave IS NOT NULL');
+  const { user_version } = db.prepare('PRAGMA user_version').get();
+  if (user_version < VERSION_ESQUEMA) db.exec('PRAGMA user_version = ' + VERSION_ESQUEMA);
+}
+
+/* ⚠️ Esta base ES el negocio: ventas, stock y quién hizo qué. Si el archivo
+   se daña, no hay de dónde reconstruirlo.
+   Se guarda una copia por día en respaldos/, y la de HOY se pisa cada vez
+   que se llama (el servidor lo hace cada hora): lo peor que puede pasar es
+   perder la última hora. VACUUM INTO saca una copia entera y consistente
+   aunque haya ventas entrando en ese momento; copiar el archivo a mano con
+   el servidor prendido NO lo garantiza (falta lo que está en el -wal).
+   Ojo: la copia queda en el mismo disco. Salva de un archivo roto o de un
+   borrado por error, no de que se muera la computadora. */
+function respaldar(db, carpeta, hoy, conservar = 30){
+  const dir = path.join(carpeta, 'respaldos');
+  fs.mkdirSync(dir, { recursive: true });
+  const destino = path.join(dir, 'inventario-' + hoy + '.db');
+  const temporal = destino + '.tmp';
+  /* VACUUM INTO se niega si el archivo ya existe: va a uno temporal y
+     recién cuando salió entero reemplaza al anterior. */
+  fs.rmSync(temporal, { force: true });
+  db.prepare('VACUUM INTO ?').run(temporal);
+  fs.renameSync(temporal, destino);
+
+  const copias = fs.readdirSync(dir).filter(f => /^inventario-\d{4}-\d{2}-\d{2}\.db$/.test(f)).sort();
+  for (const vieja of copias.slice(0, Math.max(0, copias.length - conservar))){
+    fs.rmSync(path.join(dir, vieja), { force: true });
+  }
+  return destino;
 }
 
 /* node:sqlite no trae un ayudante de transacciones, así que va a mano.
@@ -163,4 +279,4 @@ function enTransaccion(db, fn){
   }
 }
 
-module.exports = { abrir, enTransaccion, TIENDAS_INICIALES };
+module.exports = { abrir, enTransaccion, respaldar, TIENDAS_INICIALES };

@@ -1,14 +1,19 @@
 ﻿# ═══════════════════════════════════════════════════════════════
-#  ARRANQUE AUTOMATICO — Los Caseritos + MOTO-IVIR
+#  ARRANQUE AUTOMATICO — MOTO-IVIR (y el tunel de los dos sitios)
 #
 #  Correr UNA SOLA VEZ, como ADMINISTRADOR.
 #
-#  Deja tres cosas configuradas:
+#  Deja dos cosas configuradas:
 #    1. El tunel de Cloudflare arranca con Windows y se reintenta
 #       solo. Es UNO SOLO para los dos sitios (motoivir.com -> 3000
-#       y loscaseritos.com -> 3001), asi que con esto quedan los dos.
-#    2. La tienda Los Caseritos arranca al ENCENDER la PC
-#    3. La web MOTO-IVIR arranca al ENCENDER la PC
+#       y loscaseritos.com -> 3001).
+#    2. La web MOTO-IVIR arranca al ENCENDER la PC
+#
+#  LOS CASERITOS YA NO ESTA ACA (12/10/2026). El dueno decidio
+#  abrirlo el mismo con INICIAR.bat, que prende la tienda y el
+#  inventario juntos. La tarea vieja se borra con
+#  quitar-arranque-tienda.ps1. NO volver a agregarlo a $SITIOS sin
+#  que el lo pida: correr este script lo volveria a prender solo.
 #
 #  "Al encender" y no "al iniciar sesion": despues de un corte de
 #  luz la PC arranca sin que nadie escriba la contraseña, y los
@@ -45,12 +50,6 @@ $PROYECTOS = Split-Path -Parent $CASERITOS             # ...\proyectos
 $MOTOIVIR  = Join-Path $PROYECTOS 'MOTO-IVIR'
 
 $SITIOS = @(
-  @{ Tarea = 'Los Caseritos - Tienda'
-     Carpeta = $CASERITOS
-     Script  = 'serve.js'
-     Puerto  = 3001
-     Dominio = 'loscaseritos.com' }
-
   @{ Tarea = 'MOTO-IVIR - Web'
      Carpeta = $MOTOIVIR
      Script  = 'src\server.js'
@@ -63,7 +62,7 @@ if (-not $NODE) { throw "No encuentro node.exe en el PATH." }
 
 Write-Host ""
 Write-Host "  ================================================" -ForegroundColor Cyan
-Write-Host "    ARRANQUE AUTOMATICO — dos sitios" -ForegroundColor Cyan
+Write-Host "    ARRANQUE AUTOMATICO — MOTO-IVIR y el tunel" -ForegroundColor Cyan
 Write-Host "  ================================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "  Node : $NODE"
@@ -152,7 +151,6 @@ Write-Host "  Sin eso, todo lo de arriba no sirve despues de un corte:"
 Write-Host "  la maquina se queda apagada esperando que la prendan."
 Write-Host ""
 Write-Host "  Para comprobar mas adelante que sigue todo bien:"
-Write-Host "    Get-ScheduledTaskInfo -TaskName 'Los Caseritos - Tienda'"
 Write-Host "    Get-ScheduledTaskInfo -TaskName 'MOTO-IVIR - Web'"
 Write-Host "    Get-Service Cloudflared | Select-Object Status, StartType"
 Write-Host ""

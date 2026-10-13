@@ -4,7 +4,9 @@
 const fs = require('fs');
 const path = require('path');
 
-const cfg = JSON.parse(fs.readFileSync(path.join(__dirname, 'productos.json'), 'utf8'));
+/* Se usa de dos formas: a mano (node generar-sitemap.js) y desde serve.js,
+   que lo llama solo cada vez que se guarda el catálogo desde el panel. */
+function generar(cfg){
 const base = (cfg.tienda.urlBase || 'https://loscaseritos.bo').replace(/\/$/, '');
 const hoy = new Date().toISOString().slice(0, 10);
 
@@ -34,8 +36,17 @@ fs.writeFileSync(path.join(__dirname, 'sitemap.xml'), xml, 'utf8');
 /* robots.txt apunta al sitemap, así que también lo mantenemos al día */
 fs.writeFileSync(path.join(__dirname, 'robots.txt'),
   'User-agent: *\nAllow: /\n' +
-  'Disallow: /admin.html\nDisallow: /entrar.html\nDisallow: /panel\nDisallow: /admin\nDisallow: /api/\n\n' +
+  'Disallow: /admin.html\nDisallow: /entrar.html\nDisallow: /panel\nDisallow: /admin\nDisallow: /api/\n' +
+  'Disallow: /inventario\n\n' +
   'Sitemap: ' + base + '/sitemap.xml\n', 'utf8');
 
-console.log('✔ sitemap.xml generado con ' + urls.length + ' URLs (base: ' + base + ')');
-console.log('✔ robots.txt actualizado');
+return { urls: urls.length, base };
+}
+
+module.exports = { generar };
+
+if (require.main === module){
+  const r = generar(JSON.parse(fs.readFileSync(path.join(__dirname, 'productos.json'), 'utf8')));
+  console.log('✔ sitemap.xml generado con ' + r.urls + ' URLs (base: ' + r.base + ')');
+  console.log('✔ robots.txt actualizado');
+}

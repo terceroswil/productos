@@ -55,6 +55,7 @@
         <select id="sel-tienda" class="sel-tienda" title="Tienda en la que se está operando" hidden></select>
         <span id="tienda-fija" class="etiqueta verde" hidden></span>
         <div class="quien"><b id="quien-nombre"></b><span id="quien-rol"></span></div>
+        <button id="btn-mi-clave" class="mini" title="Cambiar mi clave">🔑</button>
         <button id="btn-salir" class="mini">Salir</button>
       </div>
       <nav class="pestanas" id="pestanas"></nav>
@@ -98,6 +99,14 @@
             <div class="vuelto" id="vender-vuelto"></div>
           </div>
           <button class="primario cobrar" id="vender-cobrar" disabled>Cobrar</button>
+          <!-- aparece cuando el sistema dice que no hay stock de algo de la lista -->
+          <div class="sin-stock" id="vender-sin-stock" hidden>
+            <b>⚠️ El sistema dice que no hay:</b>
+            <ul id="vender-sin-stock-lista"></ul>
+            <p class="chico">Si lo tiene en la mano, se puede vender igual. Le queda avisado al dueño.</p>
+            <button class="primario" id="vender-igual" type="button">Lo tengo en la mano, vender igual</button>
+            <button id="vender-no" type="button">No vender, volver a la lista</button>
+          </div>
           <button class="mini peligro" id="vender-vaciar" type="button">Vaciar la lista</button>
         </aside>
       </div>
@@ -130,18 +139,87 @@
       <div id="ventas-lista"></div>
     </section>
 
+    <!-- ── Caja ── -->
+    <section id="v-caja" class="vista" hidden>
+      <h2>Cierre de caja</h2>
+      <div id="caja-mia"></div>
+      <div id="caja-gastos"></div>
+      <div id="caja-pendientes"></div>
+      <h3 id="caja-titulo-lista">Cierres anteriores</h3>
+      <div class="tabla-caja" id="caja-lista"></div>
+    </section>
+
+    <!-- ── Reportes (dueño) ── -->
+    <section id="v-reportes" class="vista" hidden>
+      <div class="fila">
+        <h2 class="crece">Reportes</h2>
+        <select id="rep-periodo" class="sel-tienda">
+          <option value="hoy">Hoy</option>
+          <option value="ayer">Ayer</option>
+          <option value="semana" selected>Esta semana</option>
+          <option value="mes">Este mes</option>
+          <option value="mes-pasado">El mes pasado</option>
+          <option value="elegir">Elegir fechas…</option>
+        </select>
+        <input type="date" id="rep-desde" class="sel-tienda" title="Desde" hidden>
+        <input type="date" id="rep-hasta" class="sel-tienda" title="Hasta" hidden>
+        <select id="rep-tienda" class="sel-tienda"></select>
+        <button id="rep-excel" class="mini" title="Baja un archivo que se abre con Excel">⬇️ Bajar a Excel</button>
+      </div>
+      <p class="suave chico" id="rep-rango"></p>
+      <div class="tarjetas" id="rep-tarjetas"></div>
+      <h3>Día por día</h3>
+      <div class="tabla-caja" id="rep-dias"></div>
+      <h3>Por tienda</h3>
+      <div class="tabla-caja" id="rep-tiendas"></div>
+      <h3>Por persona</h3>
+      <div class="tabla-caja" id="rep-personas"></div>
+      <h3>Por producto</h3>
+      <div class="tabla-caja" id="rep-productos"></div>
+    </section>
+
     <!-- ── Stock (dueño) ── -->
     <section id="v-stock" class="vista" hidden>
       <div class="fila">
         <h2 class="crece">Stock por tienda</h2>
+        <button id="stock-traspaso">🚚 Pasar a otra tienda</button>
         <button id="stock-contar" class="primario">Contar o corregir stock</button>
       </div>
       <div class="fila">
         <input id="stock-buscar" class="crece" placeholder="Buscar producto o código">
         <label class="check"><input type="checkbox" id="stock-problemas"> Solo con problemas</label>
       </div>
-      <p></p>
+      <p class="suave chico" id="stock-nota-web"></p>
       <div class="tabla-caja" id="stock-tabla"></div>
+
+      <div id="traspaso" hidden>
+        <h3>Pasar mercadería de una tienda a otra</h3>
+        <p class="suave chico">Baja en la tienda que manda y sube en la que recibe, en un solo paso. No hace falta corregir el stock de cada una.</p>
+        <div class="dos">
+          <div>
+            <label for="tras-origen">Sale de</label>
+            <select id="tras-origen"></select>
+          </div>
+          <div>
+            <label for="tras-destino">Va a</label>
+            <select id="tras-destino"></select>
+          </div>
+        </div>
+        <p></p>
+        <div class="buscador">
+          <input id="tras-buscar" placeholder="Escanee el código o escriba qué producto manda" autocomplete="off">
+          <div class="resultados" id="tras-resultados" hidden></div>
+        </div>
+        <p></p>
+        <div class="tabla-caja" id="tras-lista"></div>
+        <label for="tras-nota">Nota (opcional)</label>
+        <input id="tras-nota" maxlength="200" placeholder="Ej.: pedido de la semana, lo lleva Juan en la flota">
+        <div class="error" id="tras-error"></div>
+        <div class="fila">
+          <button class="primario" id="tras-guardar" disabled>Hacer el traspaso</button>
+          <button id="tras-cancelar">Cancelar</button>
+        </div>
+      </div>
 
       <div id="conteo" hidden>
         <h3 id="conteo-titulo">Conteo</h3>
@@ -165,9 +243,10 @@
     <section id="v-productos" class="vista" hidden>
       <div class="fila">
         <h2 class="crece">Productos y precios</h2>
-        <button id="prod-importar">Traer de la tienda online</button>
+        <button id="prod-importar" title="Se hace sola cada vez que cambia el catálogo de la web; este botón la fuerza">🌐 Sincronizar con la web</button>
         <button id="prod-nuevo" class="primario">+ Nuevo producto</button>
       </div>
+      <p class="suave chico">Los que llevan 🌐 vienen de la tienda web: el nombre y el precio se cambian en el panel de la web y acá llegan solos. Lo que cree acá con “+ Nuevo producto” no sale en la web.</p>
       <div class="fila">
         <input id="prod-buscar" class="crece" placeholder="Buscar producto o código">
         <label class="check"><input type="checkbox" id="prod-inactivos"> Mostrar los dados de baja</label>
@@ -187,6 +266,7 @@
           <option value="anulacion">Anulaciones</option>
           <option value="entrada">Entradas</option>
           <option value="ajuste">Ajustes</option>
+          <option value="transferencia">Traspasos entre tiendas</option>
           <option value="inicial">Inventario inicial</option>
         </select>
       </div>
@@ -210,6 +290,7 @@
 <dialog id="dlg-producto">
   <form id="form-producto" method="dialog">
     <h2 id="prod-titulo">Producto</h2>
+    <p class="suave chico" id="p-nota-web" hidden>🌐 Este producto viene de la tienda web. El nombre, la categoría y el precio se cambian en el panel de la web. Acá complete el código de barras, el costo y el aviso de stock.</p>
     <label for="p-nombre">Nombre</label>
     <input id="p-nombre" required maxlength="120">
     <div class="dos">
@@ -280,6 +361,24 @@
     <div class="acciones">
       <button type="button" data-cerrar>Cancelar</button>
       <button type="submit" class="primario">Guardar</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- ═══════════ Diálogo: cambiar mi clave ═══════════ -->
+<dialog id="dlg-mi-clave">
+  <form id="form-mi-clave" method="dialog" autocomplete="off">
+    <h2>Cambiar mi clave</h2>
+    <label for="mc-actual">La clave que tiene ahora</label>
+    <input id="mc-actual" type="password" required autocomplete="current-password">
+    <label for="mc-nueva">Clave nueva (8 caracteres o más)</label>
+    <input id="mc-nueva" type="password" required minlength="8" autocomplete="new-password">
+    <label for="mc-nueva2">Repetir la clave nueva</label>
+    <input id="mc-nueva2" type="password" required minlength="8" autocomplete="new-password">
+    <div class="error" id="mc-error"></div>
+    <div class="acciones">
+      <button type="button" data-cerrar>Cancelar</button>
+      <button type="submit" class="primario">Cambiar la clave</button>
     </div>
   </form>
 </dialog>

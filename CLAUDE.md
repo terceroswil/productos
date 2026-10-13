@@ -10,6 +10,19 @@ del mercado boliviano.
   abierta, así se ve de un vistazo si está prendida. Celeste, para no confundirla
   con la de MOTO-IVIR que es verde. Avisa si el puerto ya estaba ocupado y avisa
   en rojo si el servidor se cayó, en vez de cerrarse sola.
+- **Prende la tienda y el inventario, que desde el 12/10/2026 son UN solo
+  programa** (`node serve.js`, puerto 3001): el inventario va adentro, en
+  `/inventario/`. Abre las dos pantallas. `INICIAR-INVENTARIO.bat` quedó como
+  reenvío a `INICIAR.bat`.
+- ⚠️ **La tienda YA NO arranca sola al encender la PC** (12/10/2026, lo pidió el
+  dueño: quiere abrirla él). Del 06/09 al 12/10 la levantaba una tarea
+  programada de Windows, `Los Caseritos - Tienda`, que corre como SYSTEM y **sin
+  ventana**: por eso "cerrá la ventana y volvé a abrir INICIAR.bat" no reiniciaba
+  nada, y `INICIAR.bat` contestaba "ya estaba prendida". La tarea se borra con
+  `QUITAR-ARRANQUE-AUTOMATICO.bat` (pide administrador; lo corre el dueño, no
+  Claude). MOTO-IVIR y el túnel de Cloudflare **sí** siguen arrancando solos.
+  Si el 3001 está ocupado y no hay ventana, es esa tarea que sigue viva.
+  No volver a agregar la tienda a `herramientas/arranque-automatico.ps1`.
 - `node serve.js` → tienda en `http://localhost:3001`, panel en `/admin.html`
 - ✅ **El choque con AutoTrópico por el 3001 ya no existe** (07/09/2026).
   `autoventa` se mudó al **3002**: `server.js` dice `const PORT = process.env.PORT
@@ -484,6 +497,106 @@ Se probó API, seguridad, panel y tienda de punta a punta. Lo que apareció:
   sesión. Va `Get-NetTCPConnection -LocalPort N | Stop-Process`.
 - Los eventos de analítica de las pruebas se van a `data/eventos.jsonl` y ensucian la
   pestaña "Qué buscan". Conviene filtrarlos por fecha al terminar.
+
+## Inventario y stock (12/10/2026)
+Hay un **sistema de inventario y ventas** para las tres tiendas (Ivirgarzama,
+Chimoré, Entre Ríos). Vive en **`inventario/`** y se abre en
+**`https://loscaseritos.com/inventario`**: `serve.js` hace `require` de
+`inventario/servidor.js` y le pasa todo lo que llega a `/inventario/`. Mismo
+programa, mismo puerto (3001), mismo túnel. Comparte con la tienda el `.env`,
+`src/config.js`, `src/seguridad.js` y `data/`; su base es
+`data/inventario/inventario.db`. Documentación: `inventario/LEEME.md`. Pruebas:
+`node inventario/prueba.js` (55, con base y catálogo temporales, lo levanta
+suelto en el 3999).
+
+- **Lo decidió el dueño el 12/10/2026**: las otras tiendas tienen que entrar
+  desde su pueblo. Antes era un servidor aparte (3003) que solo contestaba en
+  esta PC, y antes todavía vivía en otra carpeta (`..\productos-inventario`,
+  ya borrada).
+- El inventario tiene **sus propios usuarios, su cookie (`inv_sesion`) y su
+  lista cerrada de archivos**. Nada de `/inventario/` pasa por `tienePermiso()`
+  ni por la lista blanca de la tienda: el desvío va antes, apenas después del
+  corte de `..` y `\`.
+- ⚠️ **La pantalla del inventario pide todo con rutas relativas** (`api/ventas`).
+  Con barra adelante el pedido cae en `/api/` de la TIENDA. Y `/inventario` sin
+  barra final va por 301, por lo mismo que `/axie`.
+- ⚠️ **`sw.js` deja afuera `/inventario`**. Si no, el caché de la tienda
+  guardaba ventas, costos y stock en el teléfono de la vendedora, y sin señal
+  le mostraba un stock viejo como si fuera el de ahora.
+- ⚠️ **Comparten programa: un error sin atajar en el inventario tira también
+  la tienda.** `manejar()` atrapa lo suyo y `serve.js` lo envuelve otra vez. Si
+  el inventario no carga al arrancar, la tienda arranca igual y `/inventario/`
+  da 503.
+- `/inventario/` sigue en `NUNCA` por las variantes que el desvío no agarra:
+  en Windows `/Inventario/servidor.js` es el mismo archivo.
+- El freno de intentos de clave del inventario está **prendido** (estuvo
+  apagado del 12 al 13/10/2026 con `INV_FRENO_INTENTOS=0`; no volver a
+  apagarlo: para una clave olvidada está `CAMBIAR-CLAVES.bat`).
+- **Cierre de caja y reportes** (pestañas Caja y Reportes): el cierre es POR
+  PERSONA, no por tienda, porque hay turnos; a la vendedora no se le manda
+  cuánto efectivo tendría que haber. Detalle en `inventario/LEEME.md`.
+- **Claves olvidadas**: `CAMBIAR-CLAVES.bat` (`herramientas/cambiar-clave.cjs`)
+  pone una nueva para el panel (`.env`, pide reiniciar) o para un usuario del
+  inventario (vale en el momento). Las claves no se pueden recuperar.
+- La cuenta del dueño solo se puede crear desde esta PC por `localhost`
+  (`esLocal()` mira las cabeceras de Cloudflare, no solo la IP).
+- De paso: `decodeURIComponent` reventaba con un `%` mal armado, sin nadie
+  que lo atajara. Ahora da 400.
+
+Cada dato tiene un solo dueño:
+- **Productos, nombres y precios → este panel** (`productos.json`). El
+  inventario los lee y se pone al día solo; allá quedan bloqueados.
+- **Stock → el inventario.** Deja `stock-inventario.json` al lado del catálogo
+  con el stock de UNA tienda (la que despacha los pedidos online; hoy
+  Ivirgarzama, se cambia con `INV_TIENDA_WEB` en el `.env`).
+
+Lo que cambió acá:
+- `serve.js` → `catalogoConStock()`: al servir `/productos.json` pisa el `stock`
+  de los productos que figuran en ese archivo y les agrega `stockInv: true`.
+  **El archivo `productos.json` no se toca.** `guardarCatalogo()` saca
+  `stockInv` antes de escribir.
+- `admin.html`: la casilla de stock de un producto con `stockInv` sale
+  bloqueada (tabla y diálogo). Escribir ahí ya no cambiaba nada.
+- ⚠️ **Lo que el inventario todavía no contó sigue con el número del panel.**
+  "No figura en el archivo" no es 0: si lo fuera, prender el inventario
+  dejaría toda la tienda en "agotado".
+- ⚠️ **Sin `stock-inventario.json` la tienda anda exactamente como antes.**
+  Borrarlo es la forma de volver al stock a mano. Si está roto, se ignora.
+- ⚠️ **No escribir el stock dentro de `productos.json`**: el panel guarda ese
+  archivo entero desde lo que tiene en memoria y lo pisaría con el de hace un
+  rato. Por eso va en un archivo aparte.
+- Pendiente: las **variantes** (el inventario no las conoce y cobra el precio
+  base).
+
+## Revisión del 13/10/2026: lo que se encontró y se arregló
+- ⚠️ **Una cookie mal armada apagaba todo el programa.** `leerCookies()` hace
+  `decodeURIComponent`, que revienta con `%E0%A4%A`; `tienePermiso()` lo
+  llama fuera de todo `try`, y el manejador era `async`: el error no lo
+  atajaba nadie y Node cierra el proceso. Una visita a `/panel` con esa
+  cookie tiraba tienda e inventario. Ahora `leerCookies` ignora la cookie
+  ilegible **y** el manejador (`atender()`) va envuelto en un `.catch` que
+  contesta 500. **Todo manejador `async` nuevo va con red abajo.**
+- ⚠️ **`http://` abría igual que `https://`.** Ahora, si Cloudflare avisa que
+  el visitante entró por http (`X-Forwarded-Proto` o `CF-Visitor`), se
+  redirige con 301. Solo con `TRAS_PROXY`; en localhost no hay cabecera y no
+  se toca. De paso: HSTS de un mes, `X-Frame-Options: SAMEORIGIN`.
+- ⚠️ **Un número de producto no se reutiliza.** El panel numeraba "el más
+  alto + 1": borrando el #1 y creando otro, el nuevo volvía a ser #1 y el
+  inventario (que reconoce por ese número) le pasaba el stock, el costo y el
+  historial del borrado. Ahora el catálogo guarda `ultimoId`, el panel
+  numera desde ahí y `guardarCatalogo()` rechaza un producto nuevo con un
+  número ya usado. (Borrar y crear en la MISMA guardada no se distingue de
+  un cambio de nombre: eso lo cubre el panel, no el servidor.)
+- `sitemap.xml` y `robots.txt` se rehacen solos al guardar el catálogo
+  (`generar-sitemap.js` ahora exporta `generar()`). Listaban 25 productos
+  cuando quedaban 4. `SIN_SITEMAP=1` es para las pruebas.
+- Se guardan los últimos 100 respaldos del catálogo, no todos para siempre.
+- Salieron los restos del juego (`/axie`) de `serve.js` y `sw.js`. El corte
+  de los dos puntos seguidos y la barra invertida se queda: protege a toda la tienda.
+- En el inventario (detalle en `inventario/LEEME.md`): variantes de precio,
+  devoluciones en la caja, cerrar la caja de otro, alerta de entradas y de
+  gastos, cada uno cambia su clave, gastos y retiros de caja, traspasos
+  entre tiendas. 55 pruebas.
 
 ## Pendientes
 - **Los 26 productos del catálogo son de muestra.** El comerciante los va a borrar y

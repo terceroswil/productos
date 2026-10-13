@@ -11,9 +11,10 @@ queda apagada hasta que alguien apriete el boton.
 
 Todo lo demas ya esta hecho y funcionando:
   - El tunel de Cloudflare arranca solo con Windows
-  - loscaseritos.com (puerto 3001) arranca solo al encender
+  - loscaseritos.com YA NO arranca solo (desde el 12/10/2026): lo abre
+    el dueno con INICIAR.bat, que prende la tienda y el inventario
   - motoivir.com  (puerto 3000) arranca solo al encender
-  - Los tres arrancan SIN que nadie inicie sesion
+  - El tunel y MOTO-IVIR arrancan SIN que nadie inicie sesion
 
 
 PASOS
@@ -36,7 +37,9 @@ LA PRUEBA (2 minutos, hacela en el mismo viaje)
  3. Agarrar el celular CON DATOS MOVILES (no con el WiFi)
  4. Abrir  loscaseritos.com  y  motoivir.com
 
-Si los dos cargan sin haber iniciado sesion, esta todo listo.
+Si motoivir.com carga sin haber iniciado sesion, esta todo listo.
+(loscaseritos.com va a dar error hasta que se abra INICIAR.bat: es
+lo esperado, ya no arranca solo.)
 Eso es exactamente lo que va a pasar a las 3 de la mañana
 cuando vuelva la luz.
 
@@ -49,7 +52,7 @@ SI QUERES VER QUE LAS TAREAS ESTAN
 -----------------------------------
 PowerShell COMO ADMINISTRADOR, y pegar:
 
-Get-ScheduledTask -TaskName 'Los Caseritos - Tienda','MOTO-IVIR - Web' | Select-Object TaskName, State
+Get-ScheduledTask -TaskName 'MOTO-IVIR - Web' | Select-Object TaskName, State
 
 (Sin permisos de administrador no se ven, porque corren como
 SYSTEM. Que no aparezcan en una ventana normal es lo esperado,

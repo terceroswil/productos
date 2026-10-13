@@ -78,6 +78,9 @@
   .celda{background:transparent;border:1px solid transparent;border-radius:8px;color:var(--ink);
     padding:6px 8px;font-family:var(--f-body);font-size:.88rem;font-weight:700;width:88px;outline:none}
   .celda:hover{border-color:var(--line)}
+  /* el stock que lleva el inventario: se ve, pero se nota que no se toca */
+  .celda:disabled{opacity:.55;cursor:not-allowed}
+  .celda:disabled:hover{border-color:transparent}
   .celda:focus{border-color:var(--green);background:var(--surface)}
 
   dialog{border:1px solid var(--line);border-radius:18px;background:var(--surface);color:var(--ink);
@@ -322,8 +325,14 @@
       </div>
     </div>
     <p class="ayuda pista" style="margin:-6px 0 14px">
-      Precio y stock se editan directo en la tabla. El resto, con el botón ✏️.
+      <span id="pistaEdicion">Precio y stock se editan directo en la tabla.</span> El resto, con el botón ✏️.
       Los cambios no se aplican hasta tocar <b>Guardar cambios</b>.
+      <!-- Aparece cuando el stock lo lleva el inventario. Sin esto, la columna
+           Stock mostraba un número que no se podía tocar y no decía de qué
+           tienda era ni dónde estaban las otras dos. -->
+      <span id="pistaInventario" hidden><br>📦 El stock que se ve apagado no se escribe acá: lo lleva el
+        <a href="inventario/" target="_blank" rel="noopener">inventario</a> y es el de <b id="pistaTienda"></b>,
+        la tienda que despacha los pedidos de la web. El de las otras tiendas se ve en el inventario, pestaña Stock.</span>
     </p>
     <div class="tabla-caja">
       <table>
@@ -334,7 +343,7 @@
           <th class="oculta-movil">Categoría</th>
           <th style="width:110px">Precio Bs</th>
           <th style="width:100px" class="oculta-movil">Antes Bs</th>
-          <th style="width:96px">Stock</th>
+          <th style="width:96px" id="thStock">Stock</th>
           <th class="oculta-movil">Estado</th>
           <th style="width:104px"></th>
         </tr>
@@ -595,6 +604,10 @@ async function cargar(){
   }catch(e){ toast('No se pudo leer productos.json'); return; }
   /* Leerlo ACA: marcarLimpio() borra el de localStorage un par de lineas mas
      abajo, y para entonces ya no habria nada que ofrecer. */
+  /* El número más alto que se usó alguna vez. No baja al borrar productos:
+     así un producto nuevo nunca hereda el número de uno borrado (el
+     inventario los reconoce por ese número; ver guardarCatalogo en serve.js). */
+  CFG.ultimoId=Math.max(Number(CFG.ultimoId)||0, ...CFG.productos.map(p=>Number(p.id)||0), 0);
   const borrador=leerBorrador();
   pintarFiltroCat(); pintarTabla(); pintarTienda(); pintarEnvios(); pintarCupones();
   marcarLimpio('Catálogo cargado');
@@ -611,6 +624,14 @@ function pintarFiltroCat(){
 
 function pintarTabla(){
   const q=($('q').value||'').toLowerCase(), f=$('fCat').value;
+  /* stockInv y stockInvTienda los agrega el servidor al servir el catálogo
+     cuando el stock lo lleva el inventario (ver catalogoConStock en serve.js) */
+  const conInventario=CFG.productos.some(p=>p.stockInv);
+  const tiendaWeb=CFG.stockInvTienda||'';
+  $('pistaInventario').hidden=!conInventario;
+  $('pistaEdicion').textContent=conInventario?'El precio se edita directo en la tabla.':'Precio y stock se editan directo en la tabla.';
+  $('pistaTienda').textContent=tiendaWeb||'una sola tienda';
+  $('thStock').textContent=conInventario&&tiendaWeb?'Stock '+tiendaWeb:'Stock';
   const lista=CFG.productos.filter(p=>{
     if(f==='__sin'){ if(Number(p.stock)>0)return false; }
     else if(f==='__of'){ if(!(Number(p.precioAntes)>Number(p.price)))return false; }
@@ -628,7 +649,12 @@ function pintarTabla(){
       '<td class="oculta-movil"><div>'+esc(p.cat)+'</div><div class="sub">'+esc(p.sub||'—')+'</div></td>'+
       '<td><input class="celda" type="number" min="0" value="'+Number(p.price)+'" onchange="editarCampo('+p.id+',\'price\',this.value)"></td>'+
       '<td class="oculta-movil"><input class="celda" type="number" min="0" value="'+Number(p.precioAntes||0)+'" onchange="editarCampo('+p.id+',\'precioAntes\',this.value)"></td>'+
-      '<td><input class="celda" style="width:70px" type="number" min="0" value="'+Number(p.stock)+'" onchange="editarCampo('+p.id+',\'stock\',this.value)"></td>'+
+      /* stockInv lo pone el servidor: el stock de ese producto lo lleva el
+         inventario y lo que se escriba acá no cambia nada. Se muestra el
+         número de verdad, bloqueado, para que nadie crea que lo corrigió. */
+      (p.stockInv
+        ? '<td><input class="celda" style="width:70px" type="number" value="'+Number(p.stock)+'" disabled title="Lo lleva el inventario. Se corrige contando en el inventario, no acá."></td>'
+        : '<td><input class="celda" style="width:70px" type="number" min="0" value="'+Number(p.stock)+'" onchange="editarCampo('+p.id+',\'stock\',this.value)"></td>')+
       '<td class="oculta-movil">'+
         (sin?'<span class="pill ag">Agotado</span> ':'')+
         (of?'<span class="pill of">-'+Math.round((1-p.price/p.precioAntes)*100)+'%</span> ':'')+
@@ -777,6 +803,9 @@ function editar(id){
   $('ePrice').value=p?p.price:'';
   $('eAntes').value=p?(p.precioAntes||0):0;
   $('eStock').value=p?p.stock:1;
+  /* mismo bloqueo que en la tabla: ver pintarTabla() */
+  $('eStock').disabled=!!(p&&p.stockInv);
+  $('eStock').previousElementSibling.textContent=p&&p.stockInv?'Stock (lo lleva el inventario)':'Stock';
   $('eMarca').value=p?(p.marca||''):'';
   $('eEm').value=p?(p.em||'📦'):'📦';
   $('eNuevo').value=p&&p.nuevo?'si':'no';
@@ -823,7 +852,8 @@ function guardarProducto(ev){
     Object.assign(CFG.productos.find(x=>x.id===editandoId),datos);
     toast('Producto actualizado');
   }else{
-    datos.id=CFG.productos.reduce((m,p)=>Math.max(m,p.id),0)+1;
+    CFG.ultimoId=Math.max(Number(CFG.ultimoId)||0, CFG.productos.reduce((m,p)=>Math.max(m,p.id),0))+1;
+    datos.id=CFG.ultimoId;
     CFG.productos.push(datos);
     toast('Producto agregado (#'+datos.id+')');
   }

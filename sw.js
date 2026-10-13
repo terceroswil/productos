@@ -29,17 +29,13 @@ self.addEventListener('fetch', ev => {
   if (url.origin !== location.origin) return;
   if (url.pathname.startsWith('/api/')) return;   // la analítica nunca se cachea
 
-  /* ⚠️ El juego del Vibeathon queda AFUERA, y no es un detalle.
-     Este sw.js lo registra la TIENDA, que vive en la raíz del dominio, así que
-     su alcance es `/` y sin esta línea intercepta también `/axie/` — otra
-     aplicación, con sus propios assets y su propia versión en la URL.
-     Con las láminas del Axie pasando por el caché-primero de acá abajo, una
-     sola respuesta mala (el túnel caído, el 3001 tomado por AutoTrópico) queda
-     guardada y no vence nunca: el juego dibuja las criaturas de respaldo desde
-     ese momento y parece que se rompió el juego. Pasó de verdad el 07/09/2026.
-     De paso corta la otra: un `/axie/index.html` que no llegara caía en el
-     `catch` de abajo y devolvía la TIENDA en lugar del juego. */
-  if (url.pathname.startsWith('/axie/')) return;
+  /* ⚠️ El inventario queda AFUERA (12/10/2026). Cuelga de este mismo dominio,
+     así que sin esta línea el caché de abajo le guardaría las respuestas:
+     ventas, costos y stock quedarían copiados en el teléfono de la
+     vendedora, y cuando falte señal se le mostraría un stock viejo como si
+     fuera el de ahora. En el inventario, sin conexión tiene que verse que
+     no hay conexión. */
+  if (url.pathname === '/inventario' || url.pathname.startsWith('/inventario/')) return;
 
   const esImagen = /\.(jpg|jpeg|png|webp|avif|svg|ico)$/i.test(url.pathname);
 
