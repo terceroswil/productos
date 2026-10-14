@@ -225,6 +225,16 @@ function ipDe(req){
   return req.socket.remoteAddress || 'desconocida';
 }
 
+/* La "versión" del panel es la fecha de su archivo. La página la aprende al
+   abrirse (api/quien-soy) y la vuelve a preguntar cada tanto: si cambió, se
+   recarga sola. Sin esto, un panel que quedó abierto en un celular seguía
+   para siempre con el código de ese día, y el dueño no tiene por qué saber
+   que hay que "recargar la página". */
+function versionPanel(){
+  try { return String(Math.floor(fs.statSync(path.join(RAIZ, 'admin.html')).mtimeMs)); }
+  catch (e) { return ''; }
+}
+
 /* ¿Quién puede entrar al panel y escribir archivos?
    - con login configurado: quien tenga una sesión válida
    - sin login: solo esta computadora */
@@ -397,10 +407,12 @@ function guardarCatalogo(texto, confirmado){
 
   /* Lo de acá abajo es mantenimiento: si falla, el catálogo ya quedó guardado. */
   try {
-    /* se guardan los últimos 100 respaldos; antes se juntaban para siempre */
+    /* Se guardan los últimos 300 respaldos; antes se juntaban para siempre.
+       Eran 100 cuando el panel guardaba por tanda. Ahora cada producto que
+       se acepta es un guardado, y cargar la tienda una tarde se los comía. */
     const dir = path.join(DATOS, 'respaldos');
     const viejos = fs.readdirSync(dir).filter(f => /^productos-.*\.json$/.test(f)).sort();
-    for (const f of viejos.slice(0, Math.max(0, viejos.length - 100))) fs.rmSync(path.join(dir, f), { force: true });
+    for (const f of viejos.slice(0, Math.max(0, viejos.length - 300))) fs.rmSync(path.join(dir, f), { force: true });
   } catch (e) { /* no importa */ }
   try {
     /* el mapa del sitio que lee Google: listaba 25 productos cuando ya quedaban 4 */
@@ -663,7 +675,7 @@ async function atender(req, res){
       }
 
       if (ruta === '/api/quien-soy' && req.method === 'GET'){
-        return json(res, 200, { conLogin: cfg.CON_LOGIN, dentro: tienePermiso(req), usuario: cfg.USUARIO });
+        return json(res, 200, { conLogin: cfg.CON_LOGIN, dentro: tienePermiso(req), usuario: cfg.USUARIO, version: versionPanel() });
       }
 
       /* ── de acá para abajo hay que tener permiso ── */
@@ -676,6 +688,12 @@ async function atender(req, res){
       if (ruta === '/api/guardar' && req.method === 'POST'){
         const n = guardarCatalogo(await leerCuerpo(req), url.searchParams.get('confirmar') === '1');
         console.log('  ✔ catálogo guardado (' + n + ' productos)');
+        /* El inventario se pone al día YA, no cuando alguien abra su pantalla.
+           Hasta el 13/10/2026 esperaba a ese momento, y mientras tanto la
+           tienda mostraba el stock viejo de un producto recién vinculado. Si
+           falla no importa: el catálogo ya quedó guardado y el inventario
+           vuelve a mirar en su próximo pedido. */
+        try { if (inventario && inventario.alDia) inventario.alDia(); } catch (e) { /* no importa */ }
         return json(res, 200, { ok: true, productos: n });
       }
       if (ruta === '/api/guardar-imagen' && req.method === 'POST'){
@@ -801,7 +819,10 @@ async function atender(req, res){
   res.writeHead(200, {
     'Content-Type': TIPOS[ext] || 'application/octet-stream',
     'Content-Length': st.size,
-    'Cache-Control': cache(ext),
+    /* El panel no se guarda en el navegador. Con "no-cache" el celular lo
+       guardaba igual, y al reabrir una pestaña que había descartado la
+       rearmaba con esa copia vieja sin preguntarle nada al servidor. */
+    'Cache-Control': rel === '/admin.html' ? 'no-store' : cache(ext),
     'X-Content-Type-Options': 'nosniff'
   });
   fs.createReadStream(archivo).pipe(res);

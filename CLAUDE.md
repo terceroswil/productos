@@ -153,9 +153,29 @@ uno solo, no los tres para siempre.
 - El `<meta name="theme-color">` se reescribe con cada tema; si no, en el dorado
   la tienda es azul noche y la barra del navegador queda verde.
 
+## Las fotos se ven enteras (13/10/2026)
+- **`object-fit:contain`, no `cover`**, en la tarjeta (`.thumb`), la ficha
+  (`.m-img .principal`) y las sugerencias (`.rel`). Lo que carga el comerciante
+  son volantes del proveedor, con el nombre escrito en la imagen y de cualquier
+  proporción: recortados a un cuadrado perdían las letras ("IDROLAVADORA").
+  Las miniaturas de la galería y del carrito siguen recortadas: ahí importa
+  reconocer, no leer.
+- **`.con-fondo`**: lo que sobra se rellena con la misma foto desenfocada
+  (`::before` con `--foto`). ⚠️ `--foto` la pone `fotoLista()` en el `onload`
+  de la imagen, **no** al armar la tarjeta: como fondo de CSS bajaría las fotos
+  de todo el catálogo de una y el `loading="lazy"` no serviría de nada.
+- En la ficha la caja de la foto ocupa toda la columna (`flex:1 0 auto`) y la
+  imagen va `position:absolute`: en la computadora quedaba un bloque liso
+  vacío debajo del cuadrado, y con alto por flex el `height:100%` no resolvía.
+- Queda: en el celular la tarjeta es 4:3 y un volante 4:3 la llena justo, así
+  que la etiqueta "Nuevo" tapa la esquina de arriba del volante.
+
 ## ⚠️ Gotchas
-- **Regla del WhatsApp**: hoy `contacto.enlaceDirectoWhatsapp` está en **`true`**, y solo
-  se puede porque el número ya es WhatsApp Business. Con una cuenta normal va en `false`:
+- **Regla del WhatsApp**: desde el 13/10/2026 `contacto.enlaceDirectoWhatsapp` está en
+  **`false`** y `telegram`/`messenger` van **vacíos**: lo pidió el dueño de la PC, el
+  número (57384971) sale solo como texto para copiar y no hay otro canal. Los de
+  Telegram y Messenger que había eran de su cuenta personal, no del comerciante.
+  Estuvo en `true` mientras el número era WhatsApp Business. Con una cuenta normal va en `false`:
   Meta suspende por volumen de mensajes entrantes desde `wa.me`. Con `false` la web NUNCA
   genera un `wa.me` —el número va como texto para copiar y los pedidos salen por
   Telegram/Messenger—; con `true` el enlace aparece en los tres lados a la vez: el botón
@@ -353,19 +373,71 @@ uno solo, no los tres para siempre.
   producto guardado usa esa foto (`img/og.jpg` incluida, va en `IMAGENES_PERMITIDAS`).
   Copia a `data/respaldos/borrada-<fecha>-<nombre>` antes de borrar. Probado con
   `../serve.js`, `img/../../serve.js`, subcarpetas, `.txt` y `img/../.env`: rechazados.
-- **Hay DOS guardados y confundían.** La foto es inmediata; el producto vive en memoria
-  hasta tocar 💾 Guardar cambios. El comerciante que cerraba la pestaña perdía el
-  trabajo. Ahora cada `marcarSucio()` anota un **borrador en `localStorage`**
-  (`lc_borrador`, con 700 ms de espera) y al volver el panel ofrece **Recuperar**.
-  `marcarLimpio()` lo borra.
+- ⚠️ **"Aceptar" YA GUARDA (13/10/2026).** Antes había dos guardados: la foto era
+  inmediata y el producto vivía en memoria hasta tocar 💾 Guardar cambios. Se le
+  puso una nota al pie, una barra fija y un borrador, y aun así pasó: el dueño
+  cargó productos desde el celular, vio "Producto agregado (#15)" y se fue. Las
+  fotos quedaron en `img/` y el catálogo sin tocar. (La guía además decía que el
+  botón estaba "arriba", y en el celular está abajo.) Un aviso no arregla un
+  diseño que contradice lo que la palabra "Aceptar" promete.
+  Ahora `guardarProducto()` y `borrar()` llaman a `guardar()`, y `editarCampo()`
+  (precio y stock en la tabla) a `guardarPronto()`, que junta 1,5 s para que
+  varios precios seguidos salgan en un solo guardado.
+  **El botón 💾 queda para dos cosas**: la pestaña "Tienda y envíos", que se
+  escribe de a letras, y reintentar un guardado que falló.
+- **Un guardado a la vez** (`guardando`). Cada uno manda el catálogo entero; dos
+  cruzados pueden llegar al revés y dejar el viejo encima. `marcarSucio()` sube
+  el contador `cambios`; `guardar()` lo anota al salir y, si al volver es otro,
+  manda uno más en vez de marcar limpio. De paso arregla un error viejo: editar
+  un precio mientras un guardado viajaba lo daba por guardado sin estarlo.
+- **Si falla, el botón queda en rojo** ("⚠️ No se guardó · Reintentar", clase
+  `fallo`) hasta que uno salga bien, y el aviso dura 9 s (`toast(m, ms)`). El
+  aviso de 2,4 s en el celular pasaba de largo. Con 401 dice que se venció la
+  sesión; el borrador sigue anotado y se ofrece al volver a entrar.
+- `.toast` lleva `width:max-content`: con `left:50%` la caja solo dispone de
+  media pantalla y un aviso largo salía de dos palabras por renglón.
+- **El panel se pone al día solo al volver a la pestaña** (`ponerseAlDia()`, en
+  `focus` y `visibilitychange`). Con el panel abierto en la computadora y el
+  dueño cargando desde el celular, la computadora mostraba la lista vieja y, al
+  guardar cualquier cosa, pisaba lo del celular. Solo se refresca si no hay
+  nada a medio hacer (`ocupado()`: cambios pendientes, formulario abierto, una
+  casilla en uso). **No hay control de versiones entre aparatos**: si dos
+  editan a la vez con cambios pendientes, vale el último que guarda.
+- Como ahora hay un respaldo por producto aceptado, se conservan **300** en vez
+  de 100.
+- El **borrador** sigue: cada `marcarSucio()` lo anota en `localStorage`
+  (`lc_borrador`, con 700 ms de espera) y al volver el panel ofrece
+  recuperarlo. `marcarLimpio()` lo borra.
+- ⚠️ **"Recuperar" ya no pone el borrador tal cual** (13/10/2026). El borrador
+  es una copia ENTERA del catálogo sacada en otro momento: puesta entera
+  borraba lo que se cargó después desde otro aparato y pisaba un producto si
+  dos compartían número. `compararBorrador()` mira qué trae: los productos
+  **nuevos** se recuperan siempre (con número nuevo si el suyo ya se usó); si
+  el borrador es **viejo** —a lo guardado le sobran productos, o un número
+  ahora es de otro— solo se le creen esos, no sus precios ni sus datos de
+  tienda. **Recuperar nunca borra**, y guarda solo. El cartel nombra los
+  productos ("Quedó 1 producto sin guardar: «…»"); si no hay nada que valga
+  la pena traer, no aparece.
+- El borrador pendiente **queda anotado hasta que se contesta** el cartel
+  (`olvidarBorrador()` lo vuelve a escribir si hay uno esperando). Antes vivía
+  solo en memoria y cualquier recarga lo perdía.
+- **El panel se actualiza solo cuando cambia su código** (`buscarVersionNueva()`).
+  `api/quien-soy` informa `version` (la fecha de `admin.html`); la página la
+  aprende al abrirse y la vuelve a preguntar al volver a la pestaña y cada 2
+  min; si cambió y no está `ocupado()`, se recarga. `admin.html` sale con
+  `Cache-Control: no-store`: con `no-cache` el celular guardaba copia y al
+  rearmar una pestaña descartada usaba esa, sin preguntar. Lo pidió el dueño
+  de la PC: "cierre la página y ábrala de nuevo" no es una instrucción para el
+  comerciante. **Necesita `serve.js` reiniciado**; con un servidor que no
+  informa versión no hace nada. El inventario todavía NO tiene esto.
 - ⚠️ El borrador hay que **leerlo antes** de `marcarLimpio()`, que lo borra, y guardarlo
   en `borradorPendiente`: para cuando el admin toca "Recuperar", el de `localStorage`
   ya no está. Por eso `cargar()` hace `leerBorrador()` primero.
 - `guardarBorrador()` llama a `recogerTienda()`: sin eso, lo que se edita en la pestaña
   "Tienda y envíos" no entra en `CFG` hasta el guardado y el borrador lo perdía.
-- El pie del diálogo lo dice en palabras. El "arriba"/"abajo" del final cambia con el
-  ancho (`si-ancho`/`si-angosto`): en la computadora el botón vive en la cabecera, en
-  el celular baja como barra fija al pie.
+- El pie del diálogo dice una sola cosa: que Aceptar guarda. El par
+  `si-ancho`/`si-angosto` sigue en el botón 💾, que en la computadora vive en la
+  cabecera y en el celular baja como barra fija al pie.
 
 ## Panel en el celular (23/08/2026)
 Todo vive en un solo `@media(max-width:560px)`; la computadora no cambia.
@@ -568,6 +640,29 @@ Lo que cambió acá:
 - Pendiente: las **variantes** (el inventario no las conoce y cobra el precio
   base).
 
+### Lo que se borra y lo que vuelve (revisión del 13/10/2026, noche)
+Salió de simular el recorrido del dueño: borrar todos los productos de muestra
+del panel y cargar los suyos.
+- ⚠️ **Borrar un producto en el panel lo da de baja en el inventario, SALVO
+  que quede mercadería.** Antes solo se desvinculaba y quedaba activo: el dueño
+  borró los 14 de muestra y en el mostrador seguían saliendo todos para vender.
+  Ahora `sincronizarCatalogo()` mira el stock: si en alguna tienda la suma no
+  es 0 (también un negativo sin aclarar), se suelta y se sigue vendiendo; si no
+  queda nada, `activo = 0`. No se borra nada: vuelve con "Mostrar los dados de
+  baja" o cargándolo de nuevo en la web.
+- ⚠️ **Vincular por nombre reactiva.** Un producto dado de baja que se volvía a
+  cargar en la web con el mismo nombre quedaba vinculado pero inactivo: salía
+  en la tienda web y en el mostrador no existía, ni para venderlo ni para
+  recibirlo (la lista no muestra los dados de baja).
+- **El inventario se entera en el momento**: `/api/guardar` llama a
+  `inventario.alDia()`. Antes esperaba al próximo pedido al inventario, y
+  mientras tanto la web mostraba el stock viejo de un producto recién vinculado.
+- La regla vale desde que se desvincula. Los que ya estaban sueltos de antes
+  no se tocan solos: el 13/10 se dieron de baja a mano los 9 de muestra que
+  nunca tuvieron movimientos. Quedaron activos y sueltos, con stock de pruebas:
+  platos, Sartén, Juego de ollas y Zimba.
+- Pruebas: `node inventario/prueba.js` (56).
+
 ## Revisión del 13/10/2026: lo que se encontró y se arregló
 - ⚠️ **Una cookie mal armada apagaba todo el programa.** `leerCookies()` hace
   `decodeURIComponent`, que revienta con `%E0%A4%A`; `tienePermiso()` lo
@@ -590,7 +685,8 @@ Lo que cambió acá:
 - `sitemap.xml` y `robots.txt` se rehacen solos al guardar el catálogo
   (`generar-sitemap.js` ahora exporta `generar()`). Listaban 25 productos
   cuando quedaban 4. `SIN_SITEMAP=1` es para las pruebas.
-- Se guardan los últimos 100 respaldos del catálogo, no todos para siempre.
+- Se guardan los últimos 300 respaldos del catálogo, no todos para siempre
+  (eran 100 hasta que Aceptar empezó a guardar solo).
 - Salieron los restos del juego (`/axie`) de `serve.js` y `sw.js`. El corte
   de los dos puntos seguidos y la barra invertida se queda: protege a toda la tienda.
 - En el inventario (detalle en `inventario/LEEME.md`): variantes de precio,

@@ -36,6 +36,17 @@
   .primario{background:var(--grad);border-color:transparent;color:#05130d}
   .primario:disabled{opacity:.45;cursor:not-allowed}
   .peligro{color:var(--coral)}
+  /* El botón de guardar dice en qué anda: normal, en viaje, o que falló.
+     El fallo se queda puesto hasta que un guardado salga bien: el aviso que
+     aparece y se va no alcanza para algo que el comerciante cree hecho. */
+  /* Salir solo existe con clave configurada; sin esto el display del botón
+     le ganaba al atributo hidden y aparecía igual. */
+  #btnSalir[hidden]{display:none}
+  #btnGuardar .g-viaje,#btnGuardar .g-fallo{display:none}
+  #btnGuardar.viaje .g-normal,#btnGuardar.fallo .g-normal{display:none}
+  #btnGuardar.viaje .g-viaje{display:inline}
+  #btnGuardar.fallo:not(.viaje) .g-fallo{display:inline}
+  #btnGuardar.fallo:not(.viaje){background:var(--coral);border-color:var(--coral);color:#2a0b08}
   .mini{padding:6px 11px;font-size:.8rem}
 
   /* Textos que cambian con el ancho de pantalla. Van en pares: en pantalla
@@ -145,8 +156,12 @@
   .aviso{padding:13px 16px;border-radius:12px;font-size:.87rem;font-weight:600;margin-bottom:16px;
     background:color-mix(in srgb,var(--amber) 14%,transparent);border:1px solid color-mix(in srgb,var(--amber) 35%,transparent);color:var(--amber)}
   .toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,14px);z-index:100;background:var(--ink);
-    color:var(--bg);padding:13px 22px;border-radius:999px;font-weight:800;font-size:.9rem;opacity:0;
-    pointer-events:none;transition:.2s;max-width:90vw;text-align:center}
+    color:var(--bg);padding:13px 22px;border-radius:22px;font-weight:800;font-size:.9rem;opacity:0;
+    pointer-events:none;transition:.2s;max-width:90vw;text-align:center;
+    /* Con left:50% la caja solo dispone de media pantalla y un aviso largo
+       salía como una columna de dos palabras por renglón. max-content le
+       deja tomar el ancho del texto, hasta el max-width. */
+    width:max-content;line-height:1.35}
   .toast.show{opacity:1;transform:translate(-50%,0)}
 
   @media(max-width:720px){
@@ -228,6 +243,8 @@
       box-shadow:0 6px 20px rgba(0,0,0,.45);
     }
     body.hay-cambios #btnNuevo{bottom:74px}
+    /* y el aviso tampoco: "no se guardó" sale justo cuando la barra está */
+    body.hay-cambios .toast{bottom:66px}
     /* aire para que el flotante no tape el ultimo producto */
     .panel{padding-bottom:80px}
     /* plegado: los dos botones de vez en cuando se esconden tras el ⋯ */
@@ -295,7 +312,7 @@
     <span class="estado" id="estado">Cargando…</span>
     <div class="sp"></div>
     <a class="btn" href="./" target="_blank" title="Ver la tienda" aria-label="Ver la tienda"><span class="si-ancho">Ver tienda ↗</span><span class="si-angosto" aria-hidden="true">🏪</span></a>
-    <button id="btnGuardar" class="primario" onclick="guardar()" disabled>💾<span class="si-ancho"> Guardar cambios</span><span class="si-angosto"> Guardar</span></button>
+    <button id="btnGuardar" class="primario" onclick="guardar()" disabled><span class="g-normal">💾<span class="si-ancho"> Guardar cambios</span><span class="si-angosto"> Guardar</span></span><span class="g-viaje">Guardando…</span><span class="g-fallo">⚠️ No se guardó · Reintentar</span></button>
     <button id="btnSalir" onclick="salir()" hidden title="Cerrar sesión" aria-label="Cerrar sesión"><span class="si-ancho">Salir</span><span class="si-angosto" aria-hidden="true">🚪</span></button>
   </div>
   <div class="wrap tabs">
@@ -326,7 +343,7 @@
     </div>
     <p class="ayuda pista" style="margin:-6px 0 14px">
       <span id="pistaEdicion">Precio y stock se editan directo en la tabla.</span> El resto, con el botón ✏️.
-      Los cambios no se aplican hasta tocar <b>Guardar cambios</b>.
+      Lo que cambiás acá <b>se guarda solo</b> y ya sale en la tienda.
       <!-- Aparece cuando el stock lo lleva el inventario. Sin esto, la columna
            Stock mostraba un número que no se podía tocar y no decía de qué
            tienda era ni dónde estaban las otras dos. -->
@@ -378,6 +395,7 @@
       </div>
       <div class="campo"><label>Telegram</label><input id="cTg" oninput="marcarSucio()"></div>
       <div class="campo"><label>Messenger</label><input id="cMs" oninput="marcarSucio()"></div>
+      <div class="campo"><label>TikTok (dirección de la cuenta)</label><input id="cTk" oninput="marcarSucio()" placeholder="https://www.tiktok.com/@tucuenta"></div>
     </div>
 
     <h3 style="font-family:var(--f-display);margin:28px 0 4px">Costos de envío</h3>
@@ -447,10 +465,7 @@
       </div>
     </div>
     <div class="dlg-foot">
-      <!-- "arriba"/"abajo" cambia con el ancho: en la computadora el boton vive
-           en la cabecera, en el celular baja como barra fija al pie. -->
-      <span class="ayuda nota-dos-pasos">Aceptar lo anota en la lista. Para que lo vea el cliente falta
-        <b>💾 Guardar cambios</b>,<span class="si-ancho"> arriba.</span><span class="si-angosto"> abajo.</span></span>
+      <span class="ayuda nota-dos-pasos">Al tocar <b>Aceptar</b> se guarda solo y ya sale en la tienda.</span>
       <button value="cancel">Cancelar</button>
       <button class="primario" value="ok" onclick="guardarProducto(event)">Aceptar</button>
     </div>
@@ -467,11 +482,17 @@ const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').rep
 const fmt=n=>'Bs '+Math.round(Number(n)||0).toLocaleString('es-BO');
 
 let toastT;
-function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show');
-  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2400); }
+/* ms: cuánto queda a la vista. Un "no se guardó" tiene que durar lo que se
+   tarda en leerlo; con los 2,4 s de siempre en el celular pasaba de largo. */
+function toast(m,ms){ const t=$('toast'); t.textContent=m; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),ms||2400); }
+
+/* Sube con cada cambio. guardar() lo mira al salir y al volver: si no es el
+   mismo, se tocó algo mientras el guardado viajaba y hay que mandar otro. */
+let cambios=0;
 
 function marcarSucio(){
-  sucio=true;
+  sucio=true; cambios++;
   $('estado').textContent='Cambios sin guardar';
   $('estado').className='estado sucio';
   $('btnGuardar').disabled=false;
@@ -485,6 +506,7 @@ function marcarLimpio(msg){
   $('estado').textContent=msg||'Todo guardado';
   $('estado').className='estado ok';
   $('btnGuardar').disabled=true;
+  $('btnGuardar').classList.remove('fallo');
 }
 addEventListener('beforeunload',e=>{ if(sucio){ e.preventDefault(); e.returnValue=''; } });
 
@@ -498,10 +520,11 @@ function verTab(cual,btn){
 }
 
 /* ═════════════ borrador en esta computadora ═════════════
-   El panel trabaja sobre una copia en memoria y recién escribe el archivo
-   cuando se toca "Guardar cambios". Eso es a propósito: un solo respaldo por
-   tanda en vez de uno por tecla. El problema es que si se cierra la pestaña
-   —o se corta la luz, que en el trópico pasa— se perdía todo el trabajo.
+   El panel trabaja sobre una copia en memoria. Los productos se guardan solos
+   al aceptarlos (ver guardar()), pero la pestaña "Tienda y envíos" espera al
+   botón, y un guardado puede fallar —sin señal, sesión vencida—. Si en ese
+   rato se cierra la pestaña —o se corta la luz, que en el trópico pasa— se
+   perdía el trabajo.
 
    Ahora cada cambio se anota tambien en el navegador. Al volver, si lo
    anotado no coincide con lo guardado, el panel ofrece recuperarlo. */
@@ -536,7 +559,14 @@ function guardarBorrador(){
 
 function olvidarBorrador(){
   clearTimeout(borradorT);
-  try{ localStorage.removeItem(CLAVE_BORRADOR); }catch(e){}
+  try{
+    /* Si hay uno esperando respuesta (el cartel de Recuperar), sigue anotado.
+       Antes quedaba solo en memoria y cualquier recarga lo perdía: ahora la
+       página se recarga sola cuando hay versión nueva, así que tiene que
+       sobrevivir a eso. */
+    if(borradorPendiente) localStorage.setItem(CLAVE_BORRADOR, JSON.stringify(borradorPendiente));
+    else localStorage.removeItem(CLAVE_BORRADOR);
+  }catch(e){}
 }
 
 function hace(ts){
@@ -549,18 +579,61 @@ function hace(ts){
   return 'hace '+d+(d===1?' día':' días');
 }
 
-function revisarBorrador(b, comoQuedoGuardado){
+/* Qué traería el borrador respecto de lo que hay guardado (CFG).
+   ⚠️ El borrador es una copia ENTERA del catálogo, sacada en otro momento.
+   Hasta el 13/10/2026 "Recuperar" la ponía tal cual: si mientras tanto se
+   había cargado algo desde otro aparato, lo borraba, y si un producto nuevo
+   del borrador tenía el mismo número que uno creado después, lo pisaba.
+   Ahora se mira qué cambió:
+   - nuevos: productos del borrador que no están guardados. Se recuperan
+     siempre, con número nuevo si el suyo ya se usó.
+   - viejo: en lo guardado hay productos que el borrador no conoce, o un
+     número que ahora es de otro producto. Entonces el borrador NO parte de
+     lo que hay hoy y solo se le creen los productos nuevos: sus precios y
+     sus datos de la tienda pueden ser los de antes.
+   Recuperar nunca borra. */
+function sinStockInv(p){
+  const c=Object.assign({},p);
+  if(c.stockInv) delete c.stock;     /* ese número lo pone el inventario al servir */
+  delete c.stockInv;
+  return JSON.stringify(c);
+}
+function compararBorrador(b){
+  const guardados=new Map(CFG.productos.map(p=>[p.id,p]));
+  const mismo=(x,y)=>x.name===y.name || !!(x.img&&x.img[0]&&y.img&&x.img[0]===y.img[0]);
+  const d={nuevos:[],cambiados:[],viejo:false,config:false};
+  const vistos=new Set();
+  for(const p of b.cfg.productos){
+    const g=guardados.get(p.id);
+    vistos.add(p.id);
+    if(!g) d.nuevos.push(p);
+    else if(!mismo(g,p)){ d.nuevos.push(p); d.viejo=true; }
+    else if(sinStockInv(g)!==sinStockInv(p)) d.cambiados.push(p);
+  }
+  if(CFG.productos.some(p=>!vistos.has(p.id))) d.viejo=true;
+  const resto=c=>JSON.stringify(Object.assign({},c,{productos:0,ultimoId:0,stockInvTienda:0}));
+  d.config=resto(b.cfg)!==resto(CFG);
+  return d;
+}
+
+function revisarBorrador(b){
   if(!b) return;
-  /* si el borrador es igual a lo guardado, ya cumplió: no molestar */
-  if(JSON.stringify(b.cfg)===comoQuedoGuardado) return;
+  const d=compararBorrador(b);
+  /* nada que valga la pena traer: ya está guardado, o es una copia vieja sin
+     productos nuevos */
+  if(!d.nuevos.length && (d.viejo || (!d.cambiados.length && !d.config))) return;
 
   borradorPendiente=b;
-  const n=b.cfg.productos.length;
+  olvidarBorrador();        /* con uno pendiente, lo deja anotado (ver ahí) */
+  const n=d.nuevos.length;
   const a=$('avisoBorrador');
-  a.innerHTML='⚠️ La última vez quedaron <b>cambios sin guardar</b> ('+hace(b.ts)+
-    ', '+n+' producto'+(n===1?'':'s')+'). Están anotados en esta computadora.'+
+  a.innerHTML='⚠️ '+(n
+      ? (n===1?'Quedó <b>1 producto sin guardar</b>: ':'Quedaron <b>'+n+' productos sin guardar</b>: ')+
+        d.nuevos.slice(0,4).map(p=>'«'+esc(p.name)+'»').join(', ')+(n>4?' y '+(n-4)+' más':'')
+      : 'Quedaron <b>cambios sin guardar</b>')+
+    ' ('+hace(b.ts)+').'+
     '<div class="acciones">'+
-      '<button class="primario" onclick="recuperarBorrador()">Recuperar</button>'+
+      '<button class="primario" onclick="recuperarBorrador()">Recuperar y guardar</button>'+
       '<button onclick="descartarBorrador()">Descartar</button>'+
     '</div>';
   a.style.background='color-mix(in srgb,var(--amber) 16%,transparent)';
@@ -570,13 +643,33 @@ function revisarBorrador(b, comoQuedoGuardado){
 }
 
 function recuperarBorrador(){
-  if(!borradorPendiente){ toast('El borrador ya no está'); $('avisoBorrador').hidden=true; return; }
-  CFG=borradorPendiente.cfg;
+  const b=borradorPendiente;
+  if(!b){ toast('El borrador ya no está'); $('avisoBorrador').hidden=true; return; }
+  /* se compara contra lo que hay AHORA, no contra lo que había al abrir */
+  const d=compararBorrador(b);
+  const usados=Math.max(Number(CFG.ultimoId)||0, ...CFG.productos.map(p=>Number(p.id)||0), 0);
+  const antes=CFG;
+  if(!d.viejo) CFG=b.cfg;            /* parte de lo guardado: vale entero */
+  CFG.ultimoId=Math.max(usados, Number(CFG.ultimoId)||0);
+  for(const p of d.nuevos){
+    /* un número que ya se usó no se repite: el inventario reconoce por él */
+    if(p.id<=usados){
+      const copia=Object.assign({},p);
+      delete copia.stockInv;
+      copia.id=++CFG.ultimoId;
+      if(d.viejo) CFG.productos.push(copia);
+      else CFG.productos[CFG.productos.indexOf(p)]=copia;
+    }else if(d.viejo){
+      CFG.productos.push(p);
+      CFG.ultimoId=Math.max(CFG.ultimoId,p.id);
+    }
+  }
+  if(CFG!==antes && CFG.stockInvTienda===undefined && antes.stockInvTienda!==undefined) CFG.stockInvTienda=antes.stockInvTienda;
   borradorPendiente=null;
   pintarFiltroCat(); pintarTabla(); pintarTienda(); pintarEnvios(); pintarCupones();
   $('avisoBorrador').hidden=true;
   marcarSucio();
-  toast('Recuperado. Revisalo y tocá 💾 Guardar cambios.');
+  guardar();
 }
 
 function descartarBorrador(){
@@ -672,14 +765,14 @@ function pintarTabla(){
 function editarCampo(id,campo,valor){
   const p=CFG.productos.find(x=>x.id===id); if(!p)return;
   p[campo]=Number(valor)||0;
-  marcarSucio(); pintarTabla();
+  marcarSucio(); pintarTabla(); guardarPronto();
 }
 
 function borrar(id){
   const p=CFG.productos.find(x=>x.id===id); if(!p)return;
   if(!confirm('¿Eliminar "'+p.name+'" del catálogo?'))return;
   CFG.productos=CFG.productos.filter(x=>x.id!==id);
-  marcarSucio(); pintarTabla(); toast('Producto eliminado');
+  marcarSucio(); pintarTabla(); guardar();
 }
 
 /* ═════════════ fotos del producto ═════════════
@@ -850,17 +943,19 @@ function guardarProducto(ev){
 
   if(editandoId){
     Object.assign(CFG.productos.find(x=>x.id===editandoId),datos);
-    toast('Producto actualizado');
   }else{
     CFG.ultimoId=Math.max(Number(CFG.ultimoId)||0, CFG.productos.reduce((m,p)=>Math.max(m,p.id),0))+1;
     datos.id=CFG.ultimoId;
     CFG.productos.push(datos);
-    toast('Producto agregado (#'+datos.id+')');
   }
   marcarSucio(); pintarTabla();
   /* Ya sabemos qué fotos quedaron puestas: se barre acá mismo, sin esperar al
      evento 'close', que es asincrónico y a veces tarda. */
   cerrarPasadaDeFotos();
+  /* Aceptar ya guarda (ver guardar()). El aviso de que salió bien, o de que
+     no, lo da el guardado: decir "Producto agregado" antes de saberlo era
+     justo lo que confundía. */
+  guardar();
 }
 
 /* ═════════════ fotos que quedaron sueltas ═════════════ */
@@ -952,6 +1047,7 @@ function pintarTienda(){
   $('cWa').value=c.whatsapp||''; $('cWaVis').value=c.whatsappVisible||'';
   $('cWaLink').value=c.enlaceDirectoWhatsapp?'si':'no';
   $('cTg').value=c.telegram||''; $('cMs').value=c.messenger||'';
+  $('cTk').value=c.tiktok||'';
 }
 function pintarEnvios(){
   $('tablaEnvios').innerHTML=CFG.envios.map((e,i)=>
@@ -1007,35 +1103,108 @@ function recogerTienda(){
   CFG.contacto.enlaceDirectoWhatsapp=$('cWaLink').value==='si';
   CFG.contacto.telegram=$('cTg').value.trim();
   CFG.contacto.messenger=$('cMs').value.trim();
+  /* sin lo que agrega TikTok al copiar el enlace (?is_from_webapp=...) */
+  CFG.contacto.tiktok=$('cTk').value.trim().split('?')[0];
 }
 
 /* ═════════════ guardar ═════════════ */
 
+/* Lo que se hace con un producto —aceptarlo, borrarlo, cambiarle el precio en
+   la tabla— se guarda SOLO. Hasta el 13/10/2026 "Aceptar" nada más lo anotaba
+   en la lista y faltaba tocar 💾 Guardar: el dueño cargó productos desde el
+   celular, vio "Producto agregado" y se fue. No quedó ninguno.
+   El botón sigue estando para la pestaña "Tienda y envíos", que se escribe
+   de a letras, y para reintentar cuando un guardado falla. */
+let guardando=false, guardarT;
+
+/* Para la tabla: varios precios seguidos salen en un solo guardado. */
+function guardarPronto(){ clearTimeout(guardarT); guardarT=setTimeout(guardar,1500); }
+
+function noSeGuardo(motivo){
+  const b=$('btnGuardar');
+  b.disabled=false; b.classList.remove('viaje'); b.classList.add('fallo');
+  toast('⚠️ NO se guardó: '+motivo, 9000);
+  return false;
+}
+
 async function guardar(confirmado){
+  /* De a uno. Cada guardado manda el catálogo entero: dos cruzados pueden
+     llegar al revés y dejar el viejo encima del nuevo. El que está en viaje
+     se fija al volver si hubo más cambios y manda otro. */
+  if(guardando) return;
+  guardando=true;
+  clearTimeout(guardarT);
   recogerTienda();
-  $('btnGuardar').disabled=true;
+  const alSalir=cambios;
+  const b=$('btnGuardar');
+  b.disabled=true; b.classList.add('viaje');
+  let r,d;
   try{
-    const r=await fetch('api/guardar'+(confirmado?'?confirmar=1':''),
+    r=await fetch('api/guardar'+(confirmado===true?'?confirmar=1':''),
       {method:'POST',headers:{'Content-Type':'application/json'},
        body:JSON.stringify(CFG,null,2)});
-    const d=await r.json();
-    /* El servidor frena los guardados que borran de golpe la mayoría de los
-       productos. No es un error: es una pregunta. Se traslada al comerciante
-       en vez de obedecer callado. */
-    if(r.status===409 && d.confirmable && !confirmado){
-      $('btnGuardar').disabled=false;
-      if(confirm(d.error+'\n\n¿Guardar igual?')) return guardar(true);
-      toast('No se guardó nada');
-      return;
-    }
-    if(!r.ok) throw new Error(d.error||'Error del servidor');
-    marcarLimpio('Guardado ✓ ('+d.productos+' productos)');
-    toast('Catálogo guardado ✓ Ya está en vivo en la tienda');
+    d=await r.json().catch(()=>({}));
   }catch(e){
-    $('btnGuardar').disabled=false;
-    toast('No se pudo guardar: '+e.message+'. Usá "Descargar JSON".');
+    guardando=false;
+    return noSeGuardo('no hay conexión con la tienda. Lo que hiciste sigue acá: tocá Reintentar.');
   }
+  guardando=false;
+  b.classList.remove('viaje');
+  /* El servidor frena los guardados que borran de golpe la mayoría de los
+     productos. No es un error: es una pregunta. Se traslada al comerciante
+     en vez de obedecer callado. */
+  if(r.status===409 && d.confirmable && confirmado!==true){
+    b.disabled=false;
+    if(confirm(d.error+'\n\n¿Guardar igual?')) return guardar(true);
+    toast('No se guardó nada');
+    return false;
+  }
+  if(r.status===401){
+    return noSeGuardo('se cerró tu sesión. Recargá la página y entrá de nuevo: lo que hiciste quedó anotado y el panel te lo ofrece al volver.');
+  }
+  if(!r.ok) return noSeGuardo(d.error||'error del servidor');
+  if(cambios!==alSalir) return guardar();
+  marcarLimpio('Guardado ✓ ('+d.productos+' productos)');
+  toast('Guardado ✓ Ya está en la tienda');
+  return true;
 }
+
+/* ═════════════ ponerse al día al volver ═════════════
+   El panel trabaja sobre la copia que bajó al abrirse. Con la pestaña abierta
+   en la computadora y el dueño cargando desde el celular, la computadora
+   seguía mostrando la lista vieja —"lo agregué y no me sale"— y, peor, al
+   guardar cualquier cosa desde ahí pisaba lo del celular.
+   Al volver a la pestaña se baja de nuevo, SOLO si acá no hay nada a medio
+   hacer: sin cambios pendientes, sin formulario abierto, sin casilla en uso. */
+let alDiaT=0;
+function ocupado(){
+  if(!CFG || sucio || guardando || document.hidden) return true;
+  if(document.querySelector('dialog[open]')) return true;
+  const a=document.activeElement;
+  return !!(a && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
+}
+async function ponerseAlDia(){
+  if(ocupado() || Date.now()-alDiaT<4000) return;
+  alDiaT=Date.now();
+  let nuevo;
+  try{
+    const r=await fetch('productos.json',{cache:'no-cache'});
+    if(!r.ok) return;
+    nuevo=await r.json();
+  }catch(e){ return; }
+  if(ocupado() || !nuevo || !Array.isArray(nuevo.productos)) return;
+  nuevo.ultimoId=Math.max(Number(nuevo.ultimoId)||0, ...nuevo.productos.map(p=>Number(p.id)||0), 0);
+  if(JSON.stringify(nuevo)===JSON.stringify(CFG)) return;
+  const antes=CFG.productos.length;
+  CFG=nuevo;
+  const f=$('fCat').value;
+  pintarFiltroCat(); $('fCat').value=f;
+  pintarTabla(); pintarTienda(); pintarEnvios(); pintarCupones();
+  const n=CFG.productos.length;
+  if(n!==antes) toast('Lista al día: ahora hay '+n+' producto'+(n===1?'':'s'));
+}
+document.addEventListener('visibilitychange',ponerseAlDia);
+addEventListener('focus',ponerseAlDia);
 
 function exportar(){
   recogerTienda();
@@ -1088,7 +1257,41 @@ fetch('api/quien-soy').then(r=>r.json()).then(d=>{
     $('btnSalir').hidden=false;
     $('btnSalir').title='Salir ('+d.usuario+')';
   }
+  if(d.version && !miVersion) miVersion=String(d.version);
 }).catch(()=>{});
+
+/* ═════════════ versión nueva del panel ═════════════
+   Cuando se cambia el panel, el que quedó abierto en un celular sigue con el
+   código viejo hasta que alguien lo recargue. El 13/10/2026 eso fue pedirle
+   al dueño "cierre la página y vuelva a abrirla", que para él no significa
+   nada. Ahora la página aprende su versión al abrirse (arriba) y la vuelve a
+   preguntar al volver a la pestaña y cada tanto: si cambió, se recarga sola.
+   Nunca con algo a medio hacer: ocupado() es el mismo freno que usa
+   ponerseAlDia(). Si justo está ocupado, queda anotado y se reintenta. */
+let miVersion='', versionT=Date.now(), hayVersionNueva=false, recargando=false;
+async function buscarVersionNueva(){
+  if(document.hidden || recargando) return;
+  if(!hayVersionNueva){
+    if(Date.now()-versionT<120000) return;
+    versionT=Date.now();
+    let v='';
+    try{
+      const r=await fetch('api/quien-soy',{cache:'no-store'});
+      if(r.ok) v=String((await r.json()).version||'');
+    }catch(e){}
+    if(!v) return;                 /* sin señal, o un servidor que todavía no la informa */
+    if(!miVersion){ miVersion=v; return; }
+    if(v===miVersion) return;
+    hayVersionNueva=true;
+  }
+  if(ocupado()) return;
+  recargando=true;
+  toast('Se actualizó el panel. Un momento…',4000);
+  setTimeout(()=>{ if(ocupado()){ recargando=false; return; } location.reload(); },1200);
+}
+document.addEventListener('visibilitychange',buscarVersionNueva);
+addEventListener('focus',buscarVersionNueva);
+setInterval(buscarVersionNueva,60000);
 
 async function salir(){
   if(sucio && !confirm('Tenés cambios sin guardar. ¿Salir igual?')) return;

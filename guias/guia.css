@@ -1,0 +1,75 @@
+/* Estilo de las guías de Los Caseritos. Pensado para leer en pantalla y para
+   imprimir o pasar a PDF: fondo claro, letra grande, una idea por bloque. */
+:root{
+  --tinta:#16231c; --suave:#55685e; --linea:#d9e4dd; --fondo:#f6faf7; --papel:#ffffff;
+  --verde:#12946a; --verde-claro:#e3f6ee; --ambar:#b76a00; --ambar-claro:#fff3dd; --rojo:#c0392b; --rojo-claro:#fdecea;
+}
+*{box-sizing:border-box}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{margin:0;background:var(--fondo);color:var(--tinta);font-family:"Segoe UI",system-ui,sans-serif;font-size:17px;line-height:1.55}
+.hoja{max-width:980px;margin:0 auto;padding:28px 22px 60px}
+
+.tapa{background:linear-gradient(135deg,#2fd08f,#12946a);color:#05130d;border-radius:22px;padding:34px 32px;margin-bottom:26px}
+.tapa .para{font-weight:800;letter-spacing:.08em;text-transform:uppercase;font-size:.85rem;opacity:.8}
+.tapa h1{font-family:"Trebuchet MS","Segoe UI",sans-serif;font-size:2.3rem;line-height:1.1;margin:6px 0 10px}
+.tapa p{margin:0;font-size:1.08rem;max-width:60ch}
+
+h2{font-family:"Trebuchet MS","Segoe UI",sans-serif;font-size:1.55rem;margin:38px 0 6px;display:flex;align-items:center;gap:12px}
+h2 .n{flex:0 0 auto;width:42px;height:42px;border-radius:50%;background:var(--verde);color:#fff;display:grid;place-items:center;font-size:1.2rem}
+h3{font-size:1.1rem;margin:20px 0 6px}
+p{margin:0 0 12px}
+ul,ol{margin:0 0 12px;padding-left:24px}
+li{margin-bottom:6px}
+b{font-weight:700}
+code{background:#e9f0ec;border-radius:6px;padding:1px 7px;font-family:Consolas,monospace;font-size:.93em}
+.entrada{color:var(--suave);font-size:1.05rem;margin-bottom:16px}
+
+/* cajas de aviso */
+.nota,.ojo,.mal{border-radius:14px;padding:13px 16px;margin:14px 0;border-left:5px solid}
+.nota{background:var(--verde-claro);border-color:var(--verde)}
+.ojo{background:var(--ambar-claro);border-color:var(--ambar)}
+.mal{background:var(--rojo-claro);border-color:var(--rojo)}
+.nota p:last-child,.ojo p:last-child,.mal p:last-child{margin-bottom:0}
+
+/* capturas */
+figure{margin:16px 0 22px}
+figure img{display:block;width:100%;height:auto;border-radius:14px;border:1px solid #1d2f26;box-shadow:0 8px 24px #0002}
+figcaption{font-size:.9rem;color:var(--suave);margin-top:8px;text-align:center}
+/* una captura de celular al lado de su explicación */
+.cel{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:26px;align-items:start;margin:14px 0 8px}
+.cel figure{margin:0}
+.cel.izq{grid-template-columns:290px minmax(0,1fr)}
+
+table{width:100%;border-collapse:collapse;margin:12px 0 18px;background:var(--papel);border-radius:12px;overflow:hidden;font-size:.97rem}
+th{background:#e9f0ec;text-align:left;padding:10px 12px}
+td{padding:10px 12px;border-top:1px solid var(--linea);vertical-align:top}
+
+/* lista corta de pestañas: la primera columna angosta */
+table.pestanas td:first-child{white-space:nowrap;width:1%}
+/* la foto del botón, al tamaño en que se ve en la pantalla */
+table.pestanas img{display:block;height:38px;width:auto}
+table.pestanas td{vertical-align:middle}
+.indice{background:var(--papel);border:1px solid var(--linea);border-radius:16px;padding:16px 22px;columns:2;column-gap:30px}
+.indice a{color:var(--verde);text-decoration:none;font-weight:600}
+.indice li{break-inside:avoid}
+.pie{margin-top:44px;padding-top:16px;border-top:1px solid var(--linea);color:var(--suave);font-size:.9rem}
+
+@media (max-width:720px){
+  body{font-size:16px}
+  .cel,.cel.izq{grid-template-columns:1fr}
+  .cel figure{max-width:320px;margin:0 auto}
+  .indice{columns:1}
+  .tapa h1{font-size:1.8rem}
+}
+@media print{
+  body{background:#fff;font-size:12.5pt}
+  .hoja{max-width:none;padding:0}
+  h2{break-after:avoid}
+  h3{break-after:avoid}
+  figure,.cel,.nota,.ojo,.mal,table,tr{break-inside:avoid}
+  figure img{box-shadow:none}
+  .cel,.cel.izq{grid-template-columns:minmax(0,1fr) 230px}
+  .cel.izq{grid-template-columns:230px minmax(0,1fr)}
+  a{color:inherit;text-decoration:none}
+}
+@page{size:A4;margin:14mm 13mm}

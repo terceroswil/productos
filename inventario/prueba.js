@@ -171,11 +171,41 @@ async function main(){
     assert.equal(delaWeb(5).precio, 5500);
     assert.equal(delaWeb(5).codigo, '7790005000055');
     assert.equal(r.datos.filter(p => /platos hondos/i.test(p.nombre)).length, 1);
-    const ollas = r.datos.find(p => p.id === OLLAS);
+    assert.equal(r.datos.find(p => p.id === OLLAS), undefined, 'borrado de la web y sin mercadería: ya no sale para vender');
+    const todos = (await dueno.get('/api/productos?inactivos=1')).datos;
+    const ollas = todos.find(p => p.id === OLLAS);
     assert.equal(ollas.catalogo_id, null);
-    assert.equal(ollas.activo, 1, 'lo que se borra de la web acá queda: puede haber mercadería');
+    assert.equal(ollas.activo, 0, 'queda dado de baja, no borrado');
     assert.equal(delaWeb(6), undefined);
-    ok('un cambio en el panel de la web llega solo: precio nuevo, producto vinculado por nombre, borrado desvinculado');
+    ok('un cambio en el panel de la web llega solo: precio nuevo, producto vinculado por nombre, borrado dado de baja');
+
+    /* borrado de la web CON mercadería en una tienda: se sigue vendiendo.
+       Y uno dado de baja que vuelve a la web por el nombre, vuelve a venderse. */
+    r = await dueno.post('/api/productos', { nombre: 'Termo 1L', precio: 80 });
+    const TERMO = r.datos.id;
+    escribirCatalogo([catalogoInicial[0], { id: 3, name: 'Zimba', cat: 'Hogar', price: 12, stock: 100 }, catalogoInicial[3],
+      { id: 5, name: 'platos HONDOS', cat: 'Cocina', price: 55, stock: 3 }, { id: 7, name: 'Termo 1L', cat: 'Cocina', price: 80, stock: 1 }]);
+    r = await dueno.get('/api/productos');
+    assert.equal(delaWeb(7).id, TERMO);
+    await dueno.post('/api/stock', { tienda_id: IVI, items: [{ producto_id: TERMO, cantidad: 4 }] });
+    escribirCatalogo([catalogoInicial[0], { id: 3, name: 'Zimba', cat: 'Hogar', price: 12, stock: 100 }, catalogoInicial[3],
+      { id: 5, name: 'platos HONDOS', cat: 'Cocina', price: 55, stock: 3 }]);
+    r = await dueno.get('/api/productos');
+    let termo = r.datos.find(p => p.id === TERMO);
+    assert.equal(termo.catalogo_id, null);
+    assert.equal(termo.activo, 1, 'tiene 4 en el estante: se sigue vendiendo aunque ya no esté en la web');
+    await dueno.post('/api/stock', { tienda_id: IVI, items: [{ producto_id: TERMO, cantidad: 0 }] });
+    await dueno.post('/api/productos', { id: TERMO, nombre: 'Termo 1L', precio: 80, activo: false });
+    escribirCatalogo([catalogoInicial[0], { id: 3, name: 'Zimba', cat: 'Hogar', price: 12, stock: 100 }, catalogoInicial[3],
+      { id: 5, name: 'platos HONDOS', cat: 'Cocina', price: 55, stock: 3 }, { id: 8, name: 'termo 1l', cat: 'Cocina', price: 90, stock: 1 }]);
+    r = await dueno.get('/api/productos');
+    termo = delaWeb(8);
+    assert.ok(termo, 'el que estaba dado de baja y vuelve a la web tiene que aparecer en la lista');
+    assert.equal(termo.id, TERMO); assert.equal(termo.activo, 1); assert.equal(termo.precio, 9000);
+    escribirCatalogo([catalogoInicial[0], { id: 3, name: 'Zimba', cat: 'Hogar', price: 12, stock: 100 }, catalogoInicial[3],
+      { id: 5, name: 'platos HONDOS', cat: 'Cocina', price: 55, stock: 3 }, { id: 6, name: 'Mal cargado', cat: 'Cocina', price: 'gratis' }]);
+    r = await dueno.get('/api/productos');
+    ok('borrado de la web con mercadería: se sigue vendiendo; dado de baja que vuelve a la web: vuelve a venderse');
 
     /* ── el inventario manda en el stock ── */
     assert.deepEqual(stockEnLaWeb().stock, {}, 'nada se contó todavía: la web sigue con sus números');

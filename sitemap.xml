@@ -2,84 +2,64 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://loscaseritos.com/</loc>
-    <lastmod>2026-10-13</lastmod>
+    <lastmod>2026-10-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://loscaseritos.com/?cat=Cocina</loc>
-    <lastmod>2026-10-13</lastmod>
+    <lastmod>2026-10-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://loscaseritos.com/?cat=Electrodom%C3%A9sticos</loc>
-    <lastmod>2026-10-13</lastmod>
+    <lastmod>2026-10-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://loscaseritos.com/?cat=Tecnolog%C3%ADa</loc>
-    <lastmod>2026-10-13</lastmod>
+    <lastmod>2026-10-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://loscaseritos.com/?cat=Belleza</loc>
-    <lastmod>2026-10-13</lastmod>
+    <lastmod>2026-10-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://loscaseritos.com/?cat=Hogar</loc>
-    <lastmod>2026-10-13</lastmod>
+    <lastmod>2026-10-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://loscaseritos.com/?cat=Herramientas</loc>
-    <lastmod>2026-10-13</lastmod>
+    <lastmod>2026-10-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://loscaseritos.com/?p=1</loc>
-    <lastmod>2026-10-13</lastmod>
+    <loc>https://loscaseritos.com/?p=15</loc>
+    <lastmod>2026-10-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://loscaseritos.com/img/p1.jpg</image:loc>
-      <image:title>Sartén antiadherente 28cm</image:title>
+      <image:loc>https://loscaseritos.com/img/idrolavadora-portatil-mv7h7vuradp.jpg</image:loc>
+      <image:title>Idrolavadora portatil</image:title>
     </image:image>
   </url>
   <url>
-    <loc>https://loscaseritos.com/?p=2</loc>
-    <lastmod>2026-10-13</lastmod>
+    <loc>https://loscaseritos.com/?p=16</loc>
+    <lastmod>2026-10-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
     <image:image>
-      <image:loc>https://loscaseritos.com/img/p2.jpg</image:loc>
-      <image:title>Juego de ollas 7 piezas</image:title>
-    </image:image>
-  </url>
-  <url>
-    <loc>https://loscaseritos.com/?p=3</loc>
-    <lastmod>2026-10-13</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://loscaseritos.com/img/zimba-mt9kdtkane5.jpg</image:loc>
-      <image:title>Zimba</image:title>
-    </image:image>
-  </url>
-  <url>
-    <loc>https://loscaseritos.com/?p=4</loc>
-    <lastmod>2026-10-13</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-    <image:image>
-      <image:loc>https://loscaseritos.com/img/cocacola-mubktuxmjbr.jpg</image:loc>
-      <image:title>cocacola</image:title>
+      <image:loc>https://loscaseritos.com/img/p5.jpg</image:loc>
+      <image:title>Cafetera italiana 6 tazas</image:title>
     </image:image>
   </url>
 </urlset>

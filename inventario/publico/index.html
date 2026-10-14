@@ -36,7 +36,7 @@
   <form id="form-entrada" class="caja-entrada">
     <div class="marca"><span class="ic">📦</span> Inventario · Los Caseritos</div>
     <label for="e-usuario">Usuario</label>
-    <input id="e-usuario" required autocomplete="username" autocapitalize="none">
+    <input id="e-usuario" required autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false">
     <label for="e-clave">Clave</label>
     <input id="e-clave" type="password" required autocomplete="current-password">
     <button class="primario" type="submit">Entrar</button>
@@ -115,7 +115,12 @@
     <!-- ── Recibir mercadería ── -->
     <section id="v-recibir" class="vista" hidden>
       <h2>Recibir mercadería</h2>
-      <p class="suave chico">Escanee cada producto que llegó y ponga cuántos son. Al registrar, se suman al stock de esta tienda.</p>
+      <p class="suave chico" id="recibir-ayuda">Escanee cada producto que llegó y ponga cuántos son. Al registrar, se suman al stock de esta tienda.</p>
+      <!-- solo el dueño: si la mercadería viene de otra tienda, se descuenta de allá -->
+      <div id="recibir-origen-caja" class="origen" hidden>
+        <label for="recibir-origen">¿De dónde viene la mercadería?</label>
+        <select id="recibir-origen"></select>
+      </div>
       <div class="buscador">
         <input id="recibir-buscar" placeholder="Escanee el código o escriba el nombre del producto" autocomplete="off">
         <div class="resultados" id="recibir-resultados" hidden></div>
@@ -290,6 +295,7 @@
 <dialog id="dlg-producto">
   <form id="form-producto" method="dialog">
     <h2 id="prod-titulo">Producto</h2>
+    <div class="error" id="p-error"></div>
     <p class="suave chico" id="p-nota-web" hidden>🌐 Este producto viene de la tienda web. El nombre, la categoría y el precio se cambian en el panel de la web. Acá complete el código de barras, el costo y el aviso de stock.</p>
     <label for="p-nombre">Nombre</label>
     <input id="p-nombre" required maxlength="120">
@@ -325,7 +331,6 @@
       </div>
     </div>
     <label class="check"><input type="checkbox" id="p-activo"> Se vende (desmarcar para darlo de baja)</label>
-    <div class="error" id="p-error"></div>
     <div class="acciones">
       <button type="button" data-cerrar>Cancelar</button>
       <button type="submit" class="primario">Guardar</button>
@@ -337,10 +342,13 @@
 <dialog id="dlg-usuario">
   <form id="form-usuario" method="dialog" autocomplete="off">
     <h2 id="usr-titulo">Usuario</h2>
+    <!-- El error va ARRIBA: en el celular, abajo quedaba tapado por el teclado
+         y parecía que el botón Guardar no hacía nada. -->
+    <div class="error" id="u-error"></div>
     <label for="u-nombre">Nombre</label>
     <input id="u-nombre" required maxlength="60">
-    <label for="u-usuario">Usuario para entrar</label>
-    <input id="u-usuario" required maxlength="30" autocapitalize="none">
+    <label for="u-usuario">Usuario para entrar (una palabra, sin espacios ni tildes)</label>
+    <input id="u-usuario" required maxlength="30" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Ej.: maria">
     <label for="u-clave" id="u-clave-label">Clave (8 caracteres o más)</label>
     <input id="u-clave" type="password" autocomplete="new-password">
     <div class="dos">
@@ -357,7 +365,6 @@
       </div>
     </div>
     <label class="check"><input type="checkbox" id="u-activo"> Puede entrar (desmarcar para darlo de baja)</label>
-    <div class="error" id="u-error"></div>
     <div class="acciones">
       <button type="button" data-cerrar>Cancelar</button>
       <button type="submit" class="primario">Guardar</button>
@@ -369,13 +376,13 @@
 <dialog id="dlg-mi-clave">
   <form id="form-mi-clave" method="dialog" autocomplete="off">
     <h2>Cambiar mi clave</h2>
+    <div class="error" id="mc-error"></div>
     <label for="mc-actual">La clave que tiene ahora</label>
     <input id="mc-actual" type="password" required autocomplete="current-password">
     <label for="mc-nueva">Clave nueva (8 caracteres o más)</label>
     <input id="mc-nueva" type="password" required minlength="8" autocomplete="new-password">
     <label for="mc-nueva2">Repetir la clave nueva</label>
     <input id="mc-nueva2" type="password" required minlength="8" autocomplete="new-password">
-    <div class="error" id="mc-error"></div>
     <div class="acciones">
       <button type="button" data-cerrar>Cancelar</button>
       <button type="submit" class="primario">Cambiar la clave</button>

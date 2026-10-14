@@ -66,6 +66,7 @@ Se puede, pero no por descuido. El dueño eligió esto entre tres opciones (deja
 - **El dueño puede cerrar la caja de otra persona** ("Cerrarla yo", en Cajas sin cerrar): para la vendedora que cambió de tienda o se dio de baja sin cerrar. Queda anotado que la cerró él.
 - **Traspasos entre tiendas** (**Stock → 🚚 Pasar a otra tienda**, solo el dueño): baja en una y sube en la otra en un paso. No deja mandar más de lo que el sistema dice que hay en la tienda de origen.
 - **Mercadería recibida**: lo que anota cada persona en **Recibir** le aparece al dueño en las alertas de **Hoy**.
+- **Recibir de otra tienda** (solo el dueño): en **Recibir** hay un menú "¿De dónde viene la mercadería?". Con "De un proveedor" es una entrada común. Eligiendo otra tienda es un traspaso visto desde quien recibe: muestra cuánto hay allá, suma acá y descuenta de allá. Después de registrar, el menú vuelve solo a "proveedor": si quedara en una tienda, la próxima compra a un proveedor se descontaría de esa tienda por error.
 - **Cada uno cambia su clave** con el botón 🔑, sabiendo la actual.
 
 ---
@@ -94,7 +95,9 @@ Cada dato tiene **un solo dueño** (decidido el 12/10/2026):
 - **La web muestra el stock de UNA tienda** (`INV_TIENDA_WEB` en el `.env`, hoy Ivirgarzama): la que despacha los pedidos online. Así no promete mercadería que está en otro pueblo.
 - **Lo que todavía no se contó en esa tienda no se toca**: la web sigue con el número escrito en el panel. Recién cuando el producto tiene un movimiento en el inventario, manda el inventario. Si no fuera así, al prender la sincronización toda la tienda pasaría a "agotado".
 - **Un producto creado acá** con "+ Nuevo producto" no sale en la web. Para que salga, se lo crea en el panel de la web **con el mismo nombre**: el inventario los vincula en vez de duplicarlo, y conserva código, costo y movimientos.
-- **Un producto borrado de la web** acá queda (puede haber mercadería), desvinculado y editable.
+- **Un producto borrado de la web**: si en alguna tienda queda mercadería (o un negativo sin aclarar), acá sigue vendiéndose, desvinculado y editable. Si no queda nada, se da de baja solo. No se borra: vuelve con "Mostrar los dados de baja" o cargándolo de nuevo en la web.
+- **Uno dado de baja que se vuelve a cargar en la web con el mismo nombre** se vincula y vuelve a venderse. Antes quedaba vinculado pero inactivo: salía en la web y en el mostrador no existía.
+- **El inventario se entera en el momento** en que el panel guarda (la tienda llama a `alDia()`), no recién cuando alguien abre esta pantalla.
 - **Los pedidos de la web no descuentan stock solos**: llegan por WhatsApp. El stock baja cuando se cobran en "Vender".
 - El catálogo que se lee es el `productos.json` de esta misma carpeta, el que edita la tienda. Al arrancar, la consola dice de dónde está leyendo (`Web →`). `INV_CATALOGO` solo hace falta en las pruebas, o si algún día el inventario vuelve a vivir en otra carpeta: ahí tiene que apuntar al de la TIENDA, no a una copia.
 - ⚠️ **Variantes** (talla, tamaño): la web las tiene con diferencia de precio; el inventario tiene un solo producto con el precio base. En el mostrador una variante más cara se cobra al precio base. Pendiente.
@@ -110,6 +113,7 @@ Cada dato tiene **un solo dueño** (decidido el 12/10/2026):
 - **Lo que cambie la lista de venta pasa por `carritoCambio()`**, que tira la `clave`. Con la misma clave y otra lista, el servidor devolvería la venta anterior.
 - **`mostrarApp()` puede correr más de una vez** sin recargar (cuando vence la sesión se vuelve a entrar ahí mismo, y la venta a medio armar sigue). No enganchar eventos adentro: se duplican.
 - **El lector que no encuentra un código** deja el texto seleccionado y suena un pitido. Antes el código siguiente se pegaba atrás del que no existía.
+- **En el celular, el error de un formulario va ARRIBA, pegado al título.** Abajo lo tapaba el teclado: al crear un usuario con la clave corta o el nombre con tilde, parecía que "Guardar" no hacía nada (13/10/2026). Y el nombre de usuario se limpia solo mientras se escribe ("María Choque" → "maria.choque"), porque el teclado del teléfono mete mayúsculas, tildes y espacios.
 - **Los archivos de `publico/` se sirven del disco en cada pedido**: un cambio ahí sale en vivo al recargar la página. Lo de `operaciones.js`, `db.js` y `servidor.js` recién corre al reiniciar el inventario.
 
 ---

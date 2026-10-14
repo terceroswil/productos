@@ -390,7 +390,15 @@ function sincronizarCatalogo(db, rutaCatalogo){
     const cambio = db.prepare(`UPDATE productos SET nombre = ?, categoria = ?, precio = ?, precio_antes = ?, catalogo_id = ?,
                                       variantes = ?
                                WHERE id = ?`);
-    const r = { nuevos: 0, actualizados: 0, vinculados: 0, desvinculados: 0, iguales: 0, salteados: 0 };
+    /* ⚠️ Al vincular por nombre, el producto vuelve a venderse (activo = 1).
+       El que se toma puede estar dado de baja —se pide primero uno activo,
+       pero si no hay se usa ese—, y quedaba así: el producto salía en la
+       tienda web y en el mostrador no existía, ni para venderlo ni para
+       recibirlo, porque la lista no muestra los dados de baja. */
+    const vincular = db.prepare(`UPDATE productos SET nombre = ?, categoria = ?, precio = ?, precio_antes = ?, catalogo_id = ?,
+                                        variantes = ?, activo = 1
+                                 WHERE id = ?`);
+    const r = { nuevos: 0, actualizados: 0, vinculados: 0, desvinculados: 0, dadosDeBaja: 0, iguales: 0, salteados: 0 };
 
     /* Todos los ids que figuran en la web, aunque el producto venga mal
        cargado: uno con el precio roto se saltea, pero NO se desvincula. */
@@ -420,7 +428,7 @@ function sincronizarCatalogo(db, rutaCatalogo){
       if (!actual){
         const mismoNombre = porNombre.get(nombre);
         if (mismoNombre){
-          cambio.run(nombre, categoria, precio, antes, p.id, variantes, mismoNombre.id);
+          vincular.run(nombre, categoria, precio, antes, p.id, variantes, mismoNombre.id);
           r.vinculados++;
         } else {
           alta.run(nombre, categoria, precio, antes, p.id, variantes, Date.now());
@@ -435,9 +443,24 @@ function sincronizarCatalogo(db, rutaCatalogo){
       }
     }
 
+    /* Lo que se borró en el panel de la web.
+       - Si en alguna tienda queda mercadería (o un negativo sin aclarar), el
+         producto se suelta pero SIGUE vendiéndose: lo que está en el estante
+         no desaparece porque se lo haya sacado de internet.
+       - Si no queda nada en ninguna tienda, se da de baja. Antes quedaba
+         activo: el dueño borró del panel los productos de muestra y en el
+         mostrador seguían saliendo todos para vender.
+       Darlo de baja no borra nada: el historial queda, y vuelve con
+       "Mostrar los dados de baja" o cargándolo otra vez en la web. */
     const soltar = db.prepare('UPDATE productos SET catalogo_id = NULL WHERE id = ?');
+    const baja = db.prepare('UPDATE productos SET catalogo_id = NULL, activo = 0 WHERE id = ?');
+    const queda = db.prepare(`SELECT 1 FROM (SELECT SUM(cantidad) AS s FROM movimientos WHERE producto_id = ? GROUP BY tienda_id)
+                              WHERE s <> 0 LIMIT 1`);
     for (const v of db.prepare('SELECT id, catalogo_id FROM productos WHERE catalogo_id IS NOT NULL').all()){
-      if (!enLaWeb.has(v.catalogo_id)){ soltar.run(v.id); r.desvinculados++; }
+      if (enLaWeb.has(v.catalogo_id)) continue;
+      r.desvinculados++;
+      if (queda.get(v.id)) soltar.run(v.id);
+      else { baja.run(v.id); r.dadosDeBaja++; }
     }
     return r;
   });

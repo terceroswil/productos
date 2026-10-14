@@ -10,13 +10,14 @@
     "moneda": "Bs"
   },
   "contacto": {
-    "_nota": "enlaceDirectoWhatsapp:true SOLO porque el numero es WhatsApp Business. Con una cuenta normal, Meta suspende por volumen de mensajes entrantes desde wa.me.",
-    "enlaceDirectoWhatsapp": true,
+    "_nota": "enlaceDirectoWhatsapp va en false: el numero sale solo como texto. En true SOLO con WhatsApp Business (Meta suspende las cuentas normales por volumen de mensajes desde wa.me).",
+    "enlaceDirectoWhatsapp": false,
     "whatsapp": "59157384971",
     "whatsappVisible": "5738 4971",
-    "telegram": "https://t.me/+d1nboxAY77E4ZTdh",
-    "messenger": "https://m.me/wings.terceros.2025",
-    "facebook": "https://www.facebook.com/wings.terceros.2025/?locale=es_LA"
+    "telegram": "",
+    "messenger": "",
+    "facebook": "https://www.facebook.com/wings.terceros.2025/?locale=es_LA",
+    "tiktok": "https://www.tiktok.com/@caceritostropico"
   },
   "envios": [
     {
@@ -134,126 +135,50 @@
   ],
   "productos": [
     {
-      "id": 1,
-      "cat": "Cocina",
-      "sub": "Sartenes y ollas",
-      "em": "🍳",
-      "marca": "",
-      "name": "Sartén antiadherente 28cm",
-      "desc": "Base de aluminio, mango ergonómico.",
-      "descLarga": "Sartén de aluminio fundido con recubrimiento antiadherente. Mango ergonómico que no transmite calor. Apto para cocina a gas y eléctrica.",
-      "price": 145,
-      "precioAntes": 190,
-      "stock": 12,
-      "nuevo": false,
-      "img": [
-        "img/p1.jpg"
-      ],
-      "variantes": {
-        "nombre": "Tamaño",
-        "opciones": [
-          {
-            "label": "24 cm",
-            "delta": -25
-          },
-          {
-            "label": "28 cm",
-            "delta": 0
-          },
-          {
-            "label": "32 cm",
-            "delta": 40
-          }
-        ]
-      },
-      "palabras": [
-        "sarten",
-        "teflon",
-        "freir",
-        "antiadherente"
-      ]
-    },
-    {
-      "id": 2,
-      "cat": "Cocina",
-      "sub": "Sartenes y ollas",
-      "em": "🥘",
-      "marca": "",
-      "name": "Juego de ollas 7 piezas",
-      "desc": "Acero inoxidable con tapa de vidrio.",
-      "descLarga": "Set de 7 piezas en acero inoxidable con fondo difusor. Tapas de vidrio templado con salida de vapor. Aptas para todo tipo de hornalla.",
-      "price": 520,
-      "precioAntes": 695,
-      "stock": 6,
-      "nuevo": false,
-      "img": [
-        "img/p2.jpg"
-      ],
-      "variantes": null,
-      "palabras": [
-        "ollas",
-        "batería de cocina",
-        "cacerolas",
-        "juego de ollas"
-      ]
-    },
-    {
-      "cat": "Hogar",
-      "sub": "",
-      "em": "📦",
-      "marca": "",
-      "name": "Zimba",
-      "desc": "Refresco sabor piña 🍍",
-      "descLarga": "Dulce y muy bueno",
-      "price": 10,
-      "precioAntes": 11,
-      "stock": 100,
-      "nuevo": false,
-      "palabras": [
-        "Zimba",
-        "refresco",
-        "gaseosa"
-      ],
-      "img": [
-        "img/zimba-mt9kdtkane5.jpg",
-        "img/zimba-mt9kdudje92.jpg",
-        "img/zimba-mt9kduuhjv6.jpg",
-        "img/zimba-mt9kdve90x8.jpg"
-      ],
-      "variantes": null,
-      "id": 3
-    },
-    {
       "cat": "Herramientas",
       "sub": "Eléctricas",
       "em": "📦",
-      "marca": "coca",
-      "name": "cocacola",
-      "desc": "dulce",
-      "descLarga": "la mayoria la toma",
-      "price": 10,
-      "precioAntes": 15,
-      "stock": 100,
+      "marca": "Los caseritos",
+      "name": "Idrolavadora portatil",
+      "desc": "Idrolavadora",
+      "descLarga": "Es un producto recargable con dos vateria",
+      "price": 350,
+      "precioAntes": 550,
+      "stock": 6,
       "nuevo": true,
       "palabras": [
-        "coca",
-        "cola"
+        "Idrolavadora"
       ],
       "img": [
-        "img/cocacola-mubktuxmjbr.jpg",
-        "img/cocacola-mubktvomuvj.jpg",
-        "img/cocacola-mubktw6l6y6.jpg"
+        "img/idrolavadora-portatil-mv7h7vuradp.jpg"
       ],
-      "variantes": {
-        "nombre": "we",
-        "opciones": [
-          {
-            "label": "tgra",
-            "delta": 0
-          }
-        ]
-      },
-      "id": 4
+      "variantes": null,
+      "id": 15
+    },
+    {
+      "cat": "Cocina",
+      "sub": "Café",
+      "em": "☕",
+      "marca": "",
+      "name": "Cafetera italiana 6 tazas",
+      "desc": "Cafetera de aluminio para 6 tazas. Producto de ejemplo.",
+      "descLarga": "Cafetera italiana tipo moka, de aluminio, para 6 tazas. Sirve en cocina a gas o eléctrica.",
+      "price": 95,
+      "precioAntes": 0,
+      "stock": 10,
+      "nuevo": false,
+      "palabras": [
+        "cafetera",
+        "cafe",
+        "moka",
+        "italiana"
+      ],
+      "img": [
+        "img/p5.jpg"
+      ],
+      "variantes": null,
+      "id": 16
     }
-  ]
+  ],
+  "ultimoId": 16
 }

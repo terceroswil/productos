@@ -255,7 +255,17 @@
   .card.agotado{opacity:.62}
   .card.agotado:hover{transform:none}
   .thumb{aspect-ratio:1/1;position:relative;overflow:hidden;background:var(--surface-2)}
-  .thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:.35s}
+  /* La foto se ve ENTERA (contain), no recortada (cover). Lo que carga el
+     comerciante son volantes del proveedor, con el nombre y los datos
+     escritos en la imagen, y de cualquier proporción: recortados a un
+     cuadrado perdían justo las letras ("IDROLAVADORA" por HIDROLAVADORA).
+     Lo que sobra a los costados se rellena con la misma foto desenfocada
+     (.con-fondo), así no quedan franjas lisas. */
+  .thumb img{width:100%;height:100%;object-fit:contain;display:block;transition:.35s;position:relative;z-index:1}
+  .con-fondo{position:relative;overflow:hidden}
+  .con-fondo::before{content:'';position:absolute;inset:-24px;z-index:0;
+    background:var(--foto,none) center/cover no-repeat;filter:blur(20px) saturate(1.15);opacity:.5}
+  .thumb .tag,.thumb .tag-stock,.thumb .cinta-agotado{z-index:2}
   .card:hover .thumb img{transform:scale(1.05)}
   .tag{position:absolute;top:12px;left:12px;background:var(--grad-sun);color:#3a1c00;font-size:.68rem;
     font-weight:800;padding:5px 11px;border-radius:999px;text-transform:uppercase;letter-spacing:.04em;
@@ -395,9 +405,13 @@
     overflow:hidden;box-shadow:var(--shadow-hover);border:1px solid var(--line)}
   .modal.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1)}
   .modal-in{display:grid;grid-template-columns:1fr 1fr;overflow-y:auto;overflow-x:hidden;flex:1;min-width:0}
-  .m-img{background:var(--surface-2);position:relative}
-  .m-img .principal{aspect-ratio:1/1}
-  .m-img img{width:100%;height:100%;object-fit:cover;display:block}
+  /* La caja de la foto ocupa TODA la columna, no solo un cuadrado arriba:
+     en la computadora la ficha es más alta que ancha y debajo de la foto
+     quedaba un bloque liso vacío. La foto va absoluta para que su 100% de
+     alto sea el de la caja estirada. */
+  .m-img{background:var(--surface-2);position:relative;display:flex;flex-direction:column}
+  .m-img .principal{aspect-ratio:1/1;flex:1 0 auto}
+  .m-img .principal img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:block;z-index:1}
   .m-galeria{display:flex;gap:6px;padding:8px;overflow-x:auto;scrollbar-width:none}
   .m-galeria::-webkit-scrollbar{display:none}
   .m-galeria:has(> :only-child){display:none}
@@ -458,7 +472,7 @@
     -webkit-tap-highlight-color:transparent;transition:.15s}
   .rel:hover{border-color:var(--green);transform:translateY(-2px)}
   .rel:active{transform:scale(.97)}
-  .rel img{width:100%;aspect-ratio:1/1;object-fit:cover;display:block;background:var(--surface-2)}
+  .rel img{width:100%;aspect-ratio:1/1;object-fit:contain;display:block;background:var(--surface-2)}
   .rel-nom{font-size:.74rem;font-weight:700;color:var(--ink);line-height:1.25;padding:5px 8px 0;
     display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
   .rel-precio{font-size:.82rem;font-weight:800;color:var(--green-deep);padding:0 8px}
@@ -918,7 +932,7 @@
       <!-- Sin src= a propósito: con src="" el navegador pide la PÁGINA ENTERA
            como si fuera una imagen. Era una descarga de más en cada visita,
            y con datos móviles eso se paga. El src lo pone abrirProducto(). -->
-      <div class="principal"><img id="mImg" alt=""></div>
+      <div class="principal con-fondo"><img id="mImg" alt=""></div>
       <div class="m-galeria" id="mGaleria"></div>
     </div>
     <div class="m-body">
@@ -1051,6 +1065,13 @@ function pintarTextosFijos(){
   }
   if(contacto.telegram) html+='💬 <a href="'+esc(contacto.telegram)+'" target="_blank" rel="noopener">Telegram</a> · ';
   if(contacto.messenger) html+='<a href="'+esc(contacto.messenger)+'" target="_blank" rel="noopener">Messenger</a>';
+  /* TikTok: acá sí va enlace (la regla de "solo número" es del WhatsApp).
+     Solo https, y con el @ a la vista para que se reconozca la cuenta. */
+  if(String(contacto.tiktok||'').startsWith('https://')){
+    const arroba=(contacto.tiktok.match(/@[A-Za-z0-9_.]+/)||[''])[0];
+    html+=(contacto.telegram||contacto.messenger?'<br>':'')+
+      '🎵 <a href="'+esc(contacto.tiktok)+'" target="_blank" rel="noopener">TikTok'+(arroba?' '+esc(arroba):'')+'</a>';
+  }
   $('footContacto').innerHTML=html;
 
   /* selectores del formulario */
@@ -1238,11 +1259,11 @@ function render(){
       ' onclick="openProduct('+p.id+')"'+
       ' onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openProduct('+p.id+')}"'+
       ' aria-label="Ver '+esc(p.name)+'">'+
-      '<div class="thumb">'+
+      '<div class="thumb con-fondo">'+
         (p.nuevo&&!sinStock?'<span class="tag nuevo">Nuevo</span>':(esOferta(p)?'<span class="tag">-'+pctDesc(p)+'%</span>':''))+
         (pocos?'<span class="tag-stock">¡Últimas '+Number(p.stock)+'!</span>':'')+
         '<img src="'+esc(p.img&&p.img[0]||'')+'" alt="'+esc(p.name)+'" loading="lazy" decoding="async" width="400" height="400"'+
-          ' onerror="imgFalla(this,'+p.id+')">'+
+          ' onload="fotoLista(this)" onerror="imgFalla(this,'+p.id+')">'+
         (sinStock?'<div class="cinta-agotado">Agotado</div>':'')+
       '</div>'+
       '<div class="card-body">'+
@@ -1270,6 +1291,15 @@ function render(){
 }
 
 /* Si la foto no existe, mostramos el emoji del producto en su lugar */
+/* El relleno desenfocado de .con-fondo: la misma foto, puesta de fondo en la
+   caja. Se pone recién cuando la foto CARGÓ: si fuera desde el arranque, el
+   fondo bajaría las fotos de todo el catálogo de una y el loading="lazy"
+   no serviría de nada con datos móviles. */
+function fotoLista(img){
+  const u=img.currentSrc||img.src;
+  if(u) img.parentNode.style.setProperty('--foto','url("'+u.replace(/["\\\n]/g,'')+'")');
+}
+
 function imgFalla(img,id){
   const p=products.find(x=>x.id===id); if(!p)return;
   img.style.display='none';
@@ -1582,7 +1612,9 @@ function pintarCanales(){
   z.innerHTML=h;
   $('notaSeg').textContent = contacto.enlaceDirectoWhatsapp
     ? 'Se abrirá WhatsApp con tu pedido ya escrito.'
-    : 'Copiá el pedido y pegalo en el chat. Telegram y Messenger son los canales más rápidos y seguros.';
+    : (contacto.telegram||contacto.messenger)
+      ? 'Copiá el pedido y pegalo en el chat. Telegram y Messenger son los canales más rápidos y seguros.'
+      : 'Copiá el pedido y mandalo por WhatsApp a ese número.';
 }
 
 function copiarPedido(){ copiarTexto(textoPedido(),'Pedido copiado ✓ Ahora pegalo en el chat'); }
@@ -1787,12 +1819,19 @@ function pintarConsulta(){
        cliente la pega donde quiera. */
     b.href='#';
     b.removeAttribute('target');
+    /* Con número, el botón lo MUESTRA, con el logo de WhatsApp: decía
+       "Preguntar por este producto" y no decía a dónde. Al tocarlo se copia
+       el número, que es lo que el cliente necesita para abrir el chat. */
+    const numero=contacto.whatsappVisible||contacto.whatsapp;
     b.onclick=e=>{
       e.preventDefault();
-      copiarTexto(textoConsulta(),'Consulta copiada ✓ Pegala en el chat');
+      if(numero) copiarTexto(numero,'Número copiado ✓ Escribinos por WhatsApp');
+      else copiarTexto(textoConsulta(),'Consulta copiada ✓ Pegala en el chat');
       evento('consulta',{id:mProd.id,name:mProd.name});
     };
-    b.innerHTML='💬 <span>Preguntar por este producto</span>';
+    b.innerHTML=numero
+      ? LOGO_WA+'<span>WhatsApp '+esc(numero)+'</span>'
+      : '💬 <span>Preguntar por este producto</span>';
   }
 }
 
@@ -1846,6 +1885,8 @@ function pintarGaleria(){
   /* Producto sin foto: se quita el atributo y se muestra el emoji de una.
      Poner src="" no sirve —el navegador pide la página entera como imagen—
      y encima no dispara onerror, así que el respaldo nunca aparecía. */
+  $('mImg').parentNode.style.removeProperty('--foto');
+  $('mImg').onload=function(){ fotoLista(this); };
   if(ruta){ $('mImg').style.display=''; $('mImg').src=ruta; }
   else { $('mImg').removeAttribute('src'); imgFalla($('mImg'),mProd.id); }
   $('mGaleria').innerHTML=fotos.map((f,i)=>

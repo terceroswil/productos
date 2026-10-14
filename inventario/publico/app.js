@@ -193,6 +193,7 @@
         setTimeout(() => $('vender-buscar').focus(), 100);
         break;
       case 'v-recibir':
+        prepararOrigenDeRecibir();
         cargarProductos().then(renderRecibirLista);
         setTimeout(() => $('recibir-buscar').focus(), 100);
         break;
@@ -803,8 +804,44 @@
     renderRecibirLista();
   }
 
+  /* ¿De dónde viene lo que se recibe? (lo pidió el dueño el 13/10/2026)
+     - De un proveedor: es una entrada, como siempre. Suma acá y nada más.
+     - De otra tienda: es un TRASPASO hecho desde el lado que recibe. Suma
+       acá y se descuenta de la tienda que la mandó, que es lo que faltaba:
+       antes había que acordarse de ir a Stock a descontarla allá.
+     El menú lo ve solo el dueño: es el único que ve el stock de las otras
+     tiendas, y un traspaso mueve mercadería de una tienda que no es la de
+     quien está cobrando. */
+  function origenDeRecibir() {
+    if (estado.yo.rol !== 'dueno') return null;
+    const id = Number($('recibir-origen').value);
+    return estado.tiendas.find(t => t.id === id && t.id !== estado.tiendaActual) || null;
+  }
+
+  function prepararOrigenDeRecibir() {
+    const caja = $('recibir-origen-caja');
+    if (estado.yo.rol !== 'dueno') { caja.hidden = true; return; }
+    const sel = $('recibir-origen');
+    const elegido = sel.value;
+    sel.innerHTML = '<option value="">De un proveedor (compra de afuera)</option>' +
+      estado.tiendas.filter(t => t.id !== estado.tiendaActual)
+        .map(t => `<option value="${t.id}">De la tienda de ${escapeHTML(t.nombre)}</option>`).join('');
+    /* si cambió de tienda arriba y el origen que tenía es ahora "esta tienda", vuelve a proveedor */
+    sel.value = [...sel.options].some(o => o.value === elegido) ? elegido : '';
+    caja.hidden = false;
+  }
+
   function renderRecibirLista() {
     const contenedor = $('recibir-lista');
+    const origen = origenDeRecibir();
+    const aca = (estado.tiendas.find(t => t.id === estado.tiendaActual) || {}).nombre || 'esta tienda';
+    $('recibir-ayuda').textContent = origen
+      ? `Ponga qué llegó desde ${origen.nombre} y cuántos son. Al registrar, se suman al stock de ${aca} y se descuentan del de ${origen.nombre}.`
+      : 'Escanee cada producto que llegó y ponga cuántos son. Al registrar, se suman al stock de esta tienda.';
+    $('recibir-guardar').textContent = origen ? `Registrar lo que llegó de ${origen.nombre}` : 'Registrar entrada';
+    $('recibir-nota').previousElementSibling.textContent = origen ? 'Nota (opcional)' : '¿De dónde vino? (opcional)';
+    $('recibir-nota').placeholder = origen ? 'Ej.: lo trajo Juan en la flota' : 'Ej.: Proveedor de Cochabamba, factura 123';
+
     if (!estado.recibirItems.length) {
       contenedor.innerHTML = '<div class="vacio">No hay productos en la lista de entrada.<br>Escanee o busque arriba para agregar.</div>';
       $('recibir-guardar').disabled = true;
@@ -816,6 +853,7 @@
         <thead>
           <tr>
             <th>Producto</th>
+            ${origen ? `<th class="num">Hay en ${escapeHTML(origen.nombre)}</th>` : ''}
             <th class="centro">Cantidad a ingresar</th>
             <th></th>
           </tr>
@@ -830,6 +868,10 @@
             <b>${escapeHTML(it.p.nombre)}</b>
             ${it.p.codigo ? `<div class="chico suave">${escapeHTML(it.p.codigo)}</div>` : ''}
           </td>
+          ${origen ? (() => {
+            const hay = (it.p.stock_tiendas || {})[origen.id] || 0;
+            return `<td class="num ${it.cantidad > hay ? 'neg' : ''}"><b>${hay}</b>${it.cantidad > hay ? '<div class="chico">no alcanza</div>' : ''}</td>`;
+          })() : ''}
           <td class="centro">
             <div class="cant">
               <button type="button" class="mini btn-rec-restar" data-idx="${idx}">-</button>
@@ -1472,8 +1514,8 @@
           <thead>
             <tr>
               <th>Usuario</th>
-              <th>Nombre</th>
-              <th>Rol</th>
+              <th class="no-movil">Nombre</th>
+              <th class="no-movil">Rol</th>
               <th>Tienda</th>
               <th>Estado</th>
               <th></th>
@@ -1485,9 +1527,12 @@
       usuarios.forEach(u => {
         html += `
           <tr>
-            <td><code>${escapeHTML(u.usuario)}</code></td>
-            <td><b>${escapeHTML(u.nombre)}</b></td>
-            <td><span class="etiqueta ${u.rol === 'dueno' ? 'ambar' : ''}">${u.rol === 'dueno' ? 'Dueño' : 'Vendedor'}</span></td>
+            <td>
+              <code>${escapeHTML(u.usuario)}</code>
+              <div class="chico suave solo-movil">${escapeHTML(u.nombre)} · ${u.rol === 'dueno' ? 'Dueño' : 'Vendedor'}</div>
+            </td>
+            <td class="no-movil"><b>${escapeHTML(u.nombre)}</b></td>
+            <td class="no-movil"><span class="etiqueta ${u.rol === 'dueno' ? 'ambar' : ''}">${u.rol === 'dueno' ? 'Dueño' : 'Vendedor'}</span></td>
             <td>${u.rol === 'dueno' ? '<i>Todas</i>' : escapeHTML(u.tienda || '-')}</td>
             <td><span class="etiqueta ${u.activo ? 'verde' : 'roja'}">${u.activo ? 'Activo' : 'Inactivo'}</span></td>
             <td class="der">
@@ -1906,6 +1951,27 @@
     setTimeout(() => URL.revokeObjectURL(enlace.href), 2000);
   }
 
+  /* El nombre de usuario solo admite letras sin tilde, números, punto y
+     guion. El teclado del celular pone mayúscula inicial, tildes y espacios
+     por su cuenta, y el alta fallaba sin que se entendiera por qué. Se
+     arregla a medida que se escribe: lo que se ve en la casilla es lo que
+     queda guardado ("María Choque" → "maria.choque"). */
+  function limpiarUsuario(inp) {
+    const limpio = inp.value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      .replace(/\s+/g, '.').replace(/[^a-z0-9._-]/g, '');
+    if (limpio !== inp.value) inp.value = limpio;
+  }
+  ['u-usuario', 'c-usuario', 'e-usuario'].forEach(id => {
+    $(id).addEventListener('input', () => limpiarUsuario($(id)));
+  });
+
+  /* Muestra un error dentro de un diálogo y lo trae a la vista. */
+  function errorEnDialogo(id, mensaje) {
+    const el = $(id);
+    el.textContent = mensaje;
+    if (mensaje) el.scrollIntoView({ block: 'nearest' });
+  }
+
   // ─────────────────────────── Inicialización y Sesión ───────────────────────────
   async function inicializar() {
     try {
@@ -2103,7 +2169,7 @@
       ['mc-actual', 'mc-nueva', 'mc-nueva2'].forEach(id => { $(id).value = ''; });
       mostrarAviso('Clave cambiada. Desde ahora se entra con la nueva.');
     } catch (ex) {
-      err.textContent = ex.message;
+      errorEnDialogo('mc-error', ex.message);
     }
   });
 
@@ -2222,26 +2288,33 @@
     btn.disabled = true;
 
     try {
-      const res = await api('/api/entradas', 'POST', {
-        tienda_id: estado.tiendaActual,
-        nota: $('recibir-nota').value.trim(),
-        items: estado.recibirItems.map(it => ({
-          producto_id: it.p.id,
-          cantidad: it.cantidad
-        }))
-      });
-
-      mostrarAviso(`Entrada registrada: ${res.unidades} unidades de ${res.productos} productos.`);
+      const items = estado.recibirItems.map(it => ({ producto_id: it.p.id, cantidad: it.cantidad }));
+      const nota = $('recibir-nota').value.trim();
+      const origen = origenDeRecibir();
+      if (origen) {
+        /* viene de otra tienda: baja allá y sube acá, en un solo movimiento */
+        const res = await api('/api/transferencias', 'POST', { origen: origen.id, destino: estado.tiendaActual, nota, items });
+        mostrarAviso(`Recibido de ${res.origen}: ${res.unidades} unidades. Ya se descontaron de allá.`);
+      } else {
+        const res = await api('/api/entradas', 'POST', { tienda_id: estado.tiendaActual, nota, items });
+        mostrarAviso(`Entrada registrada: ${res.unidades} unidades de ${res.productos} productos.`);
+      }
       estado.recibirItems = [];
       $('recibir-nota').value = '';
+      /* El menú vuelve SOLO a "proveedor". Si quedara en "de la tienda de X",
+         la próxima compra a un proveedor se descontaría de X sin que nadie
+         lo haya pedido: el error más fácil de cometer con este menú. */
+      $('recibir-origen').value = '';
       renderRecibirLista();
       cargarProductos();
     } catch (e) {
       mostrarAviso(e.message, true);
     } finally {
-      btn.disabled = false;
+      btn.disabled = !estado.recibirItems.length;
     }
   });
+
+  $('recibir-origen').addEventListener('change', renderRecibirLista);
 
   // 6. Vista Hoy: Actualizar
   $('hoy-actualizar').addEventListener('click', cargarHoy);
@@ -2344,7 +2417,7 @@
       mostrarAviso('Producto guardado correctamente');
       cargarProductosAdmin();
     } catch (err) {
-      pError.textContent = err.message;
+      errorEnDialogo('p-error', err.message);
     }
   });
 
@@ -2379,6 +2452,7 @@
     const uError = $('u-error');
     uError.textContent = '';
 
+    limpiarUsuario($('u-usuario'));
     const payload = {
       id: estado.usrEditandoId,
       nombre: $('u-nombre').value.trim(),
@@ -2389,13 +2463,22 @@
       activo: $('u-activo').checked
     };
 
+    /* lo más común se avisa antes de mandar nada, en palabras simples */
+    if (payload.usuario.length < 3) return errorEnDialogo('u-error', 'El usuario para entrar tiene que tener al menos 3 letras.');
+    if (!payload.id && !payload.clave) return errorEnDialogo('u-error', 'Falta ponerle una clave.');
+    if (payload.clave && payload.clave.length < 8) {
+      return errorEnDialogo('u-error', 'La clave es muy corta: tiene ' + payload.clave.length + ' y hacen falta 8 o más.');
+    }
+
     try {
       await api('/api/usuarios', 'POST', payload);
       $('dlg-usuario').close();
-      mostrarAviso('Usuario guardado correctamente');
+      mostrarAviso(payload.id
+        ? 'Usuario guardado correctamente'
+        : `Usuario creado. Para entrar: usuario "${payload.usuario}" y la clave que le puso.`);
       cargarUsuarios();
     } catch (err) {
-      uError.textContent = err.message;
+      errorEnDialogo('u-error', err.message);
     }
   });
 

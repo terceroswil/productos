@@ -148,7 +148,8 @@ function ponerAlDiaConLaWeb(forzar = false){
     firmaCatalogo = firma;
     if (r.nuevos || r.actualizados || r.vinculados || r.desvinculados){
       console.log('  🌐 catálogo de la web: ' + r.nuevos + ' nuevos, ' + r.actualizados + ' actualizados, ' +
-                  r.vinculados + ' vinculados, ' + r.desvinculados + ' ya no están');
+                  r.vinculados + ' vinculados, ' + r.desvinculados + ' ya no están' +
+                  (r.dadosDeBaja ? ' (' + r.dadosDeBaja + ' sin mercadería, dados de baja)' : ''));
     }
     publicarStockWeb();
     return r;
@@ -510,7 +511,9 @@ for (const senal of ['SIGINT', 'SIGTERM']){
   process.on(senal, () => { try { db.close(); } catch (e) {} process.exit(0); });
 }
 
-module.exports = { manejar, presentar };
+/* alDia: la tienda lo llama apenas guarda el catálogo, así el inventario
+   se entera en el momento y no recién cuando alguien abre su pantalla. */
+module.exports = { manejar, presentar, alDia: () => ponerAlDiaConLaWeb() };
 
 /* ─────────────────────────── suelto, en su propio puerto ─────────────────────────── */
 if (require.main !== module) return;
